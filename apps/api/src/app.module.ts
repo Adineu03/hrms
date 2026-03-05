@@ -13,6 +13,7 @@ import { SetupEngineModule } from './shared/setup-engine/setup-engine.module';
 import { ColdStartSetupModule } from './modules/cold-start-setup/cold-start-setup.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
+import { DataImportModule } from './shared/data-import/data-import.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -28,6 +29,7 @@ import { HealthController } from './health.controller';
     ColdStartSetupModule,
     TemplateModule,
     DefaultsModule,
+    DataImportModule,
   ],
   controllers: [HealthController],
   providers: [

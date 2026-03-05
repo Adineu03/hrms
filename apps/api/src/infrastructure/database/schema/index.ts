@@ -3,3 +3,8 @@ export * from './users';
 export * from './org-modules';
 export * from './departments';
 export * from './designations';
+export * from './locations';
+export * from './grades';
+export * from './invitation-tokens';
+export * from './employee-profiles';
+export * from './data-imports';

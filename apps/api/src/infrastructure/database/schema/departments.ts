@@ -7,6 +7,8 @@ export const departments = pgTable('departments', {
   name: varchar('name', { length: 255 }).notNull(),
   parentId: uuid('parent_id'),
   headId: uuid('head_id'),
+  locationId: uuid('location_id'),
+  workModel: varchar('work_model', { length: 20 }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

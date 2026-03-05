@@ -8,7 +8,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type {
-  CompanyProfileData,
+  EnhancedCompanyProfileData,
+  OrgSettingsData,
   WorkWeekData,
   DepartmentData,
   DesignationData,
@@ -45,7 +46,7 @@ export class ColdStartController {
 
   @Post('company-profile')
   @Roles('super_admin', 'admin')
-  async saveCompanyProfile(@Body() body: CompanyProfileData) {
+  async saveCompanyProfile(@Body() body: EnhancedCompanyProfileData) {
     const orgId = this.getOrgIdOrThrow();
     const saved = await this.coldStartService.saveCompanyProfile(orgId, body);
     await this.setupEngineService.completeStep(
@@ -54,6 +55,32 @@ export class ColdStartController {
       'company-profile',
     );
     return saved;
+  }
+
+  // ─── Organization Settings ──────────────────────────────────────────
+
+  @Get('org-settings')
+  async getOrgSettings() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.coldStartService.getOrgSettings(orgId);
+  }
+
+  @Post('org-settings')
+  @Roles('super_admin', 'admin')
+  async saveOrgSettings(@Body() body: OrgSettingsData) {
+    const orgId = this.getOrgIdOrThrow();
+    const saved = await this.coldStartService.saveOrgSettings(orgId, body);
+    await this.setupEngineService.completeStep(
+      orgId,
+      'cold-start-setup',
+      'org-settings',
+    );
+    return saved;
+  }
+
+  @Get('country-defaults/:country')
+  getCountryDefaults(@Param('country') country: string) {
+    return this.coldStartService.getCountryDefaults(country);
   }
 
   // ─── Work Week ────────────────────────────────────────────────────

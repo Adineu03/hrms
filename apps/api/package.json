@@ -39,6 +39,7 @@
     "postgres": "^3.4",
     "reflect-metadata": "^0.2",
     "rxjs": "^7",
+    "xlsx": "^0.18.5",
     "zod": "^3"
   },
   "devDependencies": {
@@ -49,6 +50,7 @@
     "@types/express": "^5",
     "@types/jest": "^29",
     "@types/ms": "^2.1.0",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22",
     "@types/passport-jwt": "^4",
     "@typescript-eslint/eslint-plugin": "^8",

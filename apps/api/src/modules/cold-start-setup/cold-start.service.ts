@@ -2,7 +2,9 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type {
-  CompanyProfileData,
+  EnhancedCompanyProfileData,
+  OrgSettingsData,
+  CountryDefaults,
   WorkWeekData,
   DepartmentData,
   DesignationData,
@@ -14,6 +16,113 @@ import { orgModules } from '../../infrastructure/database/schema/org-modules';
 import { departments } from '../../infrastructure/database/schema/departments';
 import { designations } from '../../infrastructure/database/schema/designations';
 
+// ─── Country Defaults (static lookup) ────────────────────────────────────────
+
+const COUNTRY_DEFAULTS: Record<string, CountryDefaults> = {
+  IN: {
+    country: 'IN',
+    currency: 'INR',
+    timezone: 'Asia/Kolkata',
+    dateFormat: 'DD/MM/YYYY',
+    locale: 'en-IN',
+    fiscalYearStart: 'april',
+    laborLaw: {
+      minWage: 26000,
+      maxWorkHoursPerWeek: 48,
+      mandatoryLeaves: ['Republic Day', 'Independence Day', 'Gandhi Jayanti'],
+      probationMaxMonths: 6,
+      noticePeriodDays: 30,
+      overtimeMultiplier: 2,
+    },
+  },
+  US: {
+    country: 'US',
+    currency: 'USD',
+    timezone: 'America/New_York',
+    dateFormat: 'MM/DD/YYYY',
+    locale: 'en-US',
+    fiscalYearStart: 'january',
+    laborLaw: {
+      minWage: 7.25,
+      maxWorkHoursPerWeek: 40,
+      mandatoryLeaves: [
+        'New Year',
+        'Independence Day',
+        'Thanksgiving',
+        'Christmas',
+      ],
+      probationMaxMonths: 3,
+      noticePeriodDays: 14,
+      overtimeMultiplier: 1.5,
+    },
+  },
+  GB: {
+    country: 'GB',
+    currency: 'GBP',
+    timezone: 'Europe/London',
+    dateFormat: 'DD/MM/YYYY',
+    locale: 'en-GB',
+    fiscalYearStart: 'april',
+    laborLaw: {
+      minWage: 10.42,
+      maxWorkHoursPerWeek: 48,
+      mandatoryLeaves: [
+        'New Year',
+        'Good Friday',
+        'Easter Monday',
+        'Christmas',
+        'Boxing Day',
+      ],
+      probationMaxMonths: 6,
+      noticePeriodDays: 30,
+      overtimeMultiplier: 1.5,
+    },
+  },
+  AE: {
+    country: 'AE',
+    currency: 'AED',
+    timezone: 'Asia/Dubai',
+    dateFormat: 'DD/MM/YYYY',
+    locale: 'en-AE',
+    fiscalYearStart: 'january',
+    laborLaw: {
+      minWage: 0,
+      maxWorkHoursPerWeek: 48,
+      mandatoryLeaves: [
+        'Eid Al Fitr',
+        'Eid Al Adha',
+        'UAE National Day',
+        'New Year',
+      ],
+      probationMaxMonths: 6,
+      noticePeriodDays: 30,
+      overtimeMultiplier: 1.25,
+    },
+  },
+  SG: {
+    country: 'SG',
+    currency: 'SGD',
+    timezone: 'Asia/Singapore',
+    dateFormat: 'DD/MM/YYYY',
+    locale: 'en-SG',
+    fiscalYearStart: 'january',
+    laborLaw: {
+      minWage: 0,
+      maxWorkHoursPerWeek: 44,
+      mandatoryLeaves: [
+        'New Year',
+        'Chinese New Year',
+        'Labour Day',
+        'National Day',
+        'Christmas',
+      ],
+      probationMaxMonths: 6,
+      noticePeriodDays: 30,
+      overtimeMultiplier: 1.5,
+    },
+  },
+};
+
 @Injectable()
 export class ColdStartService {
   constructor(
@@ -24,8 +133,8 @@ export class ColdStartService {
 
   async saveCompanyProfile(
     orgId: string,
-    data: CompanyProfileData,
-  ): Promise<CompanyProfileData> {
+    data: EnhancedCompanyProfileData,
+  ): Promise<EnhancedCompanyProfileData> {
     const [org] = await this.db
       .select()
       .from(orgs)
@@ -40,10 +149,16 @@ export class ColdStartService {
     const updatedConfig = {
       ...existingConfig,
       companyProfile: {
+        legalName: data.legalName ?? '',
+        tradeLicense: data.tradeLicense ?? '',
+        registrationNumber: data.registrationNumber ?? '',
+        taxId: data.taxId ?? '',
         logoUrl: data.logoUrl ?? '',
         address: data.address ?? '',
         phone: data.phone ?? '',
         website: data.website ?? '',
+        brandColor: data.brandColor ?? '',
+        companySizeBracket: data.companySizeBracket ?? '',
       },
     };
 
@@ -60,7 +175,9 @@ export class ColdStartService {
     return data;
   }
 
-  async getCompanyProfile(orgId: string): Promise<CompanyProfileData> {
+  async getCompanyProfile(
+    orgId: string,
+  ): Promise<EnhancedCompanyProfileData> {
     const [org] = await this.db
       .select()
       .from(orgs)
@@ -76,11 +193,72 @@ export class ColdStartService {
 
     return {
       name: org.name,
+      legalName: profile.legalName ?? '',
+      tradeLicense: profile.tradeLicense ?? '',
+      registrationNumber: profile.registrationNumber ?? '',
+      taxId: profile.taxId ?? '',
       logoUrl: profile.logoUrl ?? '',
       address: profile.address ?? '',
       phone: profile.phone ?? '',
       website: profile.website ?? '',
+      brandColor: profile.brandColor ?? '',
+      companySizeBracket: profile.companySizeBracket ?? '',
     };
+  }
+
+  // ─── Organization Settings ──────────────────────────────────────────
+
+  async saveOrgSettings(
+    orgId: string,
+    data: OrgSettingsData,
+  ): Promise<OrgSettingsData> {
+    const [org] = await this.db
+      .select()
+      .from(orgs)
+      .where(eq(orgs.id, orgId))
+      .limit(1);
+
+    if (!org) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    const existingConfig = (org.config as Record<string, any>) ?? {};
+    const updatedConfig = {
+      ...existingConfig,
+      orgSettings: data,
+    };
+
+    const now = new Date();
+    await this.db
+      .update(orgs)
+      .set({
+        config: updatedConfig,
+        updatedAt: now,
+      })
+      .where(eq(orgs.id, orgId));
+
+    return data;
+  }
+
+  async getOrgSettings(orgId: string): Promise<OrgSettingsData | null> {
+    const [org] = await this.db
+      .select()
+      .from(orgs)
+      .where(eq(orgs.id, orgId))
+      .limit(1);
+
+    if (!org) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    const config = (org.config as Record<string, any>) ?? {};
+    return config.orgSettings ?? null;
+  }
+
+  // ─── Country Defaults ──────────────────────────────────────────────
+
+  getCountryDefaults(countryCode: string): CountryDefaults | null {
+    return COUNTRY_DEFAULTS[countryCode.toUpperCase()] ?? null;
   }
 
   // ─── Work Week ────────────────────────────────────────────────────

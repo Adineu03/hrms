@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import type { CompanyProfileData } from '@hrms/shared';
-import { Loader2, CheckCircle2, Building2, Globe, Phone, MapPin, Image } from 'lucide-react';
+import { Loader2, CheckCircle2, Building2, Globe, Phone, MapPin, Image as ImageIcon } from 'lucide-react';
 
 interface CompanyProfileFormProps {
   onComplete: () => void;
@@ -119,7 +119,7 @@ export default function CompanyProfileForm({ onComplete }: CompanyProfileFormPro
           Logo URL <span className="text-text-muted font-normal">(optional)</span>
         </label>
         <div className="relative">
-          <Image className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+          <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <input
             id="logoUrl"
             type="url"
