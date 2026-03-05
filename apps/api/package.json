@@ -19,6 +19,7 @@
     "seed:demo": "ts-node src/infrastructure/database/seeds/demo.seed.ts"
   },
   "dependencies": {
+    "@hrms/shared": "workspace:*",
     "@nestjs/bullmq": "^11",
     "@nestjs/common": "^11",
     "@nestjs/config": "^4",
@@ -32,13 +33,13 @@
     "class-validator": "^0.14.1",
     "drizzle-orm": "^0.39",
     "ioredis": "^5",
+    "ms": "^2.1.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "postgres": "^3.4",
     "reflect-metadata": "^0.2",
     "rxjs": "^7",
-    "zod": "^3",
-    "@hrms/shared": "workspace:*"
+    "zod": "^3"
   },
   "devDependencies": {
     "@nestjs/cli": "^11",
@@ -47,6 +48,7 @@
     "@types/bcrypt": "^5",
     "@types/express": "^5",
     "@types/jest": "^29",
+    "@types/ms": "^2.1.0",
     "@types/node": "^22",
     "@types/passport-jwt": "^4",
     "@typescript-eslint/eslint-plugin": "^8",

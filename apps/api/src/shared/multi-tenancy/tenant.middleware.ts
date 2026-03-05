@@ -13,15 +13,14 @@ export class TenantMiddleware implements NestMiddleware {
   constructor(private readonly tenantService: TenantService) {}
 
   use(req: Request, _res: Response, next: NextFunction) {
-    // Tenant context will be set after JWT auth is implemented (Step 2).
-    // For now, pass through without tenant context.
+    // JWT guard sets req.user on authenticated requests.
     // Public routes (health, signup, login) won't have tenant context.
     const user = (req as Request & { user?: AuthenticatedUser }).user;
     const orgId = user?.orgId;
     const userId = user?.userId;
     const role = user?.role;
 
-    if (orgId) {
+    if (orgId && userId && role) {
       this.tenantService.run({ orgId, userId, role }, async () => next());
     } else {
       next();
