@@ -1,0 +1,11 @@
+{
+  "moduleId": "core-hr",
+  "defaults": {
+    "employeeIdFormat": "EMP-{0000}",
+    "probationMonths": 6,
+    "noticePeriodDays": 60,
+    "retirementAge": 60,
+    "enableSelfService": true,
+    "documentTypes": ["Aadhar Card", "PAN Card", "Passport", "Bank Statement", "Offer Letter"]
+  }
+}

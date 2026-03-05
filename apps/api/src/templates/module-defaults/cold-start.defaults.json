@@ -1,0 +1,17 @@
+{
+  "moduleId": "cold-start-setup",
+  "defaults": {
+    "companyProfile": {
+      "logoUrl": "",
+      "address": "",
+      "phone": "",
+      "website": ""
+    },
+    "workWeek": {
+      "days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "timezone": "Asia/Kolkata"
+    }
+  }
+}

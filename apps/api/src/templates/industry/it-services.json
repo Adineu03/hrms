@@ -1,0 +1,58 @@
+{
+  "id": "it-services",
+  "name": "IT / Services",
+  "description": "Software companies, IT consulting, digital agencies, and professional services",
+  "icon": "Monitor",
+  "workWeek": {
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    "startTime": "09:00",
+    "endTime": "18:00",
+    "timezone": "Asia/Kolkata"
+  },
+  "leave": {
+    "casual": 12,
+    "sick": 12,
+    "earned": 15,
+    "wfh": true
+  },
+  "attendance": {
+    "flexiHours": true,
+    "remoteEnabled": true,
+    "graceMinutes": 15
+  },
+  "payroll": {
+    "taxRegime": "Indian",
+    "ctcBased": true,
+    "currency": "INR"
+  },
+  "probation": {
+    "months": 6,
+    "noticePeriodDays": 90
+  },
+  "departments": [
+    { "name": "Engineering", "children": [{ "name": "Frontend" }, { "name": "Backend" }, { "name": "QA" }, { "name": "DevOps" }] },
+    { "name": "Product", "children": [{ "name": "Product Management" }, { "name": "Design" }] },
+    { "name": "Human Resources" },
+    { "name": "Finance & Accounts" },
+    { "name": "Sales & Marketing", "children": [{ "name": "Sales" }, { "name": "Marketing" }] },
+    { "name": "Operations" }
+  ],
+  "designations": [
+    { "name": "CEO", "level": 1 },
+    { "name": "CTO", "level": 2 },
+    { "name": "VP of Engineering", "level": 3, "department": "Engineering" },
+    { "name": "Engineering Manager", "level": 4, "department": "Engineering" },
+    { "name": "Senior Software Engineer", "level": 5, "department": "Engineering" },
+    { "name": "Software Engineer", "level": 6, "department": "Engineering" },
+    { "name": "Junior Software Engineer", "level": 7, "department": "Engineering" },
+    { "name": "Product Manager", "level": 4, "department": "Product" },
+    { "name": "UI/UX Designer", "level": 5, "department": "Product" },
+    { "name": "QA Lead", "level": 4, "department": "Engineering" },
+    { "name": "QA Engineer", "level": 6, "department": "Engineering" },
+    { "name": "DevOps Engineer", "level": 5, "department": "Engineering" },
+    { "name": "HR Manager", "level": 4, "department": "Human Resources" },
+    { "name": "HR Executive", "level": 6, "department": "Human Resources" },
+    { "name": "Finance Manager", "level": 4, "department": "Finance & Accounts" },
+    { "name": "Accountant", "level": 6, "department": "Finance & Accounts" }
+  ]
+}

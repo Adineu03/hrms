@@ -1,0 +1,45 @@
+{
+  "id": "custom",
+  "name": "Custom",
+  "description": "Start fresh with minimal defaults — configure everything from scratch",
+  "icon": "Settings",
+  "workWeek": {
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    "startTime": "09:00",
+    "endTime": "18:00",
+    "timezone": "Asia/Kolkata"
+  },
+  "leave": {
+    "casual": 12,
+    "sick": 12,
+    "earned": 15,
+    "wfh": false
+  },
+  "attendance": {
+    "flexiHours": false,
+    "remoteEnabled": false,
+    "graceMinutes": 10
+  },
+  "payroll": {
+    "taxRegime": "Indian",
+    "ctcBased": true,
+    "currency": "INR"
+  },
+  "probation": {
+    "months": 6,
+    "noticePeriodDays": 60
+  },
+  "departments": [
+    { "name": "Management" },
+    { "name": "Operations" },
+    { "name": "Human Resources" },
+    { "name": "Finance & Accounts" }
+  ],
+  "designations": [
+    { "name": "Director", "level": 1 },
+    { "name": "Manager", "level": 3 },
+    { "name": "Senior Executive", "level": 5 },
+    { "name": "Executive", "level": 6 },
+    { "name": "Trainee", "level": 7 }
+  ]
+}

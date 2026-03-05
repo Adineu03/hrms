@@ -4,7 +4,13 @@ import { useEffect, useState } from 'react';
 import { useSetupStore } from '@/lib/setup-store';
 import { useModuleStore } from '@/lib/module-store';
 import { MODULES } from '@hrms/shared';
-import { Check, Circle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Check, Circle, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
+import CompanyProfileForm from '@/components/setup-steps/company-profile-form';
+import WorkWeekForm from '@/components/setup-steps/work-week-form';
+import DepartmentsForm from '@/components/setup-steps/departments-form';
+import DesignationsForm from '@/components/setup-steps/designations-form';
+import InviteEmployeesForm from '@/components/setup-steps/invite-employees-form';
+import { api } from '@/lib/api';
 
 interface SetupWizardProps {
   moduleId: string;
@@ -17,12 +23,30 @@ export default function SetupWizard({ moduleId }: SetupWizardProps) {
   const [activeStepId, setActiveStepId] = useState<string | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [templateName, setTemplateName] = useState<string | null>(null);
 
   const moduleDef = MODULES[moduleId];
 
   useEffect(() => {
     fetchSetupInfo(moduleId);
   }, [moduleId, fetchSetupInfo]);
+
+  // Check if a template was applied (for the smart defaults banner)
+  useEffect(() => {
+    if (moduleId !== 'cold-start-setup') return;
+
+    async function checkTemplate() {
+      try {
+        const res = await api.get('/templates/status');
+        if (res.data?.applied && res.data?.templateName) {
+          setTemplateName(res.data.templateName);
+        }
+      } catch {
+        // No template status — no banner
+      }
+    }
+    checkTemplate();
+  }, [moduleId]);
 
   // Set active step to first incomplete step when setup info loads
   useEffect(() => {
@@ -85,7 +109,27 @@ export default function SetupWizard({ moduleId }: SetupWizardProps) {
       ? Math.round((setupInfo.completedSteps / setupInfo.totalSteps) * 100)
       : 0;
 
-  const handleCompleteStep = async () => {
+  const handleStepComplete = async () => {
+    if (!activeStepId) return;
+    setIsCompleting(true);
+    try {
+      await completeStep(moduleId, activeStepId);
+      // Auto-advance to next incomplete step
+      const updated = useSetupStore.getState().setupInfo;
+      if (updated) {
+        const nextIncomplete = updated.steps.find((s) => !s.completed);
+        if (nextIncomplete) {
+          setActiveStepId(nextIncomplete.id);
+        }
+      }
+    } catch {
+      // error handled in store
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  const handleGenericCompleteStep = async () => {
     if (!activeStepId) return;
     setIsCompleting(true);
     try {
@@ -115,6 +159,38 @@ export default function SetupWizard({ moduleId }: SetupWizardProps) {
       // error handled in store
     } finally {
       setIsFinishing(false);
+    }
+  };
+
+  /**
+   * Determines whether the current active step has a dedicated form component.
+   * Returns true for cold-start-setup steps that have matching form components.
+   */
+  const hasDedicatedForm = (): boolean => {
+    if (moduleId !== 'cold-start-setup' || !activeStep) return false;
+    const formStepIds = ['company-profile', 'work-week', 'departments', 'designations', 'invite-employees'];
+    return formStepIds.includes(activeStep.id);
+  };
+
+  /**
+   * Renders the appropriate form component for the active step.
+   */
+  const renderStepForm = () => {
+    if (moduleId !== 'cold-start-setup' || !activeStep) return null;
+
+    switch (activeStep.id) {
+      case 'company-profile':
+        return <CompanyProfileForm onComplete={handleStepComplete} />;
+      case 'work-week':
+        return <WorkWeekForm onComplete={handleStepComplete} />;
+      case 'departments':
+        return <DepartmentsForm onComplete={handleStepComplete} />;
+      case 'designations':
+        return <DesignationsForm onComplete={handleStepComplete} />;
+      case 'invite-employees':
+        return <InviteEmployeesForm onComplete={handleStepComplete} />;
+      default:
+        return null;
     }
   };
 
@@ -190,6 +266,7 @@ export default function SetupWizard({ moduleId }: SetupWizardProps) {
           {activeStep ? (
             <>
               <div className="flex-1">
+                {/* Step Header */}
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-medium text-text-muted uppercase tracking-wider">
                     Step {activeStep.order}
@@ -211,24 +288,44 @@ export default function SetupWizard({ moduleId }: SetupWizardProps) {
                 <p className="text-text-muted mt-3 leading-relaxed">
                   {activeStep.description}
                 </p>
+
+                {/* Template Smart Defaults Banner */}
+                {templateName && moduleId === 'cold-start-setup' && !activeStep.completed && (
+                  <div className="mt-4 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 shrink-0" />
+                    <span>
+                      Defaults applied from <strong>{templateName}</strong> template. You can customize below.
+                    </span>
+                  </div>
+                )}
+
+                {/* Step Form Content */}
+                {!activeStep.completed && hasDedicatedForm() ? (
+                  <div className="mt-6">
+                    {renderStepForm()}
+                  </div>
+                ) : !activeStep.completed ? (
+                  /* Generic fallback for non-cold-start modules */
+                  <div className="mt-6 flex items-center gap-3 pt-4 border-t border-border">
+                    <button
+                      onClick={handleGenericCompleteStep}
+                      disabled={isCompleting}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isCompleting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Circle className="h-4 w-4" />
+                      )}
+                      Mark as Complete
+                    </button>
+                  </div>
+                ) : null}
               </div>
 
-              <div className="mt-6 flex items-center gap-3 pt-4 border-t border-border">
-                {!activeStep.completed && (
-                  <button
-                    onClick={handleCompleteStep}
-                    disabled={isCompleting}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isCompleting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Circle className="h-4 w-4" />
-                    )}
-                    Mark as Complete
-                  </button>
-                )}
-                {allRequiredDone && (
+              {/* Complete Setup Button (always visible when all required steps are done) */}
+              {allRequiredDone && (
+                <div className="mt-6 flex items-center gap-3 pt-4 border-t border-border">
                   <button
                     onClick={handleCompleteSetup}
                     disabled={isFinishing}
@@ -241,8 +338,8 @@ export default function SetupWizard({ moduleId }: SetupWizardProps) {
                     )}
                     Complete Setup
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-text-muted">

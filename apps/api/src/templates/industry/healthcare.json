@@ -1,0 +1,58 @@
+{
+  "id": "healthcare",
+  "name": "Healthcare",
+  "description": "Hospitals, clinics, diagnostics, pharmaceutical companies, and health services",
+  "icon": "HeartPulse",
+  "workWeek": {
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "startTime": "08:00",
+    "endTime": "17:00",
+    "timezone": "Asia/Kolkata"
+  },
+  "leave": {
+    "casual": 10,
+    "sick": 15,
+    "earned": 12,
+    "wfh": false
+  },
+  "attendance": {
+    "flexiHours": false,
+    "remoteEnabled": false,
+    "graceMinutes": 10
+  },
+  "payroll": {
+    "taxRegime": "Indian",
+    "ctcBased": true,
+    "currency": "INR"
+  },
+  "probation": {
+    "months": 3,
+    "noticePeriodDays": 60
+  },
+  "departments": [
+    { "name": "Medical", "children": [{ "name": "General Medicine" }, { "name": "Surgery" }, { "name": "Pediatrics" }, { "name": "Emergency" }] },
+    { "name": "Nursing" },
+    { "name": "Diagnostics & Lab" },
+    { "name": "Pharmacy" },
+    { "name": "Administration" },
+    { "name": "Human Resources" },
+    { "name": "Finance & Billing" },
+    { "name": "Housekeeping & Support" }
+  ],
+  "designations": [
+    { "name": "Director / CMD", "level": 1 },
+    { "name": "Medical Superintendent", "level": 2 },
+    { "name": "Head of Department", "level": 3, "department": "Medical" },
+    { "name": "Senior Consultant", "level": 4, "department": "Medical" },
+    { "name": "Consultant", "level": 5, "department": "Medical" },
+    { "name": "Resident Doctor", "level": 6, "department": "Medical" },
+    { "name": "Nursing Superintendent", "level": 3, "department": "Nursing" },
+    { "name": "Head Nurse", "level": 4, "department": "Nursing" },
+    { "name": "Staff Nurse", "level": 6, "department": "Nursing" },
+    { "name": "Lab Director", "level": 3, "department": "Diagnostics & Lab" },
+    { "name": "Lab Technician", "level": 6, "department": "Diagnostics & Lab" },
+    { "name": "Pharmacist", "level": 5, "department": "Pharmacy" },
+    { "name": "HR Manager", "level": 3, "department": "Human Resources" },
+    { "name": "Admin Officer", "level": 4, "department": "Administration" }
+  ]
+}

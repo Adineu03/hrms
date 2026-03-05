@@ -1,0 +1,56 @@
+{
+  "id": "retail",
+  "name": "Retail",
+  "description": "Retail stores, supermarkets, e-commerce, and consumer goods companies",
+  "icon": "ShoppingBag",
+  "workWeek": {
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "startTime": "09:30",
+    "endTime": "18:30",
+    "timezone": "Asia/Kolkata"
+  },
+  "leave": {
+    "casual": 10,
+    "sick": 8,
+    "earned": 12,
+    "wfh": false
+  },
+  "attendance": {
+    "flexiHours": false,
+    "remoteEnabled": false,
+    "graceMinutes": 10
+  },
+  "payroll": {
+    "taxRegime": "Indian",
+    "ctcBased": false,
+    "currency": "INR"
+  },
+  "probation": {
+    "months": 3,
+    "noticePeriodDays": 30
+  },
+  "departments": [
+    { "name": "Store Operations", "children": [{ "name": "Sales Floor" }, { "name": "Cashier" }, { "name": "Customer Service" }] },
+    { "name": "Merchandising & Buying" },
+    { "name": "Inventory & Warehouse" },
+    { "name": "Marketing" },
+    { "name": "Human Resources" },
+    { "name": "Finance & Accounts" },
+    { "name": "IT & E-commerce" }
+  ],
+  "designations": [
+    { "name": "CEO / Owner", "level": 1 },
+    { "name": "Regional Manager", "level": 2 },
+    { "name": "Store Manager", "level": 3, "department": "Store Operations" },
+    { "name": "Assistant Store Manager", "level": 4, "department": "Store Operations" },
+    { "name": "Department Lead", "level": 5, "department": "Store Operations" },
+    { "name": "Sales Associate", "level": 6, "department": "Store Operations" },
+    { "name": "Cashier", "level": 6, "department": "Store Operations" },
+    { "name": "Merchandising Manager", "level": 3, "department": "Merchandising & Buying" },
+    { "name": "Buyer", "level": 5, "department": "Merchandising & Buying" },
+    { "name": "Warehouse Supervisor", "level": 4, "department": "Inventory & Warehouse" },
+    { "name": "Inventory Clerk", "level": 6, "department": "Inventory & Warehouse" },
+    { "name": "HR Manager", "level": 3, "department": "Human Resources" },
+    { "name": "Marketing Manager", "level": 3, "department": "Marketing" }
+  ]
+}

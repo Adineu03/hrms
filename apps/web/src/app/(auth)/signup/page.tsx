@@ -36,7 +36,7 @@ export default function SignupPage() {
 
     try {
       await signup({ orgName, industry, firstName, lastName, email, password });
-      router.push('/dashboard');
+      router.push('/onboarding');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       const message =

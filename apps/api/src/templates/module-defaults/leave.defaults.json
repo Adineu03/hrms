@@ -1,0 +1,16 @@
+{
+  "moduleId": "leave-management",
+  "defaults": {
+    "leaveTypes": [
+      { "name": "Casual Leave", "daysPerYear": 12, "carryForward": false },
+      { "name": "Sick Leave", "daysPerYear": 12, "carryForward": false },
+      { "name": "Earned Leave", "daysPerYear": 15, "carryForward": true },
+      { "name": "Maternity Leave", "daysPerYear": 182, "carryForward": false },
+      { "name": "Paternity Leave", "daysPerYear": 15, "carryForward": false }
+    ],
+    "approvalChain": ["manager"],
+    "allowHalfDay": true,
+    "allowBackdated": false,
+    "minDaysBeforeRequest": 0
+  }
+}

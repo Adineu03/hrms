@@ -1,0 +1,13 @@
+{
+  "moduleId": "attendance",
+  "defaults": {
+    "trackingMethod": "web",
+    "graceMinutes": 15,
+    "halfDayThresholdHours": 4,
+    "overtimeEnabled": false,
+    "flexiHours": false,
+    "remoteCheckIn": false,
+    "autoClockOut": true,
+    "autoClockOutTime": "21:00"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "moduleId": "payroll-processing",
+  "defaults": {
+    "payrollCycle": "monthly",
+    "payDay": 1,
+    "currency": "INR",
+    "ctcBased": true,
+    "taxRegime": "Indian",
+    "components": [
+      { "name": "Basic Salary", "percentOfCtc": 40 },
+      { "name": "HRA", "percentOfCtc": 20 },
+      { "name": "Special Allowance", "percentOfCtc": 25 },
+      { "name": "PF (Employer)", "percentOfCtc": 12 },
+      { "name": "Gratuity", "percentOfCtc": 3 }
+    ],
+    "deductions": ["PF", "Professional Tax", "Income Tax"],
+    "enablePayslipEmail": true
+  }
+}

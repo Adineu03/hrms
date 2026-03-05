@@ -1,0 +1,57 @@
+{
+  "id": "manufacturing",
+  "name": "Manufacturing",
+  "description": "Factories, production units, assembly plants, and industrial companies",
+  "icon": "Factory",
+  "workWeek": {
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "startTime": "08:00",
+    "endTime": "17:00",
+    "timezone": "Asia/Kolkata"
+  },
+  "leave": {
+    "casual": 10,
+    "sick": 10,
+    "earned": 12,
+    "wfh": false
+  },
+  "attendance": {
+    "flexiHours": false,
+    "remoteEnabled": false,
+    "graceMinutes": 5
+  },
+  "payroll": {
+    "taxRegime": "Indian",
+    "ctcBased": false,
+    "currency": "INR"
+  },
+  "probation": {
+    "months": 3,
+    "noticePeriodDays": 30
+  },
+  "departments": [
+    { "name": "Production", "children": [{ "name": "Assembly" }, { "name": "Quality Control" }, { "name": "Packaging" }] },
+    { "name": "Procurement & Supply Chain" },
+    { "name": "Maintenance & Engineering" },
+    { "name": "Warehouse & Logistics" },
+    { "name": "Human Resources" },
+    { "name": "Finance & Accounts" },
+    { "name": "Safety & Compliance" },
+    { "name": "Administration" }
+  ],
+  "designations": [
+    { "name": "Managing Director", "level": 1 },
+    { "name": "Plant Head", "level": 2 },
+    { "name": "Production Manager", "level": 3, "department": "Production" },
+    { "name": "Shift Supervisor", "level": 4, "department": "Production" },
+    { "name": "Line Operator", "level": 6, "department": "Production" },
+    { "name": "Quality Inspector", "level": 5, "department": "Production" },
+    { "name": "Maintenance Engineer", "level": 5, "department": "Maintenance & Engineering" },
+    { "name": "Procurement Manager", "level": 3, "department": "Procurement & Supply Chain" },
+    { "name": "Warehouse Supervisor", "level": 4, "department": "Warehouse & Logistics" },
+    { "name": "HR Manager", "level": 3, "department": "Human Resources" },
+    { "name": "HR Executive", "level": 5, "department": "Human Resources" },
+    { "name": "Finance Manager", "level": 3, "department": "Finance & Accounts" },
+    { "name": "Safety Officer", "level": 4, "department": "Safety & Compliance" }
+  ]
+}
