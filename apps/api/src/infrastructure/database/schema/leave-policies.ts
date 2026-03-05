@@ -1,0 +1,31 @@
+import { pgTable, uuid, varchar, integer, boolean, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import { orgs } from './orgs';
+
+export const leavePolicies = pgTable('leave_policies', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  orgId: uuid('org_id').notNull().references(() => orgs.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).default('Default Leave Policy'),
+  leaveYearStart: varchar('leave_year_start', { length: 30 }).notNull().default('calendar_year'),
+  customYearStartMonth: integer('custom_year_start_month'),
+  customYearStartDay: integer('custom_year_start_day'),
+  sandwichRuleEnabled: boolean('sandwich_rule_enabled').notNull().default(false),
+  sandwichRuleType: varchar('sandwich_rule_type', { length: 30 }),
+  autoApprovalEnabled: boolean('auto_approval_enabled').notNull().default(false),
+  autoApprovalRules: jsonb('auto_approval_rules').default([]),
+  escalationEnabled: boolean('escalation_enabled').notNull().default(false),
+  escalationHours: integer('escalation_hours'),
+  halfDayEnabled: boolean('half_day_enabled').notNull().default(true),
+  backdatedLeaveDays: integer('backdated_leave_days').notNull().default(0),
+  minDaysBeforeRequest: integer('min_days_before_request').notNull().default(0),
+  negativeBalanceAllowed: boolean('negative_balance_allowed').notNull().default(false),
+  maxNegativeBalanceDays: integer('max_negative_balance_days'),
+  yearEndProcessing: jsonb('year_end_processing').default({}),
+  compOffEarningRules: jsonb('comp_off_earning_rules').default({}),
+  compOffExpiryDays: integer('comp_off_expiry_days'),
+  encashmentRules: jsonb('encashment_rules').default({}),
+  metadata: jsonb('metadata').default({}),
+  isDefault: boolean('is_default').notNull().default(true),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});

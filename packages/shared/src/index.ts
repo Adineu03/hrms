@@ -5,3 +5,4 @@ export * from './types/templates';
 export * from './types/cold-start';
 export * from './types/core-hr';
 export * from './types/attendance';
+export * from './types/leave';

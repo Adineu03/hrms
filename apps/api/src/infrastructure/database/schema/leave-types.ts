@@ -1,0 +1,32 @@
+import { pgTable, uuid, varchar, integer, boolean, numeric, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import { orgs } from './orgs';
+
+export const leaveTypes = pgTable('leave_types', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  orgId: uuid('org_id').notNull().references(() => orgs.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 100 }).notNull(),
+  code: varchar('code', { length: 20 }).notNull(),
+  isPaid: boolean('is_paid').notNull().default(true),
+  accrualRule: varchar('accrual_rule', { length: 30 }).notNull().default('annual'),
+  daysPerYear: numeric('days_per_year', { precision: 5, scale: 1 }).notNull().default('0'),
+  maxAccrualPerPeriod: numeric('max_accrual_per_period', { precision: 5, scale: 1 }),
+  carryForwardEnabled: boolean('carry_forward_enabled').notNull().default(false),
+  maxCarryForwardDays: integer('max_carry_forward_days'),
+  carryForwardExpiryMonths: integer('carry_forward_expiry_months'),
+  encashmentEnabled: boolean('encashment_enabled').notNull().default(false),
+  maxEncashableDays: integer('max_encashable_days'),
+  probationAllowed: boolean('probation_allowed').notNull().default(true),
+  probationDaysPerYear: integer('probation_days_per_year'),
+  minConsecutiveDays: integer('min_consecutive_days'),
+  maxConsecutiveDays: integer('max_consecutive_days'),
+  requiresApproval: boolean('requires_approval').notNull().default(true),
+  requiresDocument: boolean('requires_document').notNull().default(false),
+  documentThresholdDays: integer('document_threshold_days'),
+  applicableGender: varchar('applicable_gender', { length: 10 }),
+  isCompOff: boolean('is_comp_off').notNull().default(false),
+  color: varchar('color', { length: 7 }).default('#4F46E5'),
+  metadata: jsonb('metadata').default({}),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
