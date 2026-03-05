@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 2: Core HR & People Data — User Journey Map</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html,body{margin:0;overflow:hidden;width:100vw;height:100vh;font-family:'Inter',system-ui,-apple-system,sans-serif;background:#f0f2f5}
+  .container{width:100vw;height:100vh;display:flex;flex-direction:column;position:relative}
+
+  /* HEADER */
+  .header{height:38px;min-height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;z-index:10}
+  .header-left{display:flex;align-items:center;gap:16px}
+  .header-title{font-size:13px;font-weight:700;letter-spacing:-0.3px}
+  .header-badge{font-size:8px;background:rgba(255,255,255,.1);padding:2px 8px;border-radius:10px;color:#94a3b8;font-weight:500}
+  .header-right{display:flex;align-items:center;gap:18px}
+  .legend{display:flex;align-items:center;gap:11px}
+  .legend-item{display:flex;align-items:center;gap:4px;font-size:8.5px;color:#94a3b8}
+  .legend-swatch{width:12px;height:8px;border-radius:2px}
+  .legend-swatch-std{background:#fff;border:1px solid #b0b8c4}
+  .legend-swatch-ai{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px dashed #f59e0b}
+  .legend-swatch-add{background:#ecfdf5;border:1px dotted #34d399}
+  .legend-line{width:16px;height:0;border-top:2px solid}
+  .legend-line-approval{border-color:#3b82f6}
+  .legend-line-data{border-color:#8b5cf6;border-top-style:dashed}
+  .ai-toggle{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+  .ai-toggle span{font-size:9px;color:#94a3b8}
+  .toggle-track{width:28px;height:14px;background:#475569;border-radius:7px;position:relative;transition:.3s}
+  .toggle-track.on{background:#f59e0b}
+  .toggle-knob{width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:.3s}
+  .toggle-track.on .toggle-knob{left:16px}
+
+  /* LANES AREA — 22px side margins for arrow routing channels */
+  .lanes-area{flex:1;display:flex;flex-direction:column;padding:5px 22px;gap:6px;position:relative;min-height:0}
+
+  /* LANE */
+  .lane{flex:1;display:flex;border-radius:8px;overflow:visible;min-height:0;position:relative}
+  .lane-employee{background:#e8f0fe}
+  .lane-manager{background:#fef3e2}
+  .lane-admin{background:#f3e8f9}
+  .lane-label{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;width:24px;min-width:24px;font-weight:800;font-size:9px;letter-spacing:1px;text-transform:uppercase}
+  .lane-employee .lane-label{background:#c5d9f2;color:#1a56a0}
+  .lane-manager .lane-label{background:#fad9a1;color:#c05600}
+  .lane-admin .lane-label{background:#dbb8ed;color:#5c1a8a}
+
+  /* LANE BODY — 10px vertical gap between rows for arrow transit */
+  .lane-body{flex:1;display:flex;flex-direction:column;padding:6px 8px;gap:10px;min-height:0;justify-content:center}
+  .lane-row{display:flex;align-items:center;gap:4px;flex-wrap:nowrap}
+  .lane-row-label{font-size:6.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;writing-mode:vertical-rl;transform:rotate(180deg);padding:0 1px;color:rgba(0,0,0,.2);flex-shrink:0;min-width:9px;display:flex;align-items:center;justify-content:center}
+
+  /* NODE */
+  .node{flex:1 1 0;min-width:0;border-radius:5px;padding:4px 6px;cursor:pointer;position:relative;transition:all .2s ease;display:flex;align-items:center;justify-content:center;text-align:center;opacity:0;transform:scale(.92);animation:nodeIn .35s ease forwards;border:1.5px solid;height:32px}
+  .node:hover{transform:translateY(-1px) scale(1.03);box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:20}
+  .node-standard{background:#fff;border-color:#c8ced6}
+  .node-ai{background:linear-gradient(135deg,#fffceb,#fef3c7);border-color:#f59e0b;border-style:dashed}
+  .node-additional{background:#f0fdf4;border-color:#6ee7b7;border-style:dotted}
+  .node-title{font-size:8px;font-weight:600;color:#1e293b;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .node-ai .node-title::before{content:'\2726 ';color:#f59e0b}
+  .node-count{position:absolute;top:-6px;right:-4px;background:#64748b;color:#fff;font-size:7px;font-weight:800;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+  .node-ai .node-count{background:#f59e0b}
+  .node-additional .node-count{background:#10b981}
+  .row-arrow{flex-shrink:0;width:8px;height:8px;color:rgba(0,0,0,.15)}
+
+  /* CROSS-LANE SVG */
+  #crossArrows{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
+
+  /* TOOLTIP */
+  .tooltip{display:none;position:fixed;background:#fff;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:10px 12px;max-width:320px;z-index:1000;border:1px solid #e5e7eb;pointer-events:none}
+  .tooltip.show{display:block}
+  .tip-title{font-size:11px;font-weight:700;color:#111827;margin-bottom:5px;border-bottom:1px solid #f3f4f6;padding-bottom:4px}
+  .tip-role{font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .tip-role-e{color:#1565c0}.tip-role-m{color:#e65100}.tip-role-a{color:#7b1fa2}
+  .tip-list{list-style:none}
+  .tip-list li{font-size:9px;color:#4b5563;padding:2px 0 2px 10px;position:relative;line-height:1.35}
+  .tip-list li::before{content:'\2022';position:absolute;left:0;color:#9ca3af}
+
+  /* MODAL */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+  .modal-bg.show{display:flex}
+  .modal-box{background:#fff;border-radius:12px;padding:20px 22px;max-width:480px;width:92%;max-height:65vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+  .modal-name{font-size:15px;font-weight:700;color:#111827}
+  .modal-badge{display:inline-block;font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
+  .modal-badge-standard{background:#f1f5f9;color:#475569}
+  .modal-badge-ai{background:#fef3c7;color:#b45309}
+  .modal-badge-additional{background:#d1fae5;color:#065f46}
+  .modal-role{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+  .modal-close{width:26px;height:26px;border:none;background:#f1f5f9;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .modal-close:hover{background:#e2e8f0}
+  .modal-items{list-style:none}
+  .modal-items li{font-size:12px;color:#374151;padding:5px 0 5px 14px;border-bottom:1px solid #f9fafb;line-height:1.45;position:relative}
+  .modal-items li::before{content:'\2192';position:absolute;left:0;color:#9ca3af;font-size:11px}
+
+  /* HIGHLIGHT AI */
+  .ai-mode .node-standard,.ai-mode .node-additional{opacity:.2;filter:grayscale(.5)}
+  .ai-mode .node-ai{opacity:1;box-shadow:0 0 16px 3px rgba(245,158,11,.35);transform:scale(1.04)}
+
+  @keyframes nodeIn{to{opacity:1;transform:scale(1)}}
+  @keyframes aiGlow{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0)}50%{box-shadow:0 0 10px 2px rgba(245,158,11,.18)}}
+  .node-ai{animation:nodeIn .35s ease forwards,aiGlow 2.5s ease-in-out .5s infinite}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">Module 2: Core HR & People Data — User Journey Map</div>
+      <div class="header-badge">AI-Native HRMS</div>
+    </div>
+    <div class="header-right">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-swatch legend-swatch-std"></div>Standard</div>
+        <div class="legend-item"><div class="legend-swatch legend-swatch-ai"></div>AI-Powered</div>
+        <div class="legend-item"><div class="legend-swatch legend-swatch-add"></div>Additional</div>
+        <div class="legend-item"><div class="legend-line legend-line-approval"></div>Approval</div>
+        <div class="legend-item"><div class="legend-line legend-line-data"></div>Data Flow</div>
+      </div>
+      <div class="ai-toggle" onclick="toggleAI()">
+        <span>Highlight AI</span>
+        <div class="toggle-track" id="toggleTrack"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lanes-area" id="lanesArea">
+    <div class="lane lane-employee" id="laneEmployee">
+      <div class="lane-label">Employee</div>
+      <div class="lane-body" id="bodyEmployee"></div>
+    </div>
+    <div class="lane lane-manager" id="laneManager">
+      <div class="lane-label">Manager</div>
+      <div class="lane-body" id="bodyManager"></div>
+    </div>
+    <div class="lane lane-admin" id="laneAdmin">
+      <div class="lane-label">Admin / HR</div>
+      <div class="lane-body" id="bodyAdmin"></div>
+    </div>
+    <svg id="crossArrows" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="mBlue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#2563eb"/></marker>
+        <marker id="mOrange" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#ea580c"/></marker>
+        <marker id="mPurple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#7c3aed"/></marker>
+      </defs>
+      <g id="arrowGroup"></g>
+    </svg>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tip-title" id="tipTitle"></div>
+  <div class="tip-role" id="tipRole"></div>
+  <ul class="tip-list" id="tipList"></ul>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="modal-name" id="modName"></div><div class="modal-role" id="modRole"></div></div>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <ul class="modal-items" id="modList"></ul>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const DATA={Employee:{STANDARD:{"My Profile":["View and edit personal information (full name, DOB, gender, nationality, marital status)","Update contact details (personal email, phone, current address, permanent address)","Manage emergency contacts (multiple with name, relationship, phone, priority order)","Bank details management (add/update account, IBAN, SWIFT, set primary for salary)","Dependent information (spouse, children, parents \u2014 for benefits and tax declarations)","Profile photo upload with crop and resize tool","Personal ID section (national ID, passport, visa, driving license \u2014 with expiry tracking)","Employment summary (DOJ, designation, department, grade, manager, tenure calculator)","Skills and interests section (self-declared skills, languages, hobbies \u2014 for internal matching)","Profile completeness indicator with suggestions to reach 100%","Edit history (all profile changes with timestamps)"],"Document Vault":["View documents organized by category (contracts, identity, financial, certificates, letters)","Download any document (offer letter, salary revisions, payslips, tax forms)","Upload personal documents (scanned IDs, certificates, visa copies \u2014 with category tagging)","Document expiry alerts (visa in 60 days, ID renewal, certification lapsing)","Version history for updated documents","Secure encrypted access (employee and authorized HR only)","Bulk download as ZIP for personal record-keeping","Mobile upload directly from phone camera"],"Org Chart Explorer":["Interactive visual org chart from CEO to individual contributors","Click any person for profile card (name, role, department, email, phone)","Navigate up (manager, skip-level), down (peers\u2019 reports), sideways (peers)","Dotted-line and matrix reporting relationships visible","Search by name, department, or designation within org chart","Filter by department, location, or entity","Vacant positions shown as dotted-border nodes","Export org chart as PDF or image"],"Payslip & Tax":["Monthly payslip view (gross, basic, allowances, deductions, employer contributions, net pay)","Download payslips as PDF (individual or bulk for the year)","Annual tax summary (total earnings, deductions, tax paid, Form 16/W-2 equivalent)","Year-to-date earnings tracker (running gross, deductions, tax totals)","Salary structure breakdown (visual pie chart of composition)","Historical month-over-month and year-over-year comparison","Tax declaration submission (investment declarations, rent receipts, HRA claims)","Employer contribution visibility (PF, gratuity, insurance \u2014 full CTC view)"],"Benefits Enrollment":["Browse all available benefit plans (health, dental, vision, life, retirement, wellness)","Plan comparison view (side-by-side tiers with coverage, premiums, copays)","Enroll during open enrollment window with countdown timer","Life event enrollment triggers (marriage, child birth, adoption)","Manage dependents for coverage (add/remove with documentation)","Cost impact calculator (per-paycheck deduction preview before enrolling)","Digital benefits ID card accessible from mobile","Claims history view with status and amounts"],"Self-Service Requests":["Employment verification letter (auto-generated with letterhead, digital signature, QR verification code)","NOC generation (for visa, travel, education \u2014 multiple templates by purpose)","Experience letter request (auto-generates with tenure, designation, performance summary)","Salary certificate request (for loans, visa, tenancy \u2014 auto-populated from payroll)","Name change request (with supporting documents, triggers update across all systems)","Bank account change request (new details with verification doc, routed to payroll)","Address change request (self-service with proof if required)","Request tracking dashboard (status of all pending requests with SLA timers)"]},AI:{"AI Profile Assistant":["\u2018When does my visa expire?\u2019 \u2018What\u2019s my remaining probation?\u2019 \u2014 instant answers from your data","Proactive alerts for upcoming expirations and milestones","Natural language queries about any personal HR data"],"Benefits Recommender":["Suggests optimal plan selections based on profile, family status, usage patterns","Cost-benefit comparison personalized to your situation","Alerts during enrollment window if better options exist"],"Smart Document Search":["Natural language: \u2018Find my last appraisal letter\u2019 \u2192 retrieves correct document","Search across all documents regardless of file name or category","Fuzzy matching for partial or approximate queries"],"Tax Optimization Hints":["Suggests tax-saving declarations based on salary structure and local tax law","Investment options recommended for maximum tax benefit","Alerts before declaration deadlines with estimated savings"]},ADDITIONAL:{"Contractor Self-Service":["Contractor profile with contract dates, scope of work, billing rate, and engagement type","Contract renewal tracking with expiry alerts","Timesheet and invoice submission for contractors","Limited access scope (only relevant modules visible)"],"Multi-Language Support":["Interface language selection (English, Arabic, Hindi, Spanish, French, German, Mandarin, Portuguese)","RTL layout support for Arabic and Hebrew","Localized date, number, and currency formats per user preference","Policy documents available in multiple languages"]}},Manager:{STANDARD:{"Team Directory":["Full team roster with role, tenure, location, contact info, reporting chain","Quick filters (by location, grade, employment type, tenure range)","Team size history chart (how team has grown/shrunk over time)","Export team list to Excel with selected fields"],"Team Org Management":["View current team structure in org chart format","Propose org changes (transfers, promotions, reporting line changes) with approval workflow","View impact of proposed changes before submitting (affects on spans, structure)","Track status of submitted org change requests"],"Compensation Overview":["Team salary summary (bands, compa-ratios, band positioning per member \u2014 within access rights)","Bonus eligibility and target overview per team member","Equity vesting schedules and grant status (where applicable)","Historical comp changes for each team member"],"Headcount Tracking":["Approved vs filled positions dashboard","Open requisitions with stage and ETA","Budget vs actual headcount comparison","Planned vs actual cost per head"],"Team Compliance":["Track certifications and mandatory training completion per member","Visa expiration dashboard with renewal countdown","Probation milestone tracker (confirmation due dates, review scheduling)","Compliance gap report (who\u2019s missing what)"],"Letter & Change Requests":["Initiate salary changes, promotions, transfers, role changes for team members","Approval workflow with justification and budget impact documentation","View status of all submitted requests","Generate and send letters (promotion, transfer) after approval"]},AI:{"Team Insights Brief":["AI-generated monthly summary: tenure distribution, upcoming milestones, compliance gaps, org health","Highlights changes since last month (new joiners, exits, role changes)","Proactive alerts for items needing attention"],"Org Design Suggestions":["Your team has 12 direct reports \u2014 research suggests 7\u00b12. Consider creating a sub-team.","Suggests optimal structures based on team size, function, and industry benchmarks","Models impact of proposed restructuring on reporting load and communication flow"],"Comp Equity Alerts":["Flags pay disparities within team by role, tenure, or demographics for proactive review","Shows compa-ratio outliers with suggested adjustments","Benchmarks team comp against market and internal peers"],"Succession Readiness":["AI assesses team member readiness for critical/leadership roles","Scores based on skills, performance trajectory, tenure, and development activities","Identifies gaps and recommends development actions per candidate"]},ADDITIONAL:{"Blended Workforce View":["Unified team roster showing FTEs, contractors, and interns in one view","Engagement type filter and distinct visual indicators","Contract expiry calendar for contingent workers","Contractor performance tracking with simplified review forms"],"Org Modeling":["What-if org structure simulator (drag-and-drop team restructuring)","Impact analysis: span of control changes, cost implications, reporting chain effects","Propose changes with approval workflow \u2014 applied only after approval"]}},"Admin / HR":{STANDARD:{"Employee Master Data":["Complete employee records management with all standard and custom fields","Custom field creation per entity (add country-specific fields, industry-specific fields)","Data import/export in bulk (Excel, CSV) with field mapping","Deduplication engine (identify and merge duplicate records)","Mass update capability (change department for 50 employees at once)"],"Multi-Entity Setup":["Configure legal entities across countries (name, registration, tax ID, address)","Entity-level policy separation (different leave policies per country entity)","Department and cost center mapping per entity","Grade and designation framework per entity or shared across entities","Inter-entity transfer workflows with data migration"],"Payroll Engine":["Multi-country payroll processing with country-specific tax calculations","Statutory deduction configuration (PF, ESI, GOSI, Social Security, etc.)","Arrears calculation and processing (back-dated salary changes)","Reversal and correction workflows for payroll errors","Payslip generation and distribution (email, portal, bulk PDF)","Payroll calendar management (cutoff dates, processing dates, payment dates)","Integration with banking for salary transfers (WPS for UAE, NEFT for India)"],"Benefits Admin":["Configure benefit plans with eligibility rules (by grade, tenure, entity)","Contribution structures (employer %, employee %, flat amounts)","Vendor integrations (insurance companies, retirement fund managers)","Open enrollment period configuration with auto-notifications","Life event trigger rules for mid-cycle enrollment"],"Compliance Mgmt":["Labor law compliance tracking per jurisdiction","Statutory reporting (PF returns, ESI, GOSI, WPS, P60, W-2 \u2014 auto-generated)","Document retention policy configuration and enforcement","Mandatory training tracking with escalation for non-compliance","Labor inspection readiness dashboard"],"Data Governance":["Field-level access controls (who can see salary, national ID, bank details)","PII encryption at rest and in transit","GDPR consent management (employee consent tracking, right to erasure workflows)","Complete audit log of every data mutation (who, when, what, old value, new value)","Data export and portability tools for compliance requests"]},AI:{"AI Org Designer":["Suggests optimal structures from performance data, collaboration patterns, and cost data","Models impact of restructuring (reporting load, communication overhead, cost changes)","Benchmarks against industry-standard org shapes for company size and stage"],"Smart Document Parser":["OCR + NLP auto-extracts fields from uploaded ID cards, contracts, certificates","Auto-populates employee records from scanned documents","Supports multiple languages and document formats","Confidence scores per extracted field with manual review for low-confidence items"],"Payroll Anomaly Detection":["Flags calculation errors, unusual amounts, and policy violations before payroll finalizes","Compares current month to historical patterns per employee","Detects duplicate payments, missed deductions, incorrect tax calculations","Pre-audit report with severity classification before processing"],"Predictive Compliance":["Monitors regulatory changes globally and predicts impact on your policies per jurisdiction","Alerts when new legislation requires policy updates","Estimates effort and cost of compliance changes","Suggests policy modifications to stay ahead of regulatory shifts"]},ADDITIONAL:{"Multi-Entity Mgmt":["Manage multiple legal entities from single instance with entity-level data isolation","Cross-entity reporting with consolidation views","Entity-specific policy configuration with inheritance from parent","Inter-entity transfer workflow with compliance handling"],"Contractor Lifecycle":["Contractor onboarding workflow (separate from employee onboarding)","Contract management with version control and renewal tracking","Contractor billing rate and invoice management","Auto-classification checker (contractor vs employee per jurisdiction rules)","Contractor offboarding with access revocation and IP handover"],"Custom Field Engine":["Create unlimited custom fields per module (text, number, date, dropdown, multi-select, file)","Conditional field visibility rules (show field X only if field Y equals Z)","Custom fields available in reports, workflows, and API","Field-level permissions (who can view/edit each custom field)"],"Smart Entity Setup":["When adding a new entity/country, AI pre-configures all statutory requirements","Suggests policy adjustments based on local labor law and entity characteristics","Migration assistant for employee transfers between entities"]}}};
+
+const ORDER={
+  Employee:{row1:["My Profile","Document Vault","Org Chart Explorer","Payslip & Tax","Benefits Enrollment","Self-Service Requests"],row2:["AI Profile Assistant","Smart Document Search","Tax Optimization Hints","Benefits Recommender","Contractor Self-Service","Multi-Language Support"]},
+  Manager:{row1:["Team Directory","Team Org Management","Compensation Overview","Headcount Tracking","Team Compliance","Letter & Change Requests"],row2:["Team Insights Brief","Org Design Suggestions","Comp Equity Alerts","Succession Readiness","Blended Workforce View","Org Modeling"]},
+  "Admin / HR":{row1:["Employee Master Data","Multi-Entity Setup","Payroll Engine","Benefits Admin","Compliance Mgmt","Data Governance"],row2:["AI Org Designer","Smart Document Parser","Payroll Anomaly Detection","Predictive Compliance","Multi-Entity Mgmt","Contractor Lifecycle","Custom Field Engine","Smart Entity Setup"]}
+};
+
+// ===== BUILD NODES =====
+const nodes={};
+let delay=0;
+function getType(r,n){if(DATA[r].STANDARD[n])return'standard';if(DATA[r].AI[n])return'ai';return'additional'}
+function getBullets(r,n){return DATA[r].STANDARD[n]||DATA[r].AI[n]||DATA[r].ADDITIONAL[n]||[]}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function makeNode(role,name){
+  var type=getType(role,name),bullets=getBullets(role,name);
+  var el=document.createElement('div');
+  el.className='node node-'+type;
+  el.style.animationDelay=delay+'ms';delay+=30;
+  var t=document.createElement('div');t.className='node-title';t.textContent=name;el.appendChild(t);
+  var b=document.createElement('div');b.className='node-count';b.textContent=bullets.length;el.appendChild(b);
+  el.dataset.name=name;el.dataset.role=role;el.dataset.type=type;el.dataset.bullets=JSON.stringify(bullets);
+  el.addEventListener('mouseenter',onEnter);el.addEventListener('mousemove',onMove);
+  el.addEventListener('mouseleave',onLeave);el.addEventListener('click',onClick);
+  nodes[role+'::'+name]=el;return el;
+}
+function makeArrow(){
+  var s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('class','row-arrow');s.setAttribute('viewBox','0 0 8 8');
+  s.innerHTML='<path d="M1,4 L6,4 M4.5,2 L6.5,4 L4.5,6" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>';
+  return s;
+}
+var laneMap={Employee:'bodyEmployee',Manager:'bodyManager','Admin / HR':'bodyAdmin'};
+Object.entries(ORDER).forEach(function(e){
+  var role=e[0],rows=e[1],body=document.getElementById(laneMap[role]);
+  [rows.row1,rows.row2].forEach(function(names,ri){
+    var row=document.createElement('div');row.className='lane-row';
+    var lbl=document.createElement('div');lbl.className='lane-row-label';lbl.textContent=ri===0?'STD':'AI+';row.appendChild(lbl);
+    names.forEach(function(n,i){if(i>0)row.appendChild(makeArrow());row.appendChild(makeNode(role,n));});
+    body.appendChild(row);
+  });
+});
+
+// ===== TOOLTIP =====
+var tip=document.getElementById('tooltip'),tipT=document.getElementById('tipTitle'),tipR=document.getElementById('tipRole'),tipL=document.getElementById('tipList');
+function onEnter(e){
+  var n=e.currentTarget,bl=JSON.parse(n.dataset.bullets),r=n.dataset.role;
+  tipT.textContent=n.dataset.name;
+  tipR.className='tip-role tip-role-'+(r==='Employee'?'e':r==='Manager'?'m':'a');
+  tipR.textContent=r+' \u2022 '+(n.dataset.type==='ai'?'AI-Powered':n.dataset.type==='additional'?'Additional':'Standard');
+  tipL.innerHTML=bl.map(function(b){return'<li>'+esc(b)+'</li>'}).join('');
+  tip.classList.add('show');onMove(e);
+}
+function onMove(e){
+  var x=e.clientX+12,y=e.clientY+12;
+  if(x+tip.offsetWidth>window.innerWidth)x=e.clientX-tip.offsetWidth-12;
+  if(y+tip.offsetHeight>window.innerHeight)y=e.clientY-tip.offsetHeight-12;
+  tip.style.left=x+'px';tip.style.top=y+'px';
+}
+function onLeave(){tip.classList.remove('show')}
+
+// ===== MODAL =====
+var mBg=document.getElementById('modalBg'),mN=document.getElementById('modName'),mR=document.getElementById('modRole'),mL=document.getElementById('modList');
+function onClick(e){
+  var n=e.currentTarget,bl=JSON.parse(n.dataset.bullets),t=n.dataset.type;
+  var tl=t==='ai'?'AI-Powered':t==='additional'?'Additional':'Standard';
+  mN.innerHTML=esc(n.dataset.name)+' <span class="modal-badge modal-badge-'+t+'">'+tl+'</span>';
+  mR.textContent=n.dataset.role;mR.style.color=n.dataset.role==='Employee'?'#1565c0':n.dataset.role==='Manager'?'#e65100':'#7b1fa2';
+  mL.innerHTML=bl.map(function(b){return'<li>'+esc(b)+'</li>'}).join('');mBg.classList.add('show');
+}
+function closeModal(){mBg.classList.remove('show')}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal()});
+
+// ===== AI TOGGLE =====
+function toggleAI(){document.getElementById('toggleTrack').classList.toggle('on');document.getElementById('lanesArea').classList.toggle('ai-mode')}
+
+// ===== CROSS-LANE ARROWS — ROUTED THROUGH MARGINS =====
+// Strategy: arrows exit the source node, travel to the LEFT or RIGHT margin
+// (the 22px padding area OUTSIDE the lane boxes), travel vertically in that
+// margin (never crossing any node), then enter the target lane from the top.
+//
+// Path segments:
+// 1. Source node bottom → down to inter-row gap (short, 5px in empty gap between rows)
+// 2. Inter-row gap → horizontal to margin channel (between Row1 and Row2, no nodes here)
+// 3. Margin channel → vertical to target lane top+5 (outside all lane boxes)
+// 4. Target lane top+5 → horizontal to target node X (above Row1, in top padding)
+// 5. Target node X → down to target node top (short vertical into node)
+
+var LANE_ORDER=['Employee','Manager','Admin / HR'];
+
+function drawCrossArrows(){
+  var svg=document.getElementById('crossArrows'),g=document.getElementById('arrowGroup');
+  g.innerHTML='';
+  var svgR=svg.getBoundingClientRect();
+
+  function info(laneId,bodyId){
+    var el=document.getElementById(laneId),bd=document.getElementById(bodyId);
+    var rows=bd.querySelectorAll('.lane-row'),r=el.getBoundingClientRect();
+    var r1=rows[0].getBoundingClientRect(),r2=rows[1].getBoundingClientRect();
+    return{top:r.top-svgR.top,bottom:r.bottom-svgR.top,left:r.left-svgR.left,right:r.right-svgR.left,
+      gapY:(r1.bottom+r2.top)/2-svgR.top};
+  }
+  var L={Employee:info('laneEmployee','bodyEmployee'),Manager:info('laneManager','bodyManager'),'Admin / HR':info('laneAdmin','bodyAdmin')};
+
+  var arrows=[
+    {from:'Employee::My Profile',to:'Admin / HR::Employee Master Data',color:'#2563eb',marker:'mBlue',side:'left',ch:0},
+    {from:'Manager::Team Org Management',to:'Admin / HR::Employee Master Data',color:'#ea580c',marker:'mOrange',side:'left',ch:1},
+    {from:'Admin / HR::Payroll Engine',to:'Employee::Payslip & Tax',color:'#7c3aed',marker:'mPurple',side:'left',ch:2},
+    {from:'Employee::Self-Service Requests',to:'Manager::Letter & Change Requests',color:'#2563eb',marker:'mBlue',side:'right',ch:0},
+    {from:'Admin / HR::Benefits Admin',to:'Employee::Benefits Enrollment',color:'#7c3aed',marker:'mPurple',side:'right',ch:1},
+    {from:'Manager::Compensation Overview',to:'Admin / HR::Compliance Mgmt',color:'#ea580c',marker:'mOrange',side:'right',ch:2}
+  ];
+
+  arrows.forEach(function(a,i){
+    var fromEl=nodes[a.from],toEl=nodes[a.to];
+    if(!fromEl||!toEl)return;
+    var fromRole=a.from.split('::')[0],toRole=a.to.split('::')[0];
+    var sL=L[fromRole],tL=L[toRole];
+    var isDown=LANE_ORDER.indexOf(fromRole)<LANE_ORDER.indexOf(toRole);
+
+    var fr=fromEl.getBoundingClientRect(),tr=toEl.getBoundingClientRect();
+    var srcX=fr.left+fr.width/2-svgR.left;
+    var tgtX=tr.left+tr.width/2-svgR.left;
+
+    // Margin channel X: outside the lane boxes, offset per arrow to avoid overlap
+    var spacing=5;
+    var chX;
+    if(a.side==='left'){chX=sL.left-5-a.ch*spacing}
+    else{chX=sL.right+5+a.ch*spacing}
+
+    // For DOWNWARD arrows: exit from source bottom, through inter-row gap, to margin, down to target top
+    // For UPWARD arrows: exit from source top, through source top-padding, to margin, up to target top
+    var srcGapY=sL.gapY; // between Row1 and Row2 of source lane
+    var tgtEntryY=tL.top+5; // just inside target lane top padding (above all Row1 nodes)
+    var tgtNodeY=tr.top-svgR.top; // target node top edge
+
+    var d;
+    if(isDown){
+      // Source bottom → gap → margin → target top padding → target node
+      var srcBottomY=fr.bottom-svgR.top+1;
+      d='M'+srcX+','+srcBottomY+' L'+srcX+','+srcGapY+' L'+chX+','+srcGapY+' L'+chX+','+tgtEntryY+' L'+tgtX+','+tgtEntryY+' L'+tgtX+','+tgtNodeY;
+    }else{
+      // Upward: source top → source lane top padding → margin → target top padding → target node
+      var srcTopY=fr.top-svgR.top-1;
+      var srcEntryY=sL.top+5; // source lane top padding
+      d='M'+srcX+','+srcTopY+' L'+srcX+','+srcEntryY+' L'+chX+','+srcEntryY+' L'+chX+','+tgtEntryY+' L'+tgtX+','+tgtEntryY+' L'+tgtX+','+tgtNodeY;
+    }
+
+    // Draw path
+    var p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',d);p.setAttribute('fill','none');
+    p.setAttribute('stroke',a.color);p.setAttribute('stroke-width','1.5');
+    p.setAttribute('stroke-opacity','0.5');p.setAttribute('marker-end','url(#'+a.marker+')');
+    g.appendChild(p);
+
+    // Animated dot
+    var dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('r','2.5');dot.setAttribute('fill',a.color);dot.setAttribute('fill-opacity','0.8');
+    var am=document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+    am.setAttribute('dur','3s');am.setAttribute('repeatCount','indefinite');
+    am.setAttribute('path',d);am.setAttribute('begin',i*0.5+'s');
+    dot.appendChild(am);g.appendChild(dot);
+  });
+}
+
+requestAnimationFrame(function(){setTimeout(drawCrossArrows,400)});
+window.addEventListener('resize',function(){requestAnimationFrame(drawCrossArrows)});
+
+// Verify
+(function(){var g=0,b=0;for(var r in DATA)for(var s in DATA[r])for(var n in DATA[r][s]){g++;b+=DATA[r][s][n].length}console.log('Verified: '+g+' groups, '+b+' bullets')})();
+</script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 6: Talent Acquisition — User Journey Map</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0;padding:0;overflow:hidden;width:100vw;height:100vh;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f8f9fa}
+
+/* ── Header ── */
+.header{height:38px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#fff;flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-title{font-size:12px;font-weight:600;letter-spacing:.3px}
+.header-badge{background:linear-gradient(135deg,#e94560,#c23152);font-size:8px;padding:2px 8px;border-radius:10px;font-weight:600;letter-spacing:.5px}
+.legend{display:flex;align-items:center;gap:10px;font-size:8px}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-swatch{width:14px;height:10px;border-radius:2px;border:1.5px solid}
+.legend-swatch.std{background:#fff;border-color:#90a4ae}
+.legend-swatch.ai{background:linear-gradient(135deg,#fff9c4,#ffe082);border-color:#f9a825;border-style:dashed}
+.legend-swatch.add{background:#e8f5e9;border-color:#66bb6a;border-style:dotted}
+.legend-swatch.approval{background:none;border:none;width:18px;height:2px;position:relative}
+.legend-swatch.approval::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:#e94560}
+.legend-swatch.dataflow{background:none;border:none;width:18px;height:2px;position:relative}
+.legend-swatch.dataflow::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:#2196f3}
+.ai-toggle{display:flex;align-items:center;gap:5px;font-size:8px;cursor:pointer;user-select:none}
+.ai-toggle input{display:none}
+.toggle-track{width:28px;height:14px;background:#555;border-radius:7px;position:relative;transition:background .3s}
+.toggle-track::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;background:#fff;border-radius:50%;transition:transform .3s}
+.ai-toggle input:checked+.toggle-track{background:#f9a825}
+.ai-toggle input:checked+.toggle-track::after{transform:translateX(14px)}
+
+/* ── Lanes container ── */
+.lanes-container{height:calc(100vh - 38px);padding:5px 22px;display:flex;flex-direction:column;gap:4px;position:relative}
+
+/* ── Swim lane ── */
+.swim-lane{flex:1 1 0;min-height:0;display:flex;border-radius:8px;overflow:hidden;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.swim-lane.employee{background:#e3f2fd}
+.swim-lane.manager{background:#fff3e0}
+.swim-lane.admin{background:#f3e5f5}
+.lane-label{width:24px;min-width:24px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;flex-shrink:0}
+.swim-lane.employee .lane-label{background:linear-gradient(180deg,#1565c0,#1976d2)}
+.swim-lane.manager .lane-label{background:linear-gradient(180deg,#e65100,#ef6c00)}
+.swim-lane.admin .lane-label{background:linear-gradient(180deg,#6a1b9a,#8e24aa)}
+.lane-body{flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center;padding:6px 8px;min-width:0}
+.node-row{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;min-width:0}
+
+/* ── Nodes ── */
+.node{flex:1 1 0;min-width:0;height:32px;border-radius:6px;display:flex;align-items:center;padding:0 6px;cursor:pointer;position:relative;transition:transform .15s,box-shadow .15s;overflow:hidden;opacity:0;transform:scale(.92)}
+.node.visible{opacity:1;transform:scale(1)}
+.node:hover{transform:scale(1.04)!important;box-shadow:0 3px 12px rgba(0,0,0,.18);z-index:10}
+.node.standard{background:#fff;border:1.5px solid #90a4ae}
+.node.ai{background:linear-gradient(135deg,#fffde7,#fff9c4);border:1.5px dashed #f9a825}
+.node.additional{background:#e8f5e9;border:1.5px dotted #66bb6a}
+.node.ai.highlight{animation:aiGlow 2.5s ease-in-out infinite}
+@keyframes aiGlow{0%,100%{box-shadow:0 0 4px rgba(249,168,37,.3)}50%{box-shadow:0 0 14px rgba(249,168,37,.7)}}
+.node-title{font-size:7.5px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;line-height:1.2}
+.node-badge{min-width:14px;height:14px;border-radius:7px;background:rgba(0,0,0,.1);font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#555;margin-left:3px;flex-shrink:0}
+.node.ai .node-badge{background:rgba(249,168,37,.25);color:#e65100}
+.node.additional .node-badge{background:rgba(76,175,80,.2);color:#2e7d32}
+
+/* ── Within-lane arrows ── */
+.intra-arrow{flex-shrink:0;width:8px;height:8px;display:flex;align-items:center;justify-content:center}
+.intra-arrow svg{width:8px;height:8px}
+
+/* ── Tooltip ── */
+.tooltip{position:fixed;background:#1a1a2e;color:#fff;border-radius:8px;padding:10px 12px;font-size:8.5px;max-width:280px;z-index:1000;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 8px 24px rgba(0,0,0,.25);line-height:1.5}
+.tooltip.show{opacity:1}
+.tooltip-title{font-weight:700;font-size:9.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.15)}
+.tooltip-title.ai-title{color:#ffe082}
+.tooltip-title.add-title{color:#a5d6a7}
+.tooltip ul{list-style:none;padding:0;margin:0}
+.tooltip li{padding:1.5px 0;position:relative;padding-left:10px}
+.tooltip li::before{content:'\2022';position:absolute;left:0;color:#e94560}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:12px;padding:20px 24px;max-width:420px;width:90%;max-height:70vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative}
+.modal-close{position:absolute;top:10px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#999;line-height:1}
+.modal-close:hover{color:#333}
+.modal h2{font-size:14px;margin-bottom:4px;color:#1a1a2e}
+.modal .modal-type{font-size:9px;color:#888;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.modal .modal-type.ai-type{color:#f9a825}
+.modal .modal-type.add-type{color:#66bb6a}
+.modal ul{list-style:none;padding:0;margin:0}
+.modal li{padding:5px 0;font-size:11px;color:#444;border-bottom:1px solid #f0f0f0;position:relative;padding-left:16px;line-height:1.5}
+.modal li:last-child{border-bottom:none}
+.modal li::before{content:'\2192';position:absolute;left:0;color:#e94560;font-weight:700}
+.modal li.ai-bullet::before{color:#f9a825}
+.modal li.add-bullet::before{color:#66bb6a}
+
+/* ── SVG overlay for cross-lane arrows ── */
+.arrow-overlay{position:absolute;inset:0;pointer-events:none;z-index:5}
+.arrow-path{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.arrow-path.approval{stroke:#e94560}
+.arrow-path.dataflow{stroke:#2196f3}
+.arrow-dot{r:3}
+.arrow-dot.approval{fill:#e94560}
+.arrow-dot.dataflow{fill:#2196f3}
+.arrow-head{stroke-width:1.5;fill:none}
+.arrow-head.approval{stroke:#e94560}
+.arrow-head.dataflow{stroke:#2196f3}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-title">Module 6: Talent Acquisition — User Journey Map</div>
+    <div class="header-badge">AI-Native HRMS</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch std"></div>Standard</div>
+    <div class="legend-item"><div class="legend-swatch ai"></div>AI-Powered</div>
+    <div class="legend-item"><div class="legend-swatch add"></div>Additional</div>
+    <div class="legend-item"><div class="legend-swatch approval"></div>Approval</div>
+    <div class="legend-item"><div class="legend-swatch dataflow"></div>Data Flow</div>
+    <label class="ai-toggle"><input type="checkbox" id="aiToggle"><span class="toggle-track"></span>Highlight AI</label>
+  </div>
+</div>
+
+<!-- Lanes -->
+<div class="lanes-container" id="lanesContainer">
+
+  <!-- EMPLOYEE LANE -->
+  <div class="swim-lane employee" id="laneEmployee">
+    <div class="lane-label">Employee</div>
+    <div class="lane-body">
+      <div class="node-row" id="empRow1"></div>
+      <div class="node-row" id="empRow2"></div>
+    </div>
+  </div>
+
+  <!-- MANAGER LANE -->
+  <div class="swim-lane manager" id="laneManager">
+    <div class="lane-label">Manager</div>
+    <div class="lane-body">
+      <div class="node-row" id="mgrRow1"></div>
+      <div class="node-row" id="mgrRow2"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN / HR LANE -->
+  <div class="swim-lane admin" id="laneAdmin">
+    <div class="lane-label">Admin / HR</div>
+    <div class="lane-body">
+      <div class="node-row" id="admRow1"></div>
+      <div class="node-row" id="admRow2"></div>
+    </div>
+  </div>
+
+  <!-- SVG arrow overlay -->
+  <svg class="arrow-overlay" id="arrowSvg"></svg>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <h2 id="modalTitle"></h2>
+    <div class="modal-type" id="modalType"></div>
+    <ul id="modalList"></ul>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// DATA — 32 features, 119 bullets from Excel
+// ════════════════════════════════════════
+const DATA = {
+  employee: {
+    standard: [
+      { id:'emp_jobboard', title:'Internal Job Board', bullets:[
+        'Browse all open positions across the company',
+        'Apply internally with streamlined application (profile auto-populated)',
+        'Filter by department, location, grade, skills',
+        'Track application status'
+      ]},
+      { id:'emp_referral', title:'Referral Portal', bullets:[
+        'Refer candidates from your network with their details',
+        'Track referral status through pipeline stages',
+        'Reward tracking and payout history',
+        'Share job openings on social media with referral tracking link'
+      ]},
+      { id:'emp_interview', title:'Interview Participation', bullets:[
+        'View interview schedule as a panelist',
+        'Access candidate profile, resume, and evaluation criteria before interview',
+        'Complete scorecard during or after interview',
+        "View other interviewers' feedback (after all interviews done)"
+      ]},
+      { id:'emp_career', title:'Career Opportunities', bullets:[
+        'Set job alerts matching your skills and interests',
+        'Express interest in lateral moves, stretch projects, or rotations',
+        'View required skills and experience for aspirational roles'
+      ]}
+    ],
+    ai: [
+      { id:'emp_ai_referral', title:'Smart Referral Match', bullets:[
+        'AI analyzes open roles and suggests people from your LinkedIn/contacts who match',
+        'Fit percentage per suggested referral',
+        'One-click refer with auto-populated details'
+      ]},
+      { id:'emp_ai_prep', title:'Interview Prep Copilot', bullets:[
+        "Generates role-specific interview questions tailored to the candidate's background",
+        'Evaluation rubric with clear criteria per competency',
+        'Red flag indicators to watch for during conversation'
+      ]},
+      { id:'emp_ai_mobility', title:'Internal Mobility Match', bullets:[
+        'Proactively suggests internal openings matching your skills, experience, and stated interests',
+        "Gap analysis: 'You need X and Y skills to qualify \u2014 here are learning paths'",
+        'Confidential expression of interest (manager not notified until formal application)'
+      ]}
+    ],
+    additional: []
+  },
+  manager: {
+    standard: [
+      { id:'mgr_requisition', title:'Requisition Management', bullets:[
+        'Create hiring requisitions with role details, requirements, justification',
+        'Attach job description and compensation range',
+        'Submit for approval (budget, headcount, band validation)',
+        'Track requisition status through approval chain'
+      ]},
+      { id:'mgr_pipeline', title:'Pipeline Dashboard', bullets:[
+        'View all candidates per requisition by stage (sourced, screened, interviewed, offered, hired)',
+        'Time-in-stage tracking with bottleneck identification',
+        'Source mix analysis (referrals, job boards, agency, direct)',
+        'Conversion rates per stage'
+      ]},
+      { id:'mgr_scheduling', title:'Interview Scheduling', bullets:[
+        'Auto-detect calendar availability across interview panel',
+        'Send interview invites with video call links',
+        'Reschedule with one click \u2014 auto-updates all parties',
+        'Panel coordination for multi-round interviews'
+      ]},
+      { id:'mgr_evaluation', title:'Candidate Evaluation', bullets:[
+        'Score candidates on defined competencies using structured scorecard',
+        'Compare scores across multiple interviewers for same candidate',
+        'Structured decision framework (strong hire, hire, no hire, strong no hire)',
+        'Debrief notes and final recommendation'
+      ]},
+      { id:'mgr_offer', title:'Offer Management', bullets:[
+        'Review and approve offer details (compensation, start date, terms)',
+        'Compare offer against salary band, budget, and internal equity',
+        'Counter-offer negotiation tracking',
+        'Digital offer generation and e-signature trigger'
+      ]},
+      { id:'mgr_analytics', title:'Hiring Analytics', bullets:[
+        'Time-to-fill per role, department, and level',
+        'Cost-per-hire breakdown (agency fees, job board spend, referral rewards)',
+        'Source effectiveness (which channels produce best hires)',
+        'Offer acceptance rate and decline reason tracking'
+      ]}
+    ],
+    ai: [
+      { id:'mgr_ai_ranking', title:'AI Candidate Ranking', bullets:[
+        'Ranks applicants by fit score with explainable reasoning per factor',
+        'Skills match, experience relevance, culture fit indicators',
+        'Highlights top 5 candidates with strengths and concerns per person'
+      ]},
+      { id:'mgr_ai_transcript', title:'Interview Transcript Analysis', bullets:[
+        'AI analyzes interview recordings for competency signals and red flags',
+        'Identifies potential bias patterns in interviewer questions',
+        'Generates structured summary for hiring committee review'
+      ]},
+      { id:'mgr_ai_offer', title:'Offer Intelligence', bullets:[
+        "Suggests competitive compensation based on market data + internal equity + candidate expectations",
+        'Models acceptance probability at different comp levels',
+        "Alerts if offer is below market for the candidate's profile"
+      ]},
+      { id:'mgr_ai_diversity', title:'Diversity Pipeline Nudges', bullets:[
+        'Real-time alerts if pipeline diversity is skewing at any stage',
+        'Suggests sourcing channel adjustments to improve diversity',
+        'Tracks diversity metrics through entire funnel'
+      ]}
+    ],
+    additional: []
+  },
+  admin: {
+    standard: [
+      { id:'adm_ats', title:'ATS Configuration', bullets:[
+        'Configure hiring stages and pipeline per role type',
+        'Scorecard template builder with custom competencies',
+        'Approval workflow setup (who approves requisitions, offers)',
+        'SLA configuration per stage (max days in screening, interview scheduling)'
+      ]},
+      { id:'adm_boards', title:'Job Board Integrations', bullets:[
+        'Connect LinkedIn, Indeed, Glassdoor, Naukri, Bayt',
+        'Auto-post jobs to connected boards from single interface',
+        'Application sync (candidates auto-imported from all sources)',
+        'Source tracking for analytics'
+      ]},
+      { id:'adm_careers', title:'Careers Site Builder', bullets:[
+        'Branded careers portal with CMS for content management',
+        'Department pages with team descriptions and photos',
+        'Employee stories and testimonials section',
+        'Benefits showcase with visual layout',
+        'SEO optimization for job postings'
+      ]},
+      { id:'adm_bgcheck', title:'Background Check Integration', bullets:[
+        'Connect Checkr, Sterling, HireRight via API',
+        'Auto-trigger background check on offer acceptance',
+        'Status tracking within candidate profile',
+        'Results handling workflow (clear, flagged, requires review)'
+      ]},
+      { id:'adm_offer_tpl', title:'Offer Template Management', bullets:[
+        'Templates per entity and country with dynamic field insertion',
+        'Multi-language support for international offers',
+        'E-signature integration (DocuSign, Adobe Sign)',
+        'Offer versioning (track changes between negotiation rounds)'
+      ]},
+      { id:'adm_rec_analytics', title:'Recruitment Analytics', bullets:[
+        'Org-wide hiring metrics dashboard',
+        'Source ROI analysis (spend per channel vs quality of hire)',
+        'Recruiter performance metrics (speed, quality, volume)',
+        'Diversity analytics across the entire funnel'
+      ]}
+    ],
+    ai: [
+      { id:'adm_ai_jd', title:'AI JD Generator', bullets:[
+        'Generates inclusive, SEO-optimized job descriptions from role requirements',
+        'Bias-checked language (removes gendered, exclusionary, or unnecessary requirements)',
+        'Industry-specific terminology and keyword optimization'
+      ]},
+      { id:'adm_ai_sourcing', title:'Sourcing Agent', bullets:[
+        'Autonomously searches talent pools and databases for matching candidates',
+        'Drafts personalized outreach messages per candidate',
+        'Tracks response rates and optimizes outreach approach over time'
+      ]},
+      { id:'adm_ai_forecast', title:'Recruitment Forecasting', bullets:[
+        'Predicts hiring needs from business plans, attrition models, and growth targets',
+        'Time-to-fill estimates per role type based on historical data',
+        'Headcount planning recommendations for next quarter/year'
+      ]},
+      { id:'adm_ai_bias', title:'Bias Audit Dashboard', bullets:[
+        'Tracks bias signals across the entire funnel by demographics',
+        'Stage-by-stage conversion rate comparison across demographic groups',
+        'Alerts on statistically significant disparities',
+        'Quarterly bias audit report for leadership'
+      ]}
+    ],
+    additional: [
+      { id:'adm_add_assess', title:'Assessment Platform', bullets:[
+        'Built-in skills assessment library (coding tests, aptitude, personality, domain knowledge)',
+        'Custom assessment builder with question bank management',
+        'Proctored online testing with fraud detection (tab switching, copy-paste alerts)',
+        'Assessment results auto-integrated into candidate scorecard',
+        'Video interview platform with async (recorded) and live interview support'
+      ]},
+      { id:'adm_add_branding', title:'Employer Branding', bullets:[
+        'Careers site builder with drag-and-drop page designer',
+        'Employee testimonial and culture video showcase',
+        'Glassdoor/Indeed review monitoring and response management',
+        'Social media job posting with branded templates',
+        'Candidate NPS tracking (measure candidate experience at each stage)'
+      ]},
+      { id:'adm_add_contract', title:'Offer & Contract Automation', bullets:[
+        'Dynamic offer letter templates with merge fields (salary, title, start date, benefits)',
+        'E-signature integration (DocuSign, Adobe Sign, native)',
+        'Multi-stage offer workflow (draft \u2192 review \u2192 approve \u2192 send \u2192 accept/decline)',
+        'Automated contract generation per entity and employment type',
+        'Background verification integration with third-party providers'
+      ]},
+      { id:'adm_add_screening', title:'AI Resume Screening', bullets:[
+        'Parses and scores resumes against job requirements with explainable ranking',
+        'Removes identifying information for blind screening (name, photo, university \u2014 configurable)',
+        'Suggests candidates from talent pool who match new requisitions'
+      ]},
+      { id:'adm_add_predictive', title:'Predictive Hiring Analytics', bullets:[
+        'Predicts time-to-fill based on role, market, and historical data',
+        'Models offer acceptance probability at different compensation levels',
+        'Identifies bottleneck stages in hiring pipeline with root cause analysis'
+      ]}
+    ]
+  }
+};
+
+// ════════════════════════════════════════
+// RENDER NODES
+// ════════════════════════════════════════
+const intraArrowSvg = `<svg viewBox="0 0 8 8" fill="none"><path d="M1 4h5M4.5 2L6.5 4L4.5 6" stroke="#b0bec5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function buildRow(containerId, features, type) {
+  const row = document.getElementById(containerId);
+  features.forEach((f, i) => {
+    if (i > 0) {
+      const arrow = document.createElement('div');
+      arrow.className = 'intra-arrow';
+      arrow.innerHTML = intraArrowSvg;
+      row.appendChild(arrow);
+    }
+    const node = document.createElement('div');
+    node.className = `node ${type}`;
+    node.dataset.id = f.id;
+    node.dataset.type = type;
+    node.id = f.id;
+    const prefix = type === 'ai' ? '\u2726 ' : '';
+    node.innerHTML = `<span class="node-title">${prefix}${f.title}</span><span class="node-badge">${f.bullets.length}</span>`;
+    node.addEventListener('mouseenter', showTooltip);
+    node.addEventListener('mousemove', moveTooltip);
+    node.addEventListener('mouseleave', hideTooltip);
+    node.addEventListener('click', () => openModal(f, type));
+    row.appendChild(node);
+  });
+}
+
+function buildMixedRow(containerId, aiFeatures, additionalFeatures) {
+  const row = document.getElementById(containerId);
+  row.innerHTML = '';
+  const combined = [
+    ...aiFeatures.map(f => ({ ...f, type: 'ai' })),
+    ...additionalFeatures.map(f => ({ ...f, type: 'additional' }))
+  ];
+  combined.forEach((f, i) => {
+    if (i > 0) {
+      const a = document.createElement('div');
+      a.className = 'intra-arrow';
+      a.innerHTML = intraArrowSvg;
+      row.appendChild(a);
+    }
+    const node = document.createElement('div');
+    node.className = `node ${f.type}`;
+    node.dataset.id = f.id;
+    node.dataset.type = f.type;
+    node.id = f.id;
+    const prefix = f.type === 'ai' ? '\u2726 ' : '';
+    node.innerHTML = `<span class="node-title">${prefix}${f.title}</span><span class="node-badge">${f.bullets.length}</span>`;
+    node.addEventListener('mouseenter', showTooltip);
+    node.addEventListener('mousemove', moveTooltip);
+    node.addEventListener('mouseleave', hideTooltip);
+    node.addEventListener('click', () => openModal(f, f.type));
+    row.appendChild(node);
+  });
+}
+
+// Employee
+buildRow('empRow1', DATA.employee.standard, 'standard');
+buildMixedRow('empRow2', DATA.employee.ai, DATA.employee.additional);
+
+// Manager
+buildRow('mgrRow1', DATA.manager.standard, 'standard');
+buildMixedRow('mgrRow2', DATA.manager.ai, DATA.manager.additional);
+
+// Admin
+buildRow('admRow1', DATA.admin.standard, 'standard');
+buildMixedRow('admRow2', DATA.admin.ai, DATA.admin.additional);
+
+// ════════════════════════════════════════
+// NODE ENTRANCE ANIMATION
+// ════════════════════════════════════════
+const allNodes = document.querySelectorAll('.node');
+allNodes.forEach((n, i) => {
+  setTimeout(() => n.classList.add('visible'), 80 + i * 30);
+});
+
+// ════════════════════════════════════════
+// TOOLTIP
+// ════════════════════════════════════════
+const tooltip = document.getElementById('tooltip');
+function findFeatureData(id) {
+  for (const role of Object.values(DATA)) {
+    for (const group of Object.values(role)) {
+      const f = group.find(x => x.id === id);
+      if (f) return f;
+    }
+  }
+  return null;
+}
+function showTooltip(e) {
+  const node = e.currentTarget;
+  const f = findFeatureData(node.dataset.id);
+  if (!f) return;
+  const type = node.dataset.type;
+  const titleClass = type === 'ai' ? 'ai-title' : type === 'additional' ? 'add-title' : '';
+  const prefix = type === 'ai' ? '\u2726 ' : '';
+  tooltip.innerHTML = `<div class="tooltip-title ${titleClass}">${prefix}${f.title}</div><ul>${f.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`;
+  tooltip.classList.add('show');
+}
+function moveTooltip(e) {
+  const x = e.clientX + 12;
+  const y = e.clientY + 12;
+  const tw = tooltip.offsetWidth;
+  const th = tooltip.offsetHeight;
+  tooltip.style.left = (x + tw > window.innerWidth ? e.clientX - tw - 8 : x) + 'px';
+  tooltip.style.top = (y + th > window.innerHeight ? e.clientY - th - 8 : y) + 'px';
+}
+function hideTooltip() { tooltip.classList.remove('show'); }
+
+// ════════════════════════════════════════
+// MODAL
+// ════════════════════════════════════════
+const modalOverlay = document.getElementById('modalOverlay');
+const modal = document.getElementById('modal');
+function openModal(f, type) {
+  const prefix = type === 'ai' ? '\u2726 ' : '';
+  document.getElementById('modalTitle').textContent = prefix + f.title;
+  const typeEl = document.getElementById('modalType');
+  typeEl.textContent = type === 'ai' ? 'AI-Powered Feature' : type === 'additional' ? 'Additional Feature' : 'Standard Feature';
+  typeEl.className = 'modal-type' + (type === 'ai' ? ' ai-type' : type === 'additional' ? ' add-type' : '');
+  const list = document.getElementById('modalList');
+  list.innerHTML = f.bullets.map(b => `<li class="${type === 'ai' ? 'ai-bullet' : type === 'additional' ? 'add-bullet' : ''}">${b}</li>`).join('');
+  modalOverlay.classList.add('show');
+}
+document.getElementById('modalClose').addEventListener('click', () => modalOverlay.classList.remove('show'));
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) modalOverlay.classList.remove('show'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') modalOverlay.classList.remove('show'); });
+
+// ════════════════════════════════════════
+// AI HIGHLIGHT TOGGLE
+// ════════════════════════════════════════
+document.getElementById('aiToggle').addEventListener('change', function() {
+  document.querySelectorAll('.node.ai').forEach(n => {
+    n.classList.toggle('highlight', this.checked);
+  });
+});
+
+// ════════════════════════════════════════
+// CROSS-LANE ARROWS (routed via margins)
+// ════════════════════════════════════════
+function drawArrows() {
+  const svg = document.getElementById('arrowSvg');
+  const container = document.getElementById('lanesContainer');
+  const cRect = container.getBoundingClientRect();
+  svg.setAttribute('viewBox', `0 0 ${cRect.width} ${cRect.height}`);
+  svg.innerHTML = '';
+
+  // Arrow definitions — Talent Acquisition pipeline flow
+  // 1. Employee refers candidate → Manager pipeline dashboard (approval)
+  // 2. Employee completes interview scorecard → Manager evaluation (approval)
+  // 3. Manager creates requisition → Admin ATS processes (dataflow)
+  // 4. Manager approves offer → Admin offer templates (approval)
+  // 5. Admin careers site → Employee internal job board (dataflow)
+
+  const arrows = [
+    { from:'emp_referral', to:'mgr_pipeline', type:'approval', side:'left', offset:0 },
+    { from:'emp_interview', to:'mgr_evaluation', type:'approval', side:'right', offset:0 },
+    { from:'mgr_requisition', to:'adm_ats', type:'dataflow', side:'left', offset:1 },
+    { from:'mgr_offer', to:'adm_offer_tpl', type:'approval', side:'right', offset:1 },
+    { from:'adm_careers', to:'emp_jobboard', type:'dataflow', side:'right', offset:2 },
+  ];
+
+  const leftBase = 4;
+  const rightBase = cRect.width - 4;
+  const channelStep = 5;
+
+  arrows.forEach(a => {
+    const fromEl = document.getElementById(a.from);
+    const toEl = document.getElementById(a.to);
+    if (!fromEl || !toEl) return;
+
+    const fRect = fromEl.getBoundingClientRect();
+    const tRect = toEl.getBoundingClientRect();
+
+    // Convert to container-relative coordinates
+    const fx = fRect.left - cRect.left + fRect.width / 2;
+    const fy_bottom = fRect.bottom - cRect.top;
+    const fy_top = fRect.top - cRect.top;
+    const tx = tRect.left - cRect.left + tRect.width / 2;
+    const ty_top = tRect.top - cRect.top;
+    const ty_bottom = tRect.bottom - cRect.top;
+
+    let channelX;
+    if (a.side === 'left') {
+      channelX = leftBase + a.offset * channelStep;
+    } else {
+      channelX = rightBase - a.offset * channelStep;
+    }
+
+    let path;
+    const goingDown = fy_bottom < ty_top;
+    if (goingDown) {
+      const sy = fy_bottom + 1;
+      const ey = ty_top - 1;
+      path = `M${fx},${sy} L${fx},${sy+3} L${channelX},${sy+3} L${channelX},${ey-3} L${tx},${ey-3} L${tx},${ey}`;
+    } else {
+      const sy = fy_top - 1;
+      const ey = ty_bottom + 1;
+      path = `M${fx},${sy} L${fx},${sy-3} L${channelX},${sy-3} L${channelX},${ey+3} L${tx},${ey+3} L${tx},${ey}`;
+    }
+
+    // Draw path
+    const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pathEl.setAttribute('d', path);
+    pathEl.setAttribute('class', `arrow-path ${a.type}`);
+    pathEl.setAttribute('fill', 'none');
+    pathEl.id = `arrow_${a.from}_${a.to}`;
+    svg.appendChild(pathEl);
+
+    // Arrowhead at end
+    const headSize = 5;
+    let headPath;
+    if (goingDown) {
+      headPath = `M${tx-headSize},${ty_top-1-headSize} L${tx},${ty_top-1} L${tx+headSize},${ty_top-1-headSize}`;
+    } else {
+      headPath = `M${tx-headSize},${ty_bottom+1+headSize} L${tx},${ty_bottom+1} L${tx+headSize},${ty_bottom+1+headSize}`;
+    }
+    const head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    head.setAttribute('d', headPath);
+    head.setAttribute('class', `arrow-head ${a.type}`);
+    svg.appendChild(head);
+
+    // Animated dot
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('class', `arrow-dot ${a.type}`);
+    dot.setAttribute('r', '3');
+    const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+    anim.setAttribute('dur', '3s');
+    anim.setAttribute('repeatCount', 'indefinite');
+    anim.setAttribute('path', path);
+    dot.appendChild(anim);
+    svg.appendChild(dot);
+  });
+}
+
+// Draw arrows after layout settles
+setTimeout(drawArrows, 500);
+window.addEventListener('resize', () => { clearTimeout(window._arrowTimer); window._arrowTimer = setTimeout(drawArrows, 100); });
+</script>
+</body>
+</html>

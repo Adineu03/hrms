@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 4: Leave Management — User Journey Map</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0;padding:0;overflow:hidden;width:100vw;height:100vh;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f8f9fa}
+
+/* ── Header ── */
+.header{height:38px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#fff;flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-title{font-size:12px;font-weight:600;letter-spacing:.3px}
+.header-badge{background:linear-gradient(135deg,#e94560,#c23152);font-size:8px;padding:2px 8px;border-radius:10px;font-weight:600;letter-spacing:.5px}
+.legend{display:flex;align-items:center;gap:10px;font-size:8px}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-swatch{width:14px;height:10px;border-radius:2px;border:1.5px solid}
+.legend-swatch.std{background:#fff;border-color:#90a4ae}
+.legend-swatch.ai{background:linear-gradient(135deg,#fff9c4,#ffe082);border-color:#f9a825;border-style:dashed}
+.legend-swatch.add{background:#e8f5e9;border-color:#66bb6a;border-style:dotted}
+.legend-swatch.approval{background:none;border:none;width:18px;height:2px;position:relative}
+.legend-swatch.approval::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:#e94560}
+.legend-swatch.dataflow{background:none;border:none;width:18px;height:2px;position:relative}
+.legend-swatch.dataflow::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:#2196f3}
+.ai-toggle{display:flex;align-items:center;gap:5px;font-size:8px;cursor:pointer;user-select:none}
+.ai-toggle input{display:none}
+.toggle-track{width:28px;height:14px;background:#555;border-radius:7px;position:relative;transition:background .3s}
+.toggle-track::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;background:#fff;border-radius:50%;transition:transform .3s}
+.ai-toggle input:checked+.toggle-track{background:#f9a825}
+.ai-toggle input:checked+.toggle-track::after{transform:translateX(14px)}
+
+/* ── Lanes container ── */
+.lanes-container{height:calc(100vh - 38px);padding:5px 22px;display:flex;flex-direction:column;gap:4px;position:relative}
+
+/* ── Swim lane ── */
+.swim-lane{flex:1 1 0;min-height:0;display:flex;border-radius:8px;overflow:hidden;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.swim-lane.employee{background:#e3f2fd}
+.swim-lane.manager{background:#fff3e0}
+.swim-lane.admin{background:#f3e5f5}
+.lane-label{width:24px;min-width:24px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;flex-shrink:0}
+.swim-lane.employee .lane-label{background:linear-gradient(180deg,#1565c0,#1976d2)}
+.swim-lane.manager .lane-label{background:linear-gradient(180deg,#e65100,#ef6c00)}
+.swim-lane.admin .lane-label{background:linear-gradient(180deg,#6a1b9a,#8e24aa)}
+.lane-body{flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center;padding:6px 8px;min-width:0}
+.node-row{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;min-width:0}
+
+/* ── Nodes ── */
+.node{flex:1 1 0;min-width:0;height:32px;border-radius:6px;display:flex;align-items:center;padding:0 6px;cursor:pointer;position:relative;transition:transform .15s,box-shadow .15s;overflow:hidden;opacity:0;transform:scale(.92)}
+.node.visible{opacity:1;transform:scale(1)}
+.node:hover{transform:scale(1.04)!important;box-shadow:0 3px 12px rgba(0,0,0,.18);z-index:10}
+.node.standard{background:#fff;border:1.5px solid #90a4ae}
+.node.ai{background:linear-gradient(135deg,#fffde7,#fff9c4);border:1.5px dashed #f9a825}
+.node.additional{background:#e8f5e9;border:1.5px dotted #66bb6a}
+.node.ai.highlight{animation:aiGlow 2.5s ease-in-out infinite}
+@keyframes aiGlow{0%,100%{box-shadow:0 0 4px rgba(249,168,37,.3)}50%{box-shadow:0 0 14px rgba(249,168,37,.7)}}
+.node-title{font-size:7.5px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;line-height:1.2}
+.node-badge{min-width:14px;height:14px;border-radius:7px;background:rgba(0,0,0,.1);font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#555;margin-left:3px;flex-shrink:0}
+.node.ai .node-badge{background:rgba(249,168,37,.25);color:#e65100}
+.node.additional .node-badge{background:rgba(76,175,80,.2);color:#2e7d32}
+
+/* ── Within-lane arrows ── */
+.intra-arrow{flex-shrink:0;width:8px;height:8px;display:flex;align-items:center;justify-content:center}
+.intra-arrow svg{width:8px;height:8px}
+
+/* ── Tooltip ── */
+.tooltip{position:fixed;background:#1a1a2e;color:#fff;border-radius:8px;padding:10px 12px;font-size:8.5px;max-width:280px;z-index:1000;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 8px 24px rgba(0,0,0,.25);line-height:1.5}
+.tooltip.show{opacity:1}
+.tooltip-title{font-weight:700;font-size:9.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.15)}
+.tooltip-title.ai-title{color:#ffe082}
+.tooltip-title.add-title{color:#a5d6a7}
+.tooltip ul{list-style:none;padding:0;margin:0}
+.tooltip li{padding:1.5px 0;position:relative;padding-left:10px}
+.tooltip li::before{content:'•';position:absolute;left:0;color:#e94560}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:12px;padding:20px 24px;max-width:420px;width:90%;max-height:70vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative}
+.modal-close{position:absolute;top:10px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#999;line-height:1}
+.modal-close:hover{color:#333}
+.modal h2{font-size:14px;margin-bottom:4px;color:#1a1a2e}
+.modal .modal-type{font-size:9px;color:#888;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.modal .modal-type.ai-type{color:#f9a825}
+.modal .modal-type.add-type{color:#66bb6a}
+.modal ul{list-style:none;padding:0;margin:0}
+.modal li{padding:5px 0;font-size:11px;color:#444;border-bottom:1px solid #f0f0f0;position:relative;padding-left:16px;line-height:1.5}
+.modal li:last-child{border-bottom:none}
+.modal li::before{content:'→';position:absolute;left:0;color:#e94560;font-weight:700}
+.modal li.ai-bullet::before{color:#f9a825}
+.modal li.add-bullet::before{color:#66bb6a}
+
+/* ── SVG overlay for cross-lane arrows ── */
+.arrow-overlay{position:absolute;inset:0;pointer-events:none;z-index:5}
+.arrow-path{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.arrow-path.approval{stroke:#e94560}
+.arrow-path.dataflow{stroke:#2196f3}
+.arrow-dot{r:3}
+.arrow-dot.approval{fill:#e94560}
+.arrow-dot.dataflow{fill:#2196f3}
+.arrow-head{stroke-width:1.5;fill:none}
+.arrow-head.approval{stroke:#e94560}
+.arrow-head.dataflow{stroke:#2196f3}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-title">Module 4: Leave Management — User Journey Map</div>
+    <div class="header-badge">AI-Native HRMS</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch std"></div>Standard</div>
+    <div class="legend-item"><div class="legend-swatch ai"></div>AI-Powered</div>
+    <div class="legend-item"><div class="legend-swatch approval"></div>Approval</div>
+    <div class="legend-item"><div class="legend-swatch dataflow"></div>Data Flow</div>
+    <label class="ai-toggle"><input type="checkbox" id="aiToggle"><span class="toggle-track"></span>Highlight AI</label>
+  </div>
+</div>
+
+<!-- Lanes -->
+<div class="lanes-container" id="lanesContainer">
+
+  <!-- EMPLOYEE LANE -->
+  <div class="swim-lane employee" id="laneEmployee">
+    <div class="lane-label">Employee</div>
+    <div class="lane-body">
+      <div class="node-row" id="empRow1"></div>
+      <div class="node-row" id="empRow2"></div>
+    </div>
+  </div>
+
+  <!-- MANAGER LANE -->
+  <div class="swim-lane manager" id="laneManager">
+    <div class="lane-label">Manager</div>
+    <div class="lane-body">
+      <div class="node-row" id="mgrRow1"></div>
+      <div class="node-row" id="mgrRow2"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN / HR LANE -->
+  <div class="swim-lane admin" id="laneAdmin">
+    <div class="lane-label">Admin / HR</div>
+    <div class="lane-body">
+      <div class="node-row" id="admRow1"></div>
+      <div class="node-row" id="admRow2"></div>
+    </div>
+  </div>
+
+  <!-- SVG arrow overlay -->
+  <svg class="arrow-overlay" id="arrowSvg"></svg>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <h2 id="modalTitle"></h2>
+    <div class="modal-type" id="modalType"></div>
+    <ul id="modalList"></ul>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// DATA — All 30 features, 138 bullets from Excel
+// ════════════════════════════════════════
+const DATA = {
+  employee: {
+    standard: [
+      { id:'emp_balance', title:'Leave Balance Dashboard', bullets:[
+        'All leave types at a glance: annual, sick, casual, parental, comp-off, unpaid',
+        'Per-type breakdown: accrued, used, pending approval, available balance',
+        'Visual progress bars showing usage vs entitlement',
+        'Year-to-date summary with monthly trend chart',
+        'Carry-forward balance from previous year clearly shown',
+        'Projected balance at year-end based on current usage rate'
+      ]},
+      { id:'emp_apply', title:'Quick Apply', bullets:[
+        'Apply in 3 taps: select type, pick dates, add reason',
+        'Attach supporting documents (medical certificate, travel itinerary)',
+        'See team availability calendar before applying (avoid conflicts)',
+        'Half-day option (first half / second half selection)',
+        'Multi-day leave with individual day type selection (2 annual + 1 sick in one request)',
+        'Draft and save for later submission',
+        'Delegate assignment before submitting (who covers your work)'
+      ]},
+      { id:'emp_calendar', title:'Team Calendar View', bullets:[
+        "Visual calendar showing team members' leave, holidays, and availability",
+        'Color-coded by leave type (annual=blue, sick=red, WFH=green)',
+        'Overlapping leave detection with warning indicator',
+        'Public holidays marked by location',
+        "Click any date to see who's available and who's out",
+        'Toggle views: weekly, monthly, quarterly'
+      ]},
+      { id:'emp_history', title:'Leave History', bullets:[
+        'Full history with status (approved, rejected, cancelled, pending)',
+        'Filter by year, leave type, or status',
+        'Download leave history as Excel/PDF for personal records',
+        'View manager comments on rejected/modified requests'
+      ]},
+      { id:'emp_holiday', title:'Holiday Calendar', bullets:[
+        'Company + location-specific holidays for the year',
+        'Optional holidays with opt-in (choose X from Y optional holidays)',
+        'Calendar integration (sync holidays to Google Calendar / Outlook)',
+        'Upcoming holiday countdown on dashboard'
+      ]},
+      { id:'emp_compoff', title:'Comp-Off & WFH', bullets:[
+        'Claim comp-off for working on holidays/weekends with date and reason',
+        'Comp-off balance tracking with expiry dates',
+        'WFH request with same approval workflow as leave',
+        'WFH tracking dashboard (days used this month/quarter)'
+      ]}
+    ],
+    ai: [
+      { id:'emp_ai_planner', title:'Smart Leave Planner', bullets:[
+        "'Take Dec 24-26 off for 9-day break using only 3 leaves (weekends + holidays)'",
+        'Suggests optimal dates combining weekends, public holidays, and bridge days',
+        'Considers team coverage and project deadlines in suggestions',
+        'Long weekend opportunity alerts throughout the year'
+      ]},
+      { id:'emp_ai_forecast', title:'Balance Forecast', bullets:[
+        'Projects year-end balance based on current usage rate',
+        'Warns about use-it-or-lose-it policies before expiry',
+        'Recommends leave schedule to avoid last-minute rush in Q4'
+      ]},
+      { id:'emp_ai_converse', title:'Conversational Apply', bullets:[
+        "'I need next Friday off' → AI auto-selects leave type, sets date, routes for approval",
+        "'I'm sick today' → creates sick leave for today with appropriate type",
+        "Handles complex requests: 'I want 2 weeks off in August' → suggests best dates"
+      ]},
+      { id:'emp_ai_wellness', title:'Wellness Nudge', bullets:[
+        'Notices 4+ months without leave and suggests taking time off',
+        'Detects sustained high-hour patterns and recommends wellness leave',
+        'Gentle, non-intrusive suggestions respecting individual preferences'
+      ]}
+    ],
+    additional: []
+  },
+  manager: {
+    standard: [
+      { id:'mgr_approval', title:'Approval Dashboard', bullets:[
+        'Pending requests with employee name, leave type, dates, reason visible',
+        'Leave balance shown alongside each request (can they afford this leave?)',
+        'Team coverage impact indicator (who else is out during this period)',
+        'Project deadline context (any critical deliverables during requested dates)',
+        'Approve/reject with comments field',
+        'Counter-suggest alternative dates with one click',
+        'Approval SLA timer (auto-escalates if unactioned within policy timeframe)'
+      ]},
+      { id:'mgr_calendar', title:'Team Leave Calendar', bullets:[
+        'Monthly and quarterly view of team availability',
+        'Minimum staffing alert when too many leaves overlap',
+        'Drag-to-suggest: propose alternative dates directly on calendar',
+        'Department-wide view (see cross-team overlaps)',
+        'Holiday and event overlay for context'
+      ]},
+      { id:'mgr_delegation', title:'Delegation Setup', bullets:[
+        'Assign responsibilities when team members go on leave',
+        'Auto-notify delegates of their temporary responsibilities',
+        "Delegate task list generation from the leaving member's active assignments",
+        'Track delegation completion status'
+      ]},
+      { id:'mgr_analytics', title:'Leave Analytics', bullets:[
+        'Absenteeism rate per team member with trend over 6-12 months',
+        'Average leaves taken vs entitlement (utilization percentage)',
+        'Sick leave trend analysis (spikes, seasonal patterns)',
+        'Cross-team benchmark comparison',
+        'Leave forecast for upcoming months based on historical patterns'
+      ]},
+      { id:'mgr_escalation', title:'Escalation Rules', bullets:[
+        'Auto-escalate unactioned requests after X hours to backup approver',
+        'Configure backup approvers per team/module',
+        'Auto-approve rules for specific leave types (e.g., auto-approve half-day casual if balance > 5)',
+        'Escalation notification chain (manager → skip-level → HR)'
+      ]},
+      { id:'mgr_bulk', title:'Bulk Management', bullets:[
+        'Declare team shutdown days (year-end closure, team offsite)',
+        'Mandatory leave assignment during slow periods',
+        'Force leave for compliance (mandatory leave encashment reduction)',
+        'Bulk approve/reject for team-wide requests'
+      ]}
+    ],
+    ai: [
+      { id:'mgr_ai_coverage', title:'Coverage Risk Analyzer', bullets:[
+        "'Approving this leaves frontend at 40% capacity during sprint close'",
+        'Suggests alternative dates with better coverage impact',
+        "Considers skills overlap — can remaining team cover the absent person's work?",
+        'Risk scoring: green (safe), amber (manageable), red (critical coverage gap)'
+      ]},
+      { id:'mgr_ai_pattern', title:'Pattern Alerting', bullets:[
+        'Flags concerning patterns: repeated Monday sick leaves, every Friday off',
+        'Increasing absence frequency trend detection',
+        'Suggests manager check-in conversation when patterns emerge',
+        'Distinguishes genuine patterns from coincidental clustering'
+      ]},
+      { id:'mgr_ai_copilot', title:'Approval Copilot', bullets:[
+        'Pre-evaluates each request on coverage, balance, policy, fairness, project impact',
+        'Suggests approve/reject with reasoning for each factor',
+        'Fairness check: has this employee been denied more than peers?',
+        'One-click accept AI recommendation or override with reason'
+      ]},
+      { id:'mgr_ai_quarterly', title:'Quarterly Planning Brief', bullets:[
+        'Predicts leave demand for next quarter based on holidays and historical data',
+        'Pre-plan coverage for peak leave periods (summer, year-end, festivals)',
+        'Suggests proactive conversations with team about leave scheduling',
+        'Staffing risk calendar overlay'
+      ]}
+    ],
+    additional: []
+  },
+  admin: {
+    standard: [
+      { id:'adm_policy', title:'Leave Policy Builder', bullets:[
+        'Accrual rules configuration (monthly, quarterly, annual, front-loaded)',
+        'Carry-forward limits (max days, expiry period for carried balance)',
+        'Encashment rules (eligible types, cap, payout formula)',
+        'Pro-rata calculation for mid-year joiners and exiters',
+        'Sandwich rule configuration (weekends/holidays between leave days count or not)',
+        'Minimum/maximum consecutive days per leave type',
+        'Per entity, per country, per grade policy variation support',
+        'Version control with effective dates (new policy from April 1, old preserved for history)'
+      ]},
+      { id:'adm_entitlement', title:'Entitlement Engine', bullets:[
+        'Auto-calculate entitlements by tenure, grade, and location',
+        'Handle mid-year joiners (pro-rata from join date)',
+        'Handle grade changes and transfers (recalculate entitlements automatically)',
+        'Seniority-based incremental entitlements (5+ years = extra 5 days)',
+        'Custom entitlement overrides for specific employees with approval trail'
+      ]},
+      { id:'adm_holiday', title:'Holiday Management', bullets:[
+        'Per-location holiday calendars (HQ vs branch vs factory)',
+        'Optional holidays with employee opt-in (choose 3 from 8 optional)',
+        'Government gazette import for public holidays',
+        'Floating holidays (employee picks any day as holiday from a pool)',
+        'Multi-year holiday calendar planning'
+      ]},
+      { id:'adm_payroll', title:'Leave-Payroll Mapping', bullets:[
+        'LOP deduction rules (which leave types trigger deduction, formula)',
+        'Half-day calculation rules for payroll',
+        'Maternity/paternity pay configuration (full pay, half pay, statutory minimum)',
+        'Sick leave pay thresholds (first X days full pay, then half, then unpaid)',
+        'Encashment payout calculation and trigger rules'
+      ]},
+      { id:'adm_yearend', title:'Year-End Processing', bullets:[
+        'Carry-forward calculation batch run',
+        'Lapse processing (zero out expired balances)',
+        'Encashment calculation and payout generation',
+        'Year-end leave statement generation for all employees',
+        'Balance rollover verification report'
+      ]},
+      { id:'adm_compliance', title:'Compliance Configuration', bullets:[
+        'Jurisdiction-specific minimums (maternity: 45 days UAE, 26 weeks India, 12 weeks US FMLA)',
+        'Paternity leave requirements by country',
+        'Bereavement leave (duration by relationship, documentation requirements)',
+        'Voting leave, jury duty leave, military leave — per applicable jurisdiction',
+        'Regulatory change tracking with policy update alerts'
+      ]}
+    ],
+    ai: [
+      { id:'adm_ai_benchmark', title:'Policy Benchmarking', bullets:[
+        "'Your 20 days annual leave is below market median of 25 for tech companies in UAE'",
+        'Compares your policies against industry, region, and company-size benchmarks',
+        'Identifies competitive gaps that may affect talent attraction/retention',
+        'Recommends specific policy changes with cost impact estimates'
+      ]},
+      { id:'adm_ai_abuse', title:'Abuse Detection', bullets:[
+        'Identifies suspicious patterns: coordinated team absences, systematic weekend extensions',
+        'Medical certificate pattern analysis (same clinic, same day patterns)',
+        'Flags for investigation without false accusations — human decision required',
+        'Severity scoring and investigation priority queue'
+      ]},
+      { id:'adm_ai_liability', title:'Liability Forecast', bullets:[
+        'Predicts leave encashment liability at year-end based on current balances and trends',
+        'Recommends encouraging leave usage to reduce financial exposure',
+        'Models impact of policy changes on liability (e.g., reducing carry-forward cap)',
+        'Quarterly liability report for finance team'
+      ]},
+      { id:'adm_ai_regulatory', title:'Regulatory Auto-Update', bullets:[
+        'Monitors labor law changes globally across all operating jurisdictions',
+        'Alerts when new legislation requires policy updates',
+        'Drafts updated policy language for admin review',
+        'Impact analysis: how many employees affected, cost implications'
+      ]}
+    ],
+    additional: []
+  }
+};
+
+// ════════════════════════════════════════
+// RENDER NODES
+// ════════════════════════════════════════
+const intraArrowSvg = `<svg viewBox="0 0 8 8" fill="none"><path d="M1 4h5M4.5 2L6.5 4L4.5 6" stroke="#b0bec5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function buildRow(containerId, features, type) {
+  const row = document.getElementById(containerId);
+  features.forEach((f, i) => {
+    if (i > 0) {
+      const arrow = document.createElement('div');
+      arrow.className = 'intra-arrow';
+      arrow.innerHTML = intraArrowSvg;
+      row.appendChild(arrow);
+    }
+    const node = document.createElement('div');
+    node.className = `node ${type}`;
+    node.dataset.id = f.id;
+    node.dataset.type = type;
+    node.id = f.id;
+    const prefix = type === 'ai' ? '✦ ' : '';
+    node.innerHTML = `<span class="node-title">${prefix}${f.title}</span><span class="node-badge">${f.bullets.length}</span>`;
+    node.addEventListener('mouseenter', showTooltip);
+    node.addEventListener('mousemove', moveTooltip);
+    node.addEventListener('mouseleave', hideTooltip);
+    node.addEventListener('click', () => openModal(f, type));
+    row.appendChild(node);
+  });
+}
+
+function buildMixedRow(containerId, aiFeatures, additionalFeatures) {
+  const row = document.getElementById(containerId);
+  row.innerHTML = '';
+  const combined = [
+    ...aiFeatures.map(f => ({ ...f, type: 'ai' })),
+    ...additionalFeatures.map(f => ({ ...f, type: 'additional' }))
+  ];
+  combined.forEach((f, i) => {
+    if (i > 0) {
+      const a = document.createElement('div');
+      a.className = 'intra-arrow';
+      a.innerHTML = intraArrowSvg;
+      row.appendChild(a);
+    }
+    const node = document.createElement('div');
+    node.className = `node ${f.type}`;
+    node.dataset.id = f.id;
+    node.dataset.type = f.type;
+    node.id = f.id;
+    const prefix = f.type === 'ai' ? '✦ ' : '';
+    node.innerHTML = `<span class="node-title">${prefix}${f.title}</span><span class="node-badge">${f.bullets.length}</span>`;
+    node.addEventListener('mouseenter', showTooltip);
+    node.addEventListener('mousemove', moveTooltip);
+    node.addEventListener('mouseleave', hideTooltip);
+    node.addEventListener('click', () => openModal(f, f.type));
+    row.appendChild(node);
+  });
+}
+
+// Employee
+buildRow('empRow1', DATA.employee.standard, 'standard');
+buildMixedRow('empRow2', DATA.employee.ai, DATA.employee.additional);
+
+// Manager
+buildRow('mgrRow1', DATA.manager.standard, 'standard');
+buildMixedRow('mgrRow2', DATA.manager.ai, DATA.manager.additional);
+
+// Admin
+buildRow('admRow1', DATA.admin.standard, 'standard');
+buildMixedRow('admRow2', DATA.admin.ai, DATA.admin.additional);
+
+// ════════════════════════════════════════
+// NODE ENTRANCE ANIMATION
+// ════════════════════════════════════════
+const allNodes = document.querySelectorAll('.node');
+allNodes.forEach((n, i) => {
+  setTimeout(() => n.classList.add('visible'), 80 + i * 30);
+});
+
+// ════════════════════════════════════════
+// TOOLTIP
+// ════════════════════════════════════════
+const tooltip = document.getElementById('tooltip');
+function findFeatureData(id) {
+  for (const role of Object.values(DATA)) {
+    for (const group of Object.values(role)) {
+      const f = group.find(x => x.id === id);
+      if (f) return f;
+    }
+  }
+  return null;
+}
+function showTooltip(e) {
+  const node = e.currentTarget;
+  const f = findFeatureData(node.dataset.id);
+  if (!f) return;
+  const type = node.dataset.type;
+  const titleClass = type === 'ai' ? 'ai-title' : type === 'additional' ? 'add-title' : '';
+  const prefix = type === 'ai' ? '✦ ' : '';
+  tooltip.innerHTML = `<div class="tooltip-title ${titleClass}">${prefix}${f.title}</div><ul>${f.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`;
+  tooltip.classList.add('show');
+}
+function moveTooltip(e) {
+  const x = e.clientX + 12;
+  const y = e.clientY + 12;
+  const tw = tooltip.offsetWidth;
+  const th = tooltip.offsetHeight;
+  tooltip.style.left = (x + tw > window.innerWidth ? e.clientX - tw - 8 : x) + 'px';
+  tooltip.style.top = (y + th > window.innerHeight ? e.clientY - th - 8 : y) + 'px';
+}
+function hideTooltip() { tooltip.classList.remove('show'); }
+
+// ════════════════════════════════════════
+// MODAL
+// ════════════════════════════════════════
+const modalOverlay = document.getElementById('modalOverlay');
+const modal = document.getElementById('modal');
+function openModal(f, type) {
+  const prefix = type === 'ai' ? '✦ ' : '';
+  document.getElementById('modalTitle').textContent = prefix + f.title;
+  const typeEl = document.getElementById('modalType');
+  typeEl.textContent = type === 'ai' ? 'AI-Powered Feature' : type === 'additional' ? 'Additional Feature' : 'Standard Feature';
+  typeEl.className = 'modal-type' + (type === 'ai' ? ' ai-type' : type === 'additional' ? ' add-type' : '');
+  const list = document.getElementById('modalList');
+  list.innerHTML = f.bullets.map(b => `<li class="${type === 'ai' ? 'ai-bullet' : type === 'additional' ? 'add-bullet' : ''}">${b}</li>`).join('');
+  modalOverlay.classList.add('show');
+}
+document.getElementById('modalClose').addEventListener('click', () => modalOverlay.classList.remove('show'));
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) modalOverlay.classList.remove('show'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') modalOverlay.classList.remove('show'); });
+
+// ════════════════════════════════════════
+// AI HIGHLIGHT TOGGLE
+// ════════════════════════════════════════
+document.getElementById('aiToggle').addEventListener('change', function() {
+  document.querySelectorAll('.node.ai').forEach(n => {
+    n.classList.toggle('highlight', this.checked);
+  });
+});
+
+// ════════════════════════════════════════
+// CROSS-LANE ARROWS (routed via margins)
+// ════════════════════════════════════════
+function drawArrows() {
+  const svg = document.getElementById('arrowSvg');
+  const container = document.getElementById('lanesContainer');
+  const cRect = container.getBoundingClientRect();
+  svg.setAttribute('viewBox', `0 0 ${cRect.width} ${cRect.height}`);
+  svg.innerHTML = '';
+
+  // Arrow definitions — classic leave approval cycle + data flows
+  // 1. Employee applies leave → Manager approval dashboard (approval)
+  // 2. Manager approves → Employee leave history / status update (approval)
+  // 3. Admin leave policy → Employee balance / entitlements (dataflow)
+  // 4. Admin year-end processing → Employee balance update (dataflow)
+  // 5. Admin leave-payroll mapping → Manager analytics (dataflow)
+  // 6. Manager delegation → Employee team calendar (dataflow)
+
+  const arrows = [
+    { from:'emp_apply', to:'mgr_approval', type:'approval', side:'left', offset:0 },
+    { from:'mgr_approval', to:'emp_history', type:'approval', side:'right', offset:0 },
+    { from:'adm_policy', to:'emp_balance', type:'dataflow', side:'left', offset:1 },
+    { from:'adm_yearend', to:'emp_balance', type:'dataflow', side:'right', offset:1 },
+    { from:'adm_payroll', to:'mgr_analytics', type:'dataflow', side:'right', offset:2 },
+    { from:'mgr_delegation', to:'emp_calendar', type:'dataflow', side:'left', offset:2 },
+  ];
+
+  const leftBase = 4;
+  const rightBase = cRect.width - 4;
+  const channelStep = 5;
+
+  arrows.forEach(a => {
+    const fromEl = document.getElementById(a.from);
+    const toEl = document.getElementById(a.to);
+    if (!fromEl || !toEl) return;
+
+    const fRect = fromEl.getBoundingClientRect();
+    const tRect = toEl.getBoundingClientRect();
+
+    // Convert to container-relative coordinates
+    const fx = fRect.left - cRect.left + fRect.width / 2;
+    const fy_bottom = fRect.bottom - cRect.top;
+    const fy_top = fRect.top - cRect.top;
+    const tx = tRect.left - cRect.left + tRect.width / 2;
+    const ty_top = tRect.top - cRect.top;
+    const ty_bottom = tRect.bottom - cRect.top;
+
+    let channelX;
+    if (a.side === 'left') {
+      channelX = leftBase + a.offset * channelStep;
+    } else {
+      channelX = rightBase - a.offset * channelStep;
+    }
+
+    let path;
+    const goingDown = fy_bottom < ty_top; // source above target
+    if (goingDown) {
+      const sy = fy_bottom + 1;
+      const ey = ty_top - 1;
+      path = `M${fx},${sy} L${fx},${sy+3} L${channelX},${sy+3} L${channelX},${ey-3} L${tx},${ey-3} L${tx},${ey}`;
+    } else {
+      const sy = fy_top - 1;
+      const ey = ty_bottom + 1;
+      path = `M${fx},${sy} L${fx},${sy-3} L${channelX},${sy-3} L${channelX},${ey+3} L${tx},${ey+3} L${tx},${ey}`;
+    }
+
+    // Draw path
+    const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pathEl.setAttribute('d', path);
+    pathEl.setAttribute('class', `arrow-path ${a.type}`);
+    pathEl.setAttribute('fill', 'none');
+    pathEl.id = `arrow_${a.from}_${a.to}`;
+    svg.appendChild(pathEl);
+
+    // Arrowhead at end
+    const headSize = 5;
+    let headPath;
+    if (goingDown) {
+      headPath = `M${tx-headSize},${ty_top-1-headSize} L${tx},${ty_top-1} L${tx+headSize},${ty_top-1-headSize}`;
+    } else {
+      headPath = `M${tx-headSize},${ty_bottom+1+headSize} L${tx},${ty_bottom+1} L${tx+headSize},${ty_bottom+1+headSize}`;
+    }
+    const head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    head.setAttribute('d', headPath);
+    head.setAttribute('class', `arrow-head ${a.type}`);
+    svg.appendChild(head);
+
+    // Animated dot
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('class', `arrow-dot ${a.type}`);
+    dot.setAttribute('r', '3');
+    const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+    anim.setAttribute('dur', '3s');
+    anim.setAttribute('repeatCount', 'indefinite');
+    anim.setAttribute('path', path);
+    dot.appendChild(anim);
+    svg.appendChild(dot);
+  });
+}
+
+// Draw arrows after layout settles
+setTimeout(drawArrows, 500);
+window.addEventListener('resize', () => { clearTimeout(window._arrowTimer); window._arrowTimer = setTimeout(drawArrows, 100); });
+</script>
+</body>
+</html>

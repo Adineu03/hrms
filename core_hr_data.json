@@ -1,0 +1,276 @@
+{
+  "Employee": {
+    "STANDARD": {
+      "My Profile": [
+        "View and edit personal information (full name, DOB, gender, nationality, marital status)",
+        "Update contact details (personal email, phone, current address, permanent address)",
+        "Manage emergency contacts (multiple with name, relationship, phone, priority order)",
+        "Bank details management (add/update account, IBAN, SWIFT, set primary for salary)",
+        "Dependent information (spouse, children, parents — for benefits and tax declarations)",
+        "Profile photo upload with crop and resize tool",
+        "Personal ID section (national ID, passport, visa, driving license — with expiry tracking)",
+        "Employment summary (DOJ, designation, department, grade, manager, tenure calculator)",
+        "Skills and interests section (self-declared skills, languages, hobbies — for internal matching)",
+        "Profile completeness indicator with suggestions to reach 100%",
+        "Edit history (all profile changes with timestamps)"
+      ],
+      "Document Vault": [
+        "View documents organized by category (contracts, identity, financial, certificates, letters)",
+        "Download any document (offer letter, salary revisions, payslips, tax forms)",
+        "Upload personal documents (scanned IDs, certificates, visa copies — with category tagging)",
+        "Document expiry alerts (visa in 60 days, ID renewal, certification lapsing)",
+        "Version history for updated documents",
+        "Secure encrypted access (employee and authorized HR only)",
+        "Bulk download as ZIP for personal record-keeping",
+        "Mobile upload directly from phone camera"
+      ],
+      "Org Chart Explorer": [
+        "Interactive visual org chart from CEO to individual contributors",
+        "Click any person for profile card (name, role, department, email, phone)",
+        "Navigate up (manager, skip-level), down (peers' reports), sideways (peers)",
+        "Dotted-line and matrix reporting relationships visible",
+        "Search by name, department, or designation within org chart",
+        "Filter by department, location, or entity",
+        "Vacant positions shown as dotted-border nodes",
+        "Export org chart as PDF or image"
+      ],
+      "Payslip & Tax": [
+        "Monthly payslip view (gross, basic, allowances, deductions, employer contributions, net pay)",
+        "Download payslips as PDF (individual or bulk for the year)",
+        "Annual tax summary (total earnings, deductions, tax paid, Form 16/W-2 equivalent)",
+        "Year-to-date earnings tracker (running gross, deductions, tax totals)",
+        "Salary structure breakdown (visual pie chart of composition)",
+        "Historical month-over-month and year-over-year comparison",
+        "Tax declaration submission (investment declarations, rent receipts, HRA claims)",
+        "Employer contribution visibility (PF, gratuity, insurance — full CTC view)"
+      ],
+      "Benefits Enrollment": [
+        "Browse all available benefit plans (health, dental, vision, life, retirement, wellness)",
+        "Plan comparison view (side-by-side tiers with coverage, premiums, copays)",
+        "Enroll during open enrollment window with countdown timer",
+        "Life event enrollment triggers (marriage, child birth, adoption)",
+        "Manage dependents for coverage (add/remove with documentation)",
+        "Cost impact calculator (per-paycheck deduction preview before enrolling)",
+        "Digital benefits ID card accessible from mobile",
+        "Claims history view with status and amounts"
+      ],
+      "Self-Service Requests": [
+        "Employment verification letter (auto-generated with letterhead, digital signature, QR verification code)",
+        "NOC generation (for visa, travel, education — multiple templates by purpose)",
+        "Experience letter request (auto-generates with tenure, designation, performance summary)",
+        "Salary certificate request (for loans, visa, tenancy — auto-populated from payroll)",
+        "Name change request (with supporting documents, triggers update across all systems)",
+        "Bank account change request (new details with verification doc, routed to payroll)",
+        "Address change request (self-service with proof if required)",
+        "Request tracking dashboard (status of all pending requests with SLA timers)"
+      ],
+      "Contractor Self-Service": [
+        "Contractor profile with contract dates, scope of work, billing rate, and engagement type",
+        "Contract renewal tracking with expiry alerts",
+        "Timesheet and invoice submission for contractors",
+        "Limited access scope (only relevant modules visible)"
+      ],
+      "Multi-Language Support": [
+        "Interface language selection (English, Arabic, Hindi, Spanish, French, German, Mandarin, Portuguese)",
+        "RTL layout support for Arabic and Hebrew",
+        "Localized date, number, and currency formats per user preference",
+        "Policy documents available in multiple languages"
+      ]
+    },
+    "AI": {
+      "AI Profile Assistant": [
+        "'When does my visa expire?' 'What's my remaining probation?' — instant answers from your data",
+        "Proactive alerts for upcoming expirations and milestones",
+        "Natural language queries about any personal HR data"
+      ],
+      "Benefits Recommender": [
+        "Suggests optimal plan selections based on profile, family status, usage patterns",
+        "Cost-benefit comparison personalized to your situation",
+        "Alerts during enrollment window if better options exist"
+      ],
+      "Smart Document Search": [
+        "Natural language: 'Find my last appraisal letter' → retrieves correct document",
+        "Search across all documents regardless of file name or category",
+        "Fuzzy matching for partial or approximate queries"
+      ],
+      "Tax Optimization Hints": [
+        "Suggests tax-saving declarations based on salary structure and local tax law",
+        "Investment options recommended for maximum tax benefit",
+        "Alerts before declaration deadlines with estimated savings"
+      ]
+    },
+    "ADDITIONAL": {}
+  },
+  "Manager": {
+    "STANDARD": {
+      "Team Directory": [
+        "Full team roster with role, tenure, location, contact info, reporting chain",
+        "Quick filters (by location, grade, employment type, tenure range)",
+        "Team size history chart (how team has grown/shrunk over time)",
+        "Export team list to Excel with selected fields"
+      ],
+      "Team Org Management": [
+        "View current team structure in org chart format",
+        "Propose org changes (transfers, promotions, reporting line changes) with approval workflow",
+        "View impact of proposed changes before submitting (affects on spans, structure)",
+        "Track status of submitted org change requests"
+      ],
+      "Compensation Overview": [
+        "Team salary summary (bands, compa-ratios, band positioning per member — within access rights)",
+        "Bonus eligibility and target overview per team member",
+        "Equity vesting schedules and grant status (where applicable)",
+        "Historical comp changes for each team member"
+      ],
+      "Headcount Tracking": [
+        "Approved vs filled positions dashboard",
+        "Open requisitions with stage and ETA",
+        "Budget vs actual headcount comparison",
+        "Planned vs actual cost per head"
+      ],
+      "Team Compliance": [
+        "Track certifications and mandatory training completion per member",
+        "Visa expiration dashboard with renewal countdown",
+        "Probation milestone tracker (confirmation due dates, review scheduling)",
+        "Compliance gap report (who's missing what)"
+      ],
+      "Letter & Change Requests": [
+        "Initiate salary changes, promotions, transfers, role changes for team members",
+        "Approval workflow with justification and budget impact documentation",
+        "View status of all submitted requests",
+        "Generate and send letters (promotion, transfer) after approval"
+      ],
+      "Blended Workforce View": [
+        "Unified team roster showing FTEs, contractors, and interns in one view",
+        "Engagement type filter and distinct visual indicators",
+        "Contract expiry calendar for contingent workers",
+        "Contractor performance tracking with simplified review forms"
+      ],
+      "Org Modeling": [
+        "What-if org structure simulator (drag-and-drop team restructuring)",
+        "Impact analysis: span of control changes, cost implications, reporting chain effects",
+        "Propose changes with approval workflow — applied only after approval"
+      ]
+    },
+    "AI": {
+      "Team Insights Brief": [
+        "AI-generated monthly summary: tenure distribution, upcoming milestones, compliance gaps, org health",
+        "Highlights changes since last month (new joiners, exits, role changes)",
+        "Proactive alerts for items needing attention"
+      ],
+      "Org Design Suggestions": [
+        "'Your team has 12 direct reports — research suggests 7±2. Consider creating a sub-team.'",
+        "Suggests optimal structures based on team size, function, and industry benchmarks",
+        "Models impact of proposed restructuring on reporting load and communication flow"
+      ],
+      "Comp Equity Alerts": [
+        "Flags pay disparities within team by role, tenure, or demographics for proactive review",
+        "Shows compa-ratio outliers with suggested adjustments",
+        "Benchmarks team comp against market and internal peers"
+      ],
+      "Succession Readiness": [
+        "AI assesses team member readiness for critical/leadership roles",
+        "Scores based on skills, performance trajectory, tenure, and development activities",
+        "Identifies gaps and recommends development actions per candidate"
+      ]
+    },
+    "ADDITIONAL": {}
+  },
+  "Admin / HR": {
+    "STANDARD": {
+      "Employee Master Data": [
+        "Complete employee records management with all standard and custom fields",
+        "Custom field creation per entity (add country-specific fields, industry-specific fields)",
+        "Data import/export in bulk (Excel, CSV) with field mapping",
+        "Deduplication engine (identify and merge duplicate records)",
+        "Mass update capability (change department for 50 employees at once)"
+      ],
+      "Multi-Entity Setup": [
+        "Configure legal entities across countries (name, registration, tax ID, address)",
+        "Entity-level policy separation (different leave policies per country entity)",
+        "Department and cost center mapping per entity",
+        "Grade and designation framework per entity or shared across entities",
+        "Inter-entity transfer workflows with data migration"
+      ],
+      "Payroll Engine": [
+        "Multi-country payroll processing with country-specific tax calculations",
+        "Statutory deduction configuration (PF, ESI, GOSI, Social Security, etc.)",
+        "Arrears calculation and processing (back-dated salary changes)",
+        "Reversal and correction workflows for payroll errors",
+        "Payslip generation and distribution (email, portal, bulk PDF)",
+        "Payroll calendar management (cutoff dates, processing dates, payment dates)",
+        "Integration with banking for salary transfers (WPS for UAE, NEFT for India)"
+      ],
+      "Benefits Administration": [
+        "Configure benefit plans with eligibility rules (by grade, tenure, entity)",
+        "Contribution structures (employer %, employee %, flat amounts)",
+        "Vendor integrations (insurance companies, retirement fund managers)",
+        "Open enrollment period configuration with auto-notifications",
+        "Life event trigger rules for mid-cycle enrollment"
+      ],
+      "Compliance Management": [
+        "Labor law compliance tracking per jurisdiction",
+        "Statutory reporting (PF returns, ESI, GOSI, WPS, P60, W-2 — auto-generated)",
+        "Document retention policy configuration and enforcement",
+        "Mandatory training tracking with escalation for non-compliance",
+        "Labor inspection readiness dashboard"
+      ],
+      "Data Governance": [
+        "Field-level access controls (who can see salary, national ID, bank details)",
+        "PII encryption at rest and in transit",
+        "GDPR consent management (employee consent tracking, right to erasure workflows)",
+        "Complete audit log of every data mutation (who, when, what, old value, new value)",
+        "Data export and portability tools for compliance requests"
+      ],
+      "Multi-Entity Management": [
+        "Manage multiple legal entities from single instance with entity-level data isolation",
+        "Cross-entity reporting with consolidation views",
+        "Entity-specific policy configuration with inheritance from parent",
+        "Inter-entity transfer workflow with compliance handling"
+      ],
+      "Contractor Lifecycle Management": [
+        "Contractor onboarding workflow (separate from employee onboarding)",
+        "Contract management with version control and renewal tracking",
+        "Contractor billing rate and invoice management",
+        "Auto-classification checker (contractor vs employee per jurisdiction rules)",
+        "Contractor offboarding with access revocation and IP handover"
+      ],
+      "Custom Field Engine": [
+        "Create unlimited custom fields per module (text, number, date, dropdown, multi-select, file)",
+        "Conditional field visibility rules (show field X only if field Y equals Z)",
+        "Custom fields available in reports, workflows, and API",
+        "Field-level permissions (who can view/edit each custom field)"
+      ]
+    },
+    "AI": {
+      "AI Org Designer": [
+        "Suggests optimal structures from performance data, collaboration patterns, and cost data",
+        "Models impact of restructuring (reporting load, communication overhead, cost changes)",
+        "Benchmarks against industry-standard org shapes for company size and stage"
+      ],
+      "Smart Document Parser": [
+        "OCR + NLP auto-extracts fields from uploaded ID cards, contracts, certificates",
+        "Auto-populates employee records from scanned documents",
+        "Supports multiple languages and document formats",
+        "Confidence scores per extracted field with manual review for low-confidence items"
+      ],
+      "Payroll Anomaly Detection": [
+        "Flags calculation errors, unusual amounts, and policy violations before payroll finalizes",
+        "Compares current month to historical patterns per employee",
+        "Detects duplicate payments, missed deductions, incorrect tax calculations",
+        "Pre-audit report with severity classification before processing"
+      ],
+      "Predictive Compliance": [
+        "Monitors regulatory changes globally and predicts impact on your policies per jurisdiction",
+        "Alerts when new legislation requires policy updates",
+        "Estimates effort and cost of compliance changes",
+        "Suggests policy modifications to stay ahead of regulatory shifts"
+      ],
+      "Smart Entity Setup": [
+        "When adding a new entity/country, AI pre-configures all statutory requirements",
+        "Suggests policy adjustments based on local labor law and entity characteristics",
+        "Migration assistant for employee transfers between entities"
+      ]
+    },
+    "ADDITIONAL": {}
+  }
+}

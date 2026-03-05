@@ -1,0 +1,29 @@
+{
+  "name": "hrms",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "test": "turbo test",
+    "db:generate": "turbo db:generate --filter=@hrms/api",
+    "db:migrate": "turbo db:migrate --filter=@hrms/api",
+    "db:push": "turbo db:push --filter=@hrms/api",
+    "seed:demo": "turbo seed:demo --filter=@hrms/api"
+  },
+  "devDependencies": {
+    "turbo": "^2"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "bcrypt",
+      "esbuild",
+      "msgpackr-extract",
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
+}

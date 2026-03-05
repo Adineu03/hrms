@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 1: Cold Start & Setup — User Journey Map | AI-Native HRMS</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100vw;height:100vh;overflow:hidden;font-family:'Inter',-apple-system,'Segoe UI',system-ui,Roboto,sans-serif;background:#f8f9fb;color:#1a1a2e}
+#app{width:100vw;height:100vh;display:flex;flex-direction:column}
+
+/* ── Header ── */
+#header{height:50px;min-height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#fff;border-bottom:1px solid #e2e4e9;box-shadow:0 1px 3px rgba(0,0,0,.05);z-index:100}
+.title-section{display:flex;align-items:baseline;gap:12px}
+.title-section h1{font-size:14px;font-weight:700;color:#1a1a2e;white-space:nowrap}
+.subtitle{font-size:10px;font-weight:600;color:#7c3aed;background:#f3e8ff;padding:2px 9px;border-radius:10px;white-space:nowrap}
+.legend{display:flex;align-items:center;gap:18px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#666;white-space:nowrap}
+.legend-swatch{width:22px;height:13px;border-radius:3px;border:1.5px solid}
+.legend-swatch.std{background:#fff;border-color:#90a4ae}
+.legend-swatch.ai{background:linear-gradient(135deg,#ede7f6,#e8eaf6);border-color:#7c3aed;border-style:dashed}
+.legend-line{width:28px;height:0;border-top:2.5px solid}
+.legend-line.flow{border-color:#9c27b0}
+.legend-line.ai-flow{border-color:#7c3aed;border-top-style:dashed}
+.controls{display:flex;align-items:center;gap:5px}
+.controls button{padding:3px 10px;border:1px solid #ddd;border-radius:5px;background:#fff;cursor:pointer;font-size:10px;font-weight:600;transition:all .2s;color:#555}
+.controls button:hover{background:#f5f5f5;border-color:#bbb}
+.controls button.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+
+/* ── Diagram ── */
+#diagram-wrapper{flex:1;overflow:hidden;position:relative}
+#diagram-container{width:100%;height:100%;transform-origin:center center;transition:transform .3s ease;position:relative}
+#arrows-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
+#lanes{width:100%;height:100%;display:flex;flex-direction:column;position:relative;z-index:1}
+
+/* ── Lanes ── */
+.lane{display:flex;align-items:stretch;border-bottom:1px solid rgba(0,0,0,.06);position:relative;overflow:hidden}
+.lane:last-child{border-bottom:none}
+#lane-employee{flex:0 0 22%;background:linear-gradient(135deg,#E3F2FD 0%,#e8f4fd 100%)}
+#lane-manager{flex:0 0 22%;background:linear-gradient(135deg,#FFF3E0 0%,#fff6e8 100%)}
+#lane-admin{flex:1;background:linear-gradient(135deg,#F3E5F5 0%,#f6eaf8 100%)}
+.lane-label{width:82px;min-width:82px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#333;text-align:center;padding:6px 4px;border-right:2.5px solid rgba(0,0,0,.08);background:rgba(255,255,255,.35);line-height:1.2}
+.lane-content{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:8px 14px}
+.lane-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* ── Nodes ── */
+.node{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:#fff;border:1.5px solid #b0bec5;border-radius:8px;font-size:10.5px;font-weight:600;color:#37474f;cursor:pointer;transition:all .25s ease;position:relative;white-space:nowrap;opacity:0;transform:scale(.92);animation:nodeIn .4s ease forwards}
+.node:hover{box-shadow:0 4px 14px rgba(0,0,0,.14);transform:scale(1.04) translateY(-2px);z-index:20;border-color:#78909c}
+.badge{background:#90a4ae;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;white-space:nowrap;line-height:1.3}
+.node.ai-node{background:linear-gradient(135deg,#ede7f6,#e8eaf6);border:1.5px dashed #7c3aed}
+.node.ai-node:hover{border-color:#6d28d9;box-shadow:0 4px 16px rgba(124,58,237,.25)}
+.node.ai-node .badge{background:#7c3aed}
+.ai-icon{color:#7c3aed;font-size:12px;line-height:1}
+.ai-note{font-size:9px;color:#999;font-style:italic;padding:5px 10px;border:1px dashed #ccc;border-radius:6px;background:rgba(255,255,255,.45);white-space:nowrap;opacity:0;animation:nodeIn .4s ease forwards}
+.connector{color:#bbb;font-size:14px;padding:0 1px;user-select:none;opacity:0;animation:nodeIn .4s ease forwards}
+.section-divider{width:1px;height:28px;background:rgba(0,0,0,.1);margin:0 8px;opacity:0;animation:nodeIn .4s ease forwards}
+.ai-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#7c3aed;background:rgba(124,58,237,.08);padding:2px 7px;border-radius:4px;white-space:nowrap;opacity:0;animation:nodeIn .4s ease forwards}
+
+/* ── Tooltip ── */
+#tooltip{position:fixed;background:#fff;border:1px solid #e0e0e0;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.16);padding:14px 16px;max-width:340px;max-height:300px;overflow-y:auto;z-index:1000;pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s;font-size:12px}
+#tooltip.visible{opacity:1;transform:translateY(0)}
+#tooltip h3{font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #eee}
+#tooltip ul{list-style:none;padding:0}
+#tooltip ul li{padding:3px 0;font-size:10.5px;color:#555;line-height:1.45}
+#tooltip ul li::before{content:'\2022';color:#7c3aed;font-weight:700;margin-right:6px}
+#tooltip::-webkit-scrollbar{width:4px}
+#tooltip::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px}
+
+/* ── Modal ── */
+#modal-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:2000;backdrop-filter:blur(3px)}
+#modal-overlay.visible{display:flex}
+#modal{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.28);padding:28px 32px;max-width:520px;width:92%;max-height:72vh;overflow-y:auto;animation:modalIn .22s ease}
+#modal h2{font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+#modal .modal-meta{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+#modal .modal-role{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+#modal .modal-type{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:700}
+#modal .modal-type.standard{background:#e8f5e9;color:#2e7d32}
+#modal .modal-type.ai{background:#f3e8ff;color:#7c3aed}
+#modal ul{list-style:none;padding:0}
+#modal ul li{padding:7px 0;font-size:13px;color:#444;line-height:1.5;border-bottom:1px solid #f5f5f5}
+#modal ul li:last-child{border-bottom:none}
+#modal ul li::before{content:'\2022';color:#7c3aed;font-weight:700;margin-right:8px}
+#modal::-webkit-scrollbar{width:5px}
+#modal::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px}
+
+/* ── Animations ── */
+@keyframes nodeIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes aiPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,58,237,0)}50%{box-shadow:0 0 14px 3px rgba(124,58,237,.18)}}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.node.ai-node{animation:nodeIn .4s ease forwards,aiPulse 2.2s ease-in-out .5s infinite}
+
+/* ── AI Highlight Mode ── */
+.ai-highlight .node:not(.ai-node){opacity:.3!important;filter:grayscale(.5)}
+.ai-highlight .ai-note{opacity:.25!important}
+.ai-highlight .connector,.ai-highlight .section-divider{opacity:.2!important}
+.ai-highlight .node.ai-node{box-shadow:0 0 20px 5px rgba(124,58,237,.35)!important;transform:scale(1.04)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="header">
+    <div class="title-section">
+      <h1>Module 1: Cold Start &amp; Setup &mdash; User Journey Map</h1>
+      <span class="subtitle">AI-Native HRMS</span>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-swatch std"></div>Standard</div>
+      <div class="legend-item"><div class="legend-swatch ai"></div>AI-Powered</div>
+      <div class="legend-item"><div class="legend-line flow"></div>Data Flow</div>
+      <div class="legend-item"><div class="legend-line ai-flow"></div>AI Link</div>
+    </div>
+    <div class="controls">
+      <button id="btn-ai" title="Highlight AI features">&#10024; Highlight AI</button>
+      <button id="btn-zin" title="Zoom in">+</button>
+      <button id="btn-zout" title="Zoom out">&minus;</button>
+    </div>
+  </header>
+
+  <div id="diagram-wrapper">
+    <div id="diagram-container">
+      <svg id="arrows-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ah-purple" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#9c27b0"/></marker>
+          <marker id="ah-orange" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#ef6c00"/></marker>
+          <marker id="ah-violet" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#7c3aed"/></marker>
+        </defs>
+      </svg>
+      <div id="lanes">
+
+        <!-- ═══ EMPLOYEE LANE ═══ -->
+        <div class="lane" id="lane-employee">
+          <div class="lane-label">Employee</div>
+          <div class="lane-content">
+            <div class="lane-row">
+              <div class="node" id="emp-onboard" style="animation-delay:.05s">Accept Invitation &amp; Onboard <span class="badge">7</span></div>
+              <div class="connector" style="animation-delay:.1s">&rarr;</div>
+              <div class="node" id="emp-tour" style="animation-delay:.15s">Explore System with Guided Tour <span class="badge">4</span></div>
+              <div class="section-divider" style="animation-delay:.2s"></div>
+              <div class="ai-label" style="animation-delay:.22s">AI</div>
+              <div class="node ai-note-node" id="emp-ai-none" style="animation-delay:.25s;background:rgba(255,255,255,.35);border:1px dashed #b0bec5;font-style:italic;color:#888;font-weight:500"><span class="ai-icon">&#10022;</span> None at Cold Start <span class="badge" style="background:#b0bec5">1</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ MANAGER LANE ═══ -->
+        <div class="lane" id="lane-manager">
+          <div class="lane-label">Manager</div>
+          <div class="lane-content">
+            <div class="lane-row">
+              <div class="node" id="mgr-team" style="animation-delay:.3s">View Pre-Configured Team Structure <span class="badge">4</span></div>
+              <div class="connector" style="animation-delay:.35s">&rarr;</div>
+              <div class="node" id="mgr-checklist" style="animation-delay:.4s">Getting Started Checklist <span class="badge">4</span></div>
+              <div class="section-divider" style="animation-delay:.45s"></div>
+              <div class="ai-label" style="animation-delay:.47s">AI</div>
+              <div class="node ai-note-node" id="mgr-ai-none" style="animation-delay:.5s;background:rgba(255,255,255,.35);border:1px dashed #b0bec5;font-style:italic;color:#888;font-weight:500"><span class="ai-icon">&#10022;</span> None at Cold Start <span class="badge" style="background:#b0bec5">1</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ ADMIN / HR LANE ═══ -->
+        <div class="lane" id="lane-admin">
+          <div class="lane-label">Admin / HR</div>
+          <div class="lane-content">
+            <div class="lane-row">
+              <div class="node" id="admin-wizard" style="animation-delay:.55s">Setup Wizard &mdash; Company Profile <span class="badge">7</span></div>
+              <div class="connector" style="animation-delay:.58s">&rarr;</div>
+              <div class="node" id="admin-autoconfig" style="animation-delay:.6s">Auto-Configuration Engine <span class="badge">8</span></div>
+              <div class="connector" style="animation-delay:.63s">&rarr;</div>
+              <div class="node" id="admin-structure" style="animation-delay:.65s">Work Structure Setup <span class="badge">7</span></div>
+              <div class="connector" style="animation-delay:.68s">&rarr;</div>
+              <div class="node" id="admin-import" style="animation-delay:.7s">Employee Import <span class="badge">13</span></div>
+            </div>
+            <div class="lane-row">
+              <div class="node" id="admin-modules" style="animation-delay:.75s">Module Activation <span class="badge">7</span></div>
+              <div class="connector" style="animation-delay:.78s">&rarr;</div>
+              <div class="node" id="admin-demo" style="animation-delay:.8s">Demo Company Loader <span class="badge">9</span></div>
+              <div class="connector" style="animation-delay:.83s">&rarr;</div>
+              <div class="node" id="admin-empty" style="animation-delay:.85s">Empty State UX &amp; Defaults <span class="badge">6</span></div>
+            </div>
+            <div class="lane-row">
+              <div class="ai-label" style="animation-delay:.88s">AI-POWERED</div>
+              <div class="node ai-node" id="admin-ai-mapper" style="animation-delay:.9s"><span class="ai-icon">&#10022;</span> AI Column Mapper <span class="badge">5</span></div>
+              <div class="connector" style="animation-delay:.92s">&rarr;</div>
+              <div class="node ai-node" id="admin-ai-orgchart" style="animation-delay:.95s"><span class="ai-icon">&#10022;</span> Smart Org Chart Builder <span class="badge">4</span></div>
+              <div class="connector" style="animation-delay:.97s">&rarr;</div>
+              <div class="node ai-node" id="admin-ai-quality" style="animation-delay:1s"><span class="ai-icon">&#10022;</span> Data Quality Scorer <span class="badge">4</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"><h3 id="tt-title"></h3><ul id="tt-list"></ul></div>
+
+<!-- Modal -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="m-title"></h2>
+    <div class="modal-meta"><span class="modal-role" id="m-role"></span><span class="modal-type" id="m-type"></span></div>
+    <ul id="m-list"></ul>
+  </div>
+</div>
+
+<script>
+/* ─── Feature Data (all 91 bullet points) ─── */
+const D = {
+  'emp-ai-none': {
+    title: 'None at Cold Start',
+    role: 'Employee', type: 'ai',
+    features: [
+      'AI features activate as organizational data accumulates over time'
+    ]
+  },
+  'mgr-ai-none': {
+    title: 'None at Cold Start',
+    role: 'Manager', type: 'ai',
+    features: [
+      'AI features activate as organizational data accumulates over time'
+    ]
+  },
+  'emp-onboard': {
+    title: 'Accept Invitation & Onboard',
+    role: 'Employee', type: 'standard',
+    features: [
+      'Receive welcome email with secure one-time login link',
+      'Set password with strength meter and optional MFA setup (TOTP, SMS)',
+      'Complete personal profile (photo, emergency contacts, bank details, address)',
+      'Review and correct pre-populated information from admin import',
+      'Acknowledge company policies (handbook, code of conduct, data privacy consent)',
+      'Download mobile app via QR code or direct app store link from welcome screen',
+      'Choose notification preferences (email, push, in-app \u2014 per category)'
+    ]
+  },
+  'emp-tour': {
+    title: 'Explore System with Guided Tour',
+    role: 'Employee', type: 'standard',
+    features: [
+      'Interactive walkthrough highlighting key sections (dashboard, leave, attendance, profile)',
+      'Contextual tooltips on first visit to each module explaining its purpose',
+      'Help center with searchable FAQs, video guides, and contact HR option',
+      "Dismissible tips that don\u2019t reappear once acknowledged"
+    ]
+  },
+  'mgr-team': {
+    title: 'View Pre-Configured Team Structure',
+    role: 'Manager', type: 'standard',
+    features: [
+      'See auto-generated team org chart based on imported data',
+      'Review direct reports list with imported details (name, role, department, hire date)',
+      'Verify reporting relationships are correct before go-live',
+      'Flag incorrect assignments for admin to fix'
+    ]
+  },
+  'mgr-checklist': {
+    title: 'Getting Started Checklist',
+    role: 'Manager', type: 'standard',
+    features: [
+      'Role-specific onboarding steps (review team, set up shifts, schedule 1:1s)',
+      'Progress tracker showing completed vs pending setup tasks',
+      'Contextual tips per step with links to help articles and video tutorials',
+      'Estimated time per task to set expectations'
+    ]
+  },
+  'admin-wizard': {
+    title: 'Setup Wizard \u2014 Company Profile',
+    role: 'Admin / HR', type: 'standard',
+    features: [
+      'Company name, legal name, and trade license number input',
+      'Country of incorporation selection \u2192 auto-loads labor law defaults, currency, date format, timezone',
+      'Industry selection \u2192 auto-loads industry-specific policy templates, comp benchmarks, competency frameworks',
+      'Company size bracket selection \u2192 adjusts default approval chains, org structure templates, module recommendations',
+      'Logo and brand color upload \u2192 applied across portal, careers page, offer letters, payslips',
+      'Fiscal year configuration (calendar year, April-March, custom \u2014 affects accrual, budgets, review cycles)',
+      'Multi-entity toggle for multi-country operations \u2192 enables entity-level policy separation'
+    ]
+  },
+  'admin-autoconfig': {
+    title: 'Auto-Configuration Engine',
+    role: 'Admin / HR', type: 'standard',
+    features: [
+      'Leave policies pre-loaded per country labor law (annual, sick, maternity/paternity minimums, bereavement)',
+      'Payroll tax structure configured (income tax slabs, PF/ESI/GOSI/Social Security, employer contributions)',
+      'Public holiday calendar auto-imported from government gazette for selected country and year',
+      'Attendance policy defaults set (grace period, late-mark threshold, half-day rules, OT eligibility)',
+      'Currency, timezone, date format, and language defaults applied',
+      'Working week auto-set per region (Mon-Fri, Sun-Thu for GCC, Mon-Sat for certain regions)',
+      'Statutory reporting templates loaded (WPS for UAE, PF returns for India, P60 for UK, W-2 for US)',
+      'Compliance checklists activated per jurisdiction (document retention, mandatory training, labor inspection readiness)'
+    ]
+  },
+  'admin-structure': {
+    title: 'Work Structure Setup',
+    role: 'Admin / HR', type: 'standard',
+    features: [
+      'Department creation with parent hierarchy, cost center code, and department head assignment',
+      'Location/office setup with address, timezone, GPS coordinates for geo-fencing, entity mapping',
+      'Grade/level structure definition (names, level order, salary band linkage, promotion path)',
+      'Designation master (job titles mapped to grades \u2014 used across offer letters, org chart, reporting)',
+      'Work model selection per entity/department (office, hybrid, remote, field/shift \u2014 sets attendance defaults)',
+      'Working hours definition (standard start/end, flexible window, core hours for hybrid)',
+      'Shift template auto-loading based on work model selection'
+    ]
+  },
+  'admin-import': {
+    title: 'Employee Import',
+    role: 'Admin / HR', type: 'standard',
+    features: [
+      'Excel/CSV upload with drag-and-drop file zone and column preview showing first 10 rows',
+      'Manual column mapping interface (drag source to target fields) with auto-save',
+      'Template download (pre-formatted Excel with all accepted columns, data validation, sample data)',
+      'Bulk validation report showing all errors, warnings, and suggestions before import commits',
+      'Row-level error details (which row, which column, what\u2019s wrong, suggested fix)',
+      'Partial import option (import valid rows, skip errored, download error report for fixing)',
+      'Duplicate detection (match on email, phone, national ID \u2014 merge/skip/override options)',
+      'Manager relationship mapping \u2192 auto-build reporting hierarchy from manager column',
+      'Incremental import support (add new or update existing without duplicating)',
+      'Historical data import (hire dates, salary history, leave balances from previous system)',
+      'API-based import (connect to existing HRMS, map fields, schedule sync for migration)',
+      'Manual single-employee add form and start-empty option to defer import',
+      'Welcome invitation toggle (send login invites immediately or defer to later)'
+    ]
+  },
+  'admin-modules': {
+    title: 'Module Activation',
+    role: 'Admin / HR', type: 'standard',
+    features: [
+      'Visual grid of all 11 modules with on/off toggle',
+      'Recommended starter pack highlighted (Time + Leave + Core HR)',
+      "Module dependency indicators (e.g., 'Compensation benefits from Performance data')",
+      'Instant activation \u2014 no setup required, all modules pre-configured with defaults',
+      'Deactivation hides module but retains data (re-enable anytime without data loss)',
+      'Per-entity module control (enable Recruitment for HQ but not branches)',
+      'Sub-feature flags within each module (e.g., toggle Shift Management within Time & Attendance)'
+    ]
+  },
+  'admin-demo': {
+    title: 'Demo Company Loader',
+    role: 'Admin / HR', type: 'standard',
+    features: [
+      "One-click 'Load Demo Company' button during setup",
+      'Loads complete fictional company (200 employees, 12 months history, all modules populated)',
+      "Persistent 'Demo Mode' banner across the interface \u2014 clearly labeled",
+      'Tenant-isolated from any real data the admin may add',
+      'Includes realistic transactional data (attendance, leave, timesheets, reviews, recruitment)',
+      'AI features active on demo data showcasing predictions, insights, smart suggestions',
+      'One-click wipe (removes all demo data, resets to fresh empty system)',
+      'Option to keep configurations (policies, workflows) while wiping employee data',
+      'Demo login credentials for all three roles (admin, manager, employee)'
+    ]
+  },
+  'admin-empty': {
+    title: 'Empty State UX & Defaults',
+    role: 'Admin / HR', type: 'standard',
+    features: [
+      'Every screen shows purposeful empty state with contextual guidance (not blank/error)',
+      "Call-to-action buttons on each empty screen ('Add your first employee,' 'Configure shifts')",
+      'Getting started checklist widget on admin dashboard with completion percentage',
+      'Video walkthrough links on complex setup screens (policy config, payroll mapping)',
+      'Country-specific policy packs, industry-specific templates \u2014 all version-controlled',
+      'One-click reset to default if customization goes wrong'
+    ]
+  },
+  'admin-ai-mapper': {
+    title: 'AI Column Mapper',
+    role: 'Admin / HR', type: 'ai',
+    features: [
+      'Auto-detects column types from headers and sample data patterns',
+      "Maps variant names ('Emp Name', 'Full Name', 'Name') to correct field automatically",
+      'Detects and normalizes date formats (DD/MM/YYYY vs MM/DD/YYYY) automatically',
+      'Confidence score per mapping with manual override option',
+      'Learns from admin corrections for future imports'
+    ]
+  },
+  'admin-ai-orgchart': {
+    title: 'Smart Org Chart Builder',
+    role: 'Admin / HR', type: 'ai',
+    features: [
+      'Infers reporting hierarchy from manager columns in imported data',
+      'Detects circular references and flags them for admin to fix',
+      'Identifies orphan employees and suggests likely managers based on department',
+      'Detects unreasonable spans of control and suggests intermediate levels'
+    ]
+  },
+  'admin-ai-quality': {
+    title: 'Data Quality Scorer',
+    role: 'Admin / HR', type: 'ai',
+    features: [
+      "Scores overall import quality (e.g., '78% complete \u2014 44 records missing phone')",
+      'Categorizes issues by severity (critical, warning, info)',
+      'Suggests likely values for missing fields based on patterns in the dataset',
+      'Data enrichment suggestions (validate national ID formats, email domains)'
+    ]
+  }
+};
+
+/* ─── Cross-lane arrow definitions ─── */
+const arrows = [
+  { from:'admin-import',     to:'emp-onboard',    color:'#9c27b0', marker:'ah-purple', dash:false },
+  { from:'admin-structure',  to:'mgr-team',       color:'#9c27b0', marker:'ah-purple', dash:false },
+  { from:'admin-autoconfig', to:'mgr-checklist',  color:'#9c27b0', marker:'ah-purple', dash:false },
+  { from:'admin-modules',    to:'emp-tour',       color:'#9c27b0', marker:'ah-purple', dash:false },
+  { from:'mgr-team',         to:'admin-structure', color:'#ef6c00', marker:'ah-orange', dash:false },
+  { from:'admin-ai-orgchart',to:'mgr-team',       color:'#7c3aed', marker:'ah-violet', dash:true  }
+];
+
+/* ─── Tooltip ─── */
+const tooltip = document.getElementById('tooltip');
+const ttTitle = document.getElementById('tt-title');
+const ttList  = document.getElementById('tt-list');
+let ttTimer = null;
+
+function showTooltip(nodeEl, data) {
+  ttTitle.textContent = data.title;
+  ttList.innerHTML = data.features.map(f => '<li>' + f + '</li>').join('');
+  const r = nodeEl.getBoundingClientRect();
+  let top = r.bottom + 6;
+  let left = r.left;
+  if (top + 240 > window.innerHeight) top = r.top - 240;
+  if (left + 320 > window.innerWidth) left = window.innerWidth - 340;
+  if (left < 8) left = 8;
+  tooltip.style.top = top + 'px';
+  tooltip.style.left = left + 'px';
+  tooltip.classList.add('visible');
+}
+function hideTooltip() { tooltip.classList.remove('visible'); }
+
+/* ─── Modal ─── */
+const overlay = document.getElementById('modal-overlay');
+const mTitle = document.getElementById('m-title');
+const mRole  = document.getElementById('m-role');
+const mType  = document.getElementById('m-type');
+const mList  = document.getElementById('m-list');
+
+function openModal(data) {
+  mTitle.textContent = data.title;
+  mRole.textContent = data.role;
+  mType.textContent = data.type === 'ai' ? 'AI-Powered' : 'Standard Feature';
+  mType.className = 'modal-type ' + (data.type === 'ai' ? 'ai' : 'standard');
+  mList.innerHTML = data.features.map(f => '<li>' + f + '</li>').join('');
+  overlay.classList.add('visible');
+}
+function closeModal() { overlay.classList.remove('visible'); }
+overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ─── Attach node events ─── */
+document.querySelectorAll('.node').forEach(el => {
+  const data = D[el.id];
+  if (!data) return;
+  el.addEventListener('mouseenter', () => { clearTimeout(ttTimer); showTooltip(el, data); });
+  el.addEventListener('mouseleave', () => { ttTimer = setTimeout(hideTooltip, 120); });
+  el.addEventListener('click', () => { hideTooltip(); openModal(data); });
+});
+
+/* ─── Draw Arrows ─── */
+const svg = document.getElementById('arrows-svg');
+const NS = 'http://www.w3.org/2000/svg';
+
+/* Which admin nodes are in Row 1 (topmost row, nothing above them in admin lane) */
+const adminRow1 = new Set(['admin-wizard','admin-autoconfig','admin-structure','admin-import']);
+
+function rel(el) {
+  const r = el.getBoundingClientRect();
+  const cr = svg.getBoundingClientRect();
+  return {
+    cx: r.left + r.width / 2 - cr.left,
+    cy: r.top + r.height / 2 - cr.top,
+    t: r.top - cr.top, b: r.bottom - cr.top,
+    l: r.left - cr.left, r: r.right - cr.left
+  };
+}
+
+function drawArrows() {
+  svg.querySelectorAll('.arrow-path,.arrow-dot').forEach(e => e.remove());
+  const cr = svg.getBoundingClientRect();
+
+  /* Lane boundary Y values */
+  const borderEM = document.getElementById('lane-employee').getBoundingClientRect().bottom - cr.top;
+  const borderMA = document.getElementById('lane-manager').getBoundingClientRect().bottom - cr.top;
+
+  /* Find rightmost edge of ALL nodes to establish a clear vertical routing channel */
+  let maxRight = 0;
+  document.querySelectorAll('.node, .ai-note-node').forEach(n => {
+    maxRight = Math.max(maxRight, n.getBoundingClientRect().right - cr.left);
+  });
+  const CHANNEL = maxRight + 28; /* Clear vertical channel to the right of every node */
+
+  /* Find the topmost edge of Admin Row 1 nodes (for safe routing above them) */
+  let adminRow1Top = Infinity;
+  adminRow1.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) adminRow1Top = Math.min(adminRow1Top, el.getBoundingClientRect().top - cr.top);
+  });
+  const safeAboveAdmin = adminRow1Top - 12; /* Y that is above all Admin Row 1 nodes */
+
+  const SP = 8; /* Spacing between parallel arrow segments */
+
+  arrows.forEach((a, idx) => {
+    const fromEl = document.getElementById(a.from);
+    const toEl   = document.getElementById(a.to);
+    if (!fromEl || !toEl) return;
+
+    const f = rel(fromEl);
+    const t = rel(toEl);
+
+    const fromAdmin = a.from.startsWith('admin');
+    const fromMgr   = a.from.startsWith('mgr');
+    const toEmp     = a.to.startsWith('emp');
+    const toMgr     = a.to.startsWith('mgr');
+    const toAdmin   = a.to.startsWith('admin');
+    const isRow1    = adminRow1.has(a.from);
+
+    let d;
+
+    if (fromAdmin && toEmp) {
+      /* ── Admin → Employee (crosses 2 lane boundaries) ── */
+      const chX = CHANNEL + idx * SP;
+      const hMA = borderMA - 6 - idx * SP;  /* horizontal at MA border */
+      const hEM = borderEM + 6 + idx * SP;  /* horizontal at EM border */
+
+      if (isRow1) {
+        /* Row 1: exit top → up to MA border → right to channel → up to EM border → left to target → up */
+        d = `M${f.cx} ${f.t - 2} V${hMA} H${chX} V${hEM} H${t.cx} V${t.b + 2}`;
+      } else {
+        /* Row 2/3: exit top → up tiny → right to channel (avoids Row 1) → up to EM border → left → up */
+        const safeY = safeAboveAdmin - idx * SP;
+        d = `M${f.cx} ${f.t - 2} V${f.t - 10} H${chX} V${hEM} H${t.cx} V${t.b + 2}`;
+      }
+    }
+    else if (fromAdmin && toMgr) {
+      /* ── Admin → Manager (crosses 1 lane boundary) ── */
+      const hMA = borderMA - 6 - idx * SP;
+
+      if (isRow1) {
+        /* Row 1: exit top → up to MA border → horizontal to target → up to target */
+        d = `M${f.cx} ${f.t - 2} V${hMA} H${t.cx} V${t.b + 2}`;
+      } else {
+        /* Row 2/3: exit top → tiny up → right to channel → up to MA border → left to target → up */
+        const chX = CHANNEL + idx * SP;
+        d = `M${f.cx} ${f.t - 2} V${f.t - 10} H${chX} V${hMA} H${t.cx} V${t.b + 2}`;
+      }
+    }
+    else if (fromMgr && toAdmin) {
+      /* ── Manager → Admin (crosses 1 lane boundary downward) ── */
+      const hMA = borderMA + 6 + idx * SP;
+      d = `M${f.cx} ${f.b + 2} V${hMA} H${t.cx} V${t.t - 2}`;
+    }
+
+    if (!d) return;
+
+    /* Create SVG path */
+    const pathId = 'ap-' + idx;
+    const path = document.createElementNS(NS, 'path');
+    path.id = pathId;
+    path.classList.add('arrow-path');
+    path.setAttribute('d', d);
+    path.setAttribute('stroke', a.color);
+    path.setAttribute('stroke-width', a.dash ? '1.5' : '2');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('marker-end', 'url(#' + a.marker + ')');
+    if (a.dash) path.setAttribute('stroke-dasharray', '6 4');
+    path.setAttribute('opacity', '0.72');
+    svg.appendChild(path);
+
+    /* Animated flowing dot */
+    const circle = document.createElementNS(NS, 'circle');
+    circle.classList.add('arrow-dot');
+    circle.setAttribute('r', '4');
+    circle.setAttribute('fill', a.color);
+    circle.setAttribute('opacity', '0.85');
+    const am = document.createElementNS(NS, 'animateMotion');
+    am.setAttribute('dur', (2.5 + idx * 0.3) + 's');
+    am.setAttribute('repeatCount', 'indefinite');
+    am.setAttribute('calcMode', 'linear');
+    const mp = document.createElementNS(NS, 'mpath');
+    mp.setAttribute('href', '#' + pathId);
+    am.appendChild(mp);
+    circle.appendChild(am);
+    svg.appendChild(circle);
+  });
+}
+
+// Draw after layout settles
+requestAnimationFrame(() => { requestAnimationFrame(drawArrows); });
+window.addEventListener('resize', () => { clearTimeout(window._arrowTimer); window._arrowTimer = setTimeout(drawArrows, 150); });
+
+/* ─── AI Highlight Toggle ─── */
+const btnAI = document.getElementById('btn-ai');
+btnAI.addEventListener('click', () => {
+  document.getElementById('lanes').classList.toggle('ai-highlight');
+  btnAI.classList.toggle('active');
+});
+
+/* ─── Zoom ─── */
+let zoom = 1;
+const container = document.getElementById('diagram-container');
+document.getElementById('btn-zin').addEventListener('click', () => {
+  zoom = Math.min(zoom + 0.1, 1.8);
+  container.style.transform = 'scale(' + zoom + ')';
+  setTimeout(drawArrows, 350);
+});
+document.getElementById('btn-zout').addEventListener('click', () => {
+  zoom = Math.max(zoom - 0.1, 0.6);
+  container.style.transform = 'scale(' + zoom + ')';
+  setTimeout(drawArrows, 350);
+});
+
+/* ─── Verify feature count ─── */
+(function verify() {
+  let total = 0;
+  for (const k in D) total += D[k].features.length;
+  console.log('[Diagram] Total features loaded: ' + total + ' (expected 91 from Excel)');
+  console.log('[Diagram] Feature groups: ' + Object.keys(D).length + ' (expected 14)');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Native HRMS - Complete Feature Mind-Map</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #f5f5f0; color: #2c2c2c;
+}
+
+/* Header */
+#header {
+  position: fixed; top: 0; left: 0; right: 0; height: 44px;
+  background: #ffffff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; z-index: 1000;
+  border-bottom: 1px solid #e0ddd5;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+#header .left { display: flex; align-items: center; gap: 12px; }
+#header .title { font-size: 13px; font-weight: 700; color: #2c2c2c; white-space: nowrap; }
+#header .badge {
+  font-size: 10px; color: #888;
+  background: #f0ede5; padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+}
+#header .right { display: flex; align-items: center; gap: 6px; }
+.hdr-btn {
+  height: 28px; padding: 0 10px;
+  border: 1px solid #d0cdc5; border-radius: 14px;
+  background: #fff; color: #555; font-size: 10px;
+  cursor: pointer; white-space: nowrap; transition: all .2s;
+}
+.hdr-btn:hover { background: #f0ede5; color: #333; }
+
+/* Canvas */
+#canvas {
+  position: fixed; top: 44px; left: 0; right: 0; bottom: 0;
+  overflow: hidden; cursor: grab;
+  background: radial-gradient(ellipse at center, #fafaf7 0%, #f0f0eb 70%);
+}
+#canvas:active { cursor: grabbing; }
+#canvas svg { width: 100%; height: 100%; }
+
+/* Tooltip */
+#tooltip {
+  position: fixed; pointer-events: none; z-index: 2000;
+  max-width: 320px;
+  background: #2c2c2c; border-radius: 8px;
+  padding: 10px 14px; color: #fff; font-size: 11px; line-height: 1.6;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity .15s; display: none;
+}
+#tooltip.show { display: block; opacity: 1; }
+#tooltip .tt-title { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+#tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; margin: 2px 0; }
+#tooltip .tt-label { color: rgba(255,255,255,0.6); }
+#tooltip .tt-val { font-weight: 600; }
+#tooltip .tt-hint { color: rgba(255,255,255,0.4); font-size: 9px; margin-top: 6px; font-style: italic; }
+
+/* Stats panel */
+#stats {
+  position: fixed; bottom: 12px; left: 12px; z-index: 900;
+  background: #fff; border: 1px solid #e0ddd5; border-radius: 8px;
+  padding: 10px 14px; font-size: 11px; color: #777; line-height: 1.9;
+  min-width: 180px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.stat-row { display: flex; justify-content: space-between; gap: 10px; }
+.stat-val { color: #2c2c2c; font-weight: 600; }
+
+/* Minimap */
+#minimap {
+  position: fixed; bottom: 12px; right: 12px; z-index: 900;
+  width: 160px; height: 110px;
+  background: #fff; border: 1px solid #e0ddd5; border-radius: 8px;
+  overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+#minimap svg { width: 100%; height: 100%; }
+#minimap-viewport { fill: rgba(0,0,0,0.04); stroke: rgba(0,0,0,0.2); stroke-width: 1; }
+
+#zoom-display {
+  position: fixed; bottom: 128px; right: 12px; z-index: 900;
+  font-size: 10px; color: #999; background: rgba(255,255,255,0.9);
+  padding: 2px 8px; border-radius: 4px; border: 1px solid #e0ddd5;
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(52,152,219,0.2)); }
+  50% { filter: drop-shadow(0 0 16px rgba(52,152,219,0.4)); }
+}
+.pulse-anim { animation: pulseGlow 3s ease-in-out infinite; }
+
+/* Module hover effect */
+.module-node { cursor: pointer; }
+.module-node:hover rect:first-of-type {
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.12));
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="left">
+    <span class="title">AI-Native HRMS &mdash; Complete Feature Mind-Map</span>
+    <span class="badge">19 Modules &middot; 465 Features &middot; 1958 Data Points</span>
+  </div>
+  <div class="right">
+    <button class="hdr-btn" id="btn-expand">Expand All</button>
+    <button class="hdr-btn" id="btn-collapse">Collapse All</button>
+    <button class="hdr-btn" id="btn-fit">Zoom to Fit</button>
+  </div>
+</div>
+
+<div id="canvas">
+  <svg id="svg-main">
+    <defs>
+      <linearGradient id="gc" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#2c3e50"/>
+        <stop offset="100%" style="stop-color:#3498db"/>
+      </linearGradient>
+    </defs>
+    <g id="world"></g>
+  </svg>
+</div>
+
+<div id="tooltip"></div>
+
+<div id="stats">
+  <div class="stat-body">
+    <div class="stat-row"><span>Modules visible</span><span class="stat-val" id="sv">0 / 19</span></div>
+    <div class="stat-row"><span>Clusters expanded</span><span class="stat-val" id="se">0 / 5</span></div>
+    <div class="stat-row"><span>Total features</span><span class="stat-val">465</span></div>
+    <div class="stat-row"><span>Standard / AI / Add.</span><span class="stat-val">265 / 176 / 24</span></div>
+  </div>
+</div>
+
+<div id="minimap"><svg id="mm-svg"><rect id="minimap-viewport"/></svg></div>
+<div id="zoom-display">100%</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const CLUSTERS = [
+  {name:'Foundation',color:'#546e7a',icon:'🏗️',modules:['Core HR & People Data','Platform & Experience Layer','Cold Start & Setup','Demo Company Feature'],total:87},
+  {name:'Day-to-Day Ops',color:'#1565c0',icon:'📅',modules:['Time & Attendance','Leave Management','Daily Work Logging','Expense Management'],total:117},
+  {name:'Talent Journey',color:'#e65100',icon:'🚀',modules:['Talent Acquisition','Onboarding & Offboarding','Performance & Growth','Learning & Development'],total:103},
+  {name:'Rewards & Culture',color:'#2e7d32',icon:'💎',modules:['Compensation & Rewards','Payroll Processing','Engagement & Culture'],total:77},
+  {name:'Intelligence',color:'#6a1b9a',icon:'📊',modules:['People Analytics & BI','Compliance & Audit','Workforce Planning','Integrations & API Platform'],total:81},
+];
+
+const MODULE_LINKS = {
+  'Cold Start & Setup': 'phase-01-cold-start-setup.html',
+  'Core HR & People Data': 'phase-02-core-hr-people-data.html',
+  'Time & Attendance': 'phase-03-time-attendance.html',
+  'Leave Management': 'phase-04-leave-management.html',
+  'Daily Work Logging': 'phase-05-daily-work-logging.html',
+  'Talent Acquisition': 'phase-06-talent-acquisition.html',
+  'Onboarding & Offboarding': 'phase-07-onboarding-offboarding.html',
+  'Performance & Growth': 'phase-08-performance-growth.html',
+  'Learning & Development': 'phase-09-learning-development.html',
+  'Compensation & Rewards': 'phase-10-compensation-rewards.html',
+  'Engagement & Culture': 'phase-11-engagement-culture.html',
+  'Platform & Experience Layer': 'phase-12-platform-experience.html',
+  'Payroll Processing': 'phase-13-payroll-processing.html',
+  'Expense Management': 'phase-14-expense-management.html',
+  'Compliance & Audit': 'phase-15-compliance-audit.html',
+  'Workforce Planning': 'phase-16-workforce-planning.html',
+  'Integrations & API Platform': 'phase-17-integrations-api.html',
+  'People Analytics & BI': 'phase-18-people-analytics-bi.html',
+  'Demo Company Feature': 'phase-19-demo-company.html',
+};
+
+const MODULE_STATS = {
+  'Cold Start & Setup': {total:16,std:11,ai:5,add:0,bul:91,emp:3,mgr:3,adm:10},
+  'Core HR & People Data': {total:38,std:18,ai:12,add:8,bul:177,emp:12,mgr:12,adm:14},
+  'Time & Attendance': {total:33,std:18,ai:12,add:3,bul:162,emp:11,mgr:10,adm:12},
+  'Leave Management': {total:30,std:18,ai:12,add:0,bul:138,emp:10,mgr:10,adm:10},
+  'Daily Work Logging': {total:30,std:18,ai:12,add:0,bul:111,emp:10,mgr:10,adm:10},
+  'Talent Acquisition': {total:32,std:16,ai:11,add:5,bul:119,emp:7,mgr:10,adm:15},
+  'Onboarding & Offboarding': {total:23,std:14,ai:9,add:0,bul:88,emp:8,mgr:7,adm:8},
+  'Performance & Growth': {total:28,std:16,ai:12,add:0,bul:102,emp:9,mgr:10,adm:9},
+  'Learning & Development': {total:20,std:11,ai:9,add:0,bul:72,emp:7,mgr:6,adm:7},
+  'Compensation & Rewards': {total:23,std:13,ai:10,add:0,bul:91,emp:7,mgr:7,adm:9},
+  'Engagement & Culture': {total:28,std:14,ai:11,add:3,bul:107,emp:8,mgr:8,adm:12},
+  'Platform & Experience Layer': {total:27,std:13,ai:9,add:5,bul:139,emp:7,mgr:5,adm:15},
+  'Payroll Processing': {total:26,std:16,ai:10,add:0,bul:123,emp:8,mgr:7,adm:11},
+  'Expense Management': {total:24,std:15,ai:9,add:0,bul:93,emp:8,mgr:7,adm:9},
+  'Compliance & Audit': {total:23,std:15,ai:8,add:0,bul:98,emp:5,mgr:7,adm:11},
+  'Workforce Planning': {total:21,std:12,ai:9,add:0,bul:79,emp:3,mgr:9,adm:9},
+  'Integrations & API Platform': {total:18,std:13,ai:5,add:0,bul:70,emp:4,mgr:3,adm:11},
+  'People Analytics & BI': {total:19,std:11,ai:8,add:0,bul:76,emp:2,mgr:6,adm:11},
+  'Demo Company Feature': {total:6,std:3,ai:3,add:0,bul:22,emp:2,mgr:2,adm:2},
+};
+
+const NS = 'http://www.w3.org/2000/svg';
+const world = document.getElementById('world');
+const canvas = document.getElementById('canvas');
+
+// ============================================================
+// TREE: only 3 levels (L0, L1, L2)
+// ============================================================
+const T = { id: 'root', name: 'AI-Native HRMS', lv: 0, ch: [], expanded: false, el: null, lines: [], x: 0, y: 0 };
+
+CLUSTERS.forEach((cl, ci) => {
+  const clNode = {
+    id: 'cl_' + ci, name: cl.icon + ' ' + cl.name, lv: 1,
+    ch: [], expanded: false, el: null, lines: [],
+    color: cl.color, badge: cl.total, parent: T,
+    modCount: cl.modules.length, x: 0, y: 0
+  };
+
+  cl.modules.forEach((mName, mi) => {
+    const stats = MODULE_STATS[mName] || {};
+    const mNode = {
+      id: 'mod_' + ci + '_' + mi, name: mName, lv: 2,
+      ch: [], expanded: false, el: null, lines: [],
+      color: cl.color, badge: stats.total || 0, parent: clNode,
+      link: MODULE_LINKS[mName] || '', stats: stats, x: 0, y: 0
+    };
+    clNode.ch.push(mNode);
+  });
+  T.ch.push(clNode);
+});
+
+// ============================================================
+// LAYOUT — radial, bottom-up arc calculation
+// ============================================================
+const RADII = [0, 240, 620];
+const NODE_W = [180, 170, 165];
+const NODE_H = [60, 48, 40];
+const GAP = 14;
+
+function calcArc(node) {
+  const r = RADII[node.lv] || 480;
+  const myArc = (NODE_W[node.lv] + GAP) / Math.max(r, 1);
+
+  if (!node.expanded || node.ch.length === 0) {
+    node._arc = myArc;
+    return myArc;
+  }
+  let total = 0;
+  node.ch.forEach(c => { total += calcArc(c); });
+  node._arc = Math.max(total, myArc);
+  return node._arc;
+}
+
+function positionNode(node, midAngle, arcSpan) {
+  const r = RADII[node.lv] || 480;
+  if (node.lv === 0) {
+    node.x = 0; node.y = 0;
+  } else {
+    node.x = Math.cos(midAngle) * r;
+    node.y = Math.sin(midAngle) * r;
+  }
+  node._angle = midAngle;
+
+  if (node.expanded && node.ch.length > 0) {
+    let totalNeeded = 0;
+    node.ch.forEach(c => { totalNeeded += c._arc; });
+    const actualArc = Math.max(arcSpan, totalNeeded);
+    let cursor = midAngle - actualArc / 2;
+    node.ch.forEach(c => {
+      const childArc = c._arc * (actualArc / totalNeeded);
+      const childMid = cursor + childArc / 2;
+      positionNode(c, childMid, childArc);
+      cursor += childArc;
+    });
+  }
+}
+
+function layoutAll() {
+  calcArc(T);
+  T.x = 0; T.y = 0; T._angle = 0;
+
+  if (T.expanded && T.ch.length > 0) {
+    let totalNeeded = 0;
+    T.ch.forEach(c => { totalNeeded += c._arc; });
+    const fullCircle = Math.PI * 2;
+    const actualArc = Math.max(fullCircle, totalNeeded);
+
+    let cursor = -Math.PI / 2; // start from top
+    T.ch.forEach(c => {
+      const childArc = c._arc * (actualArc / totalNeeded);
+      const childMid = cursor + childArc / 2;
+      positionNode(c, childMid, childArc);
+      cursor += childArc;
+    });
+  }
+}
+
+// ============================================================
+// SVG HELPERS
+// ============================================================
+function svgEl(tag) { return document.createElementNS(NS, tag); }
+
+function makeNode(node) {
+  const g = svgEl('g');
+  g.setAttribute('class', 'node-g' + (node.lv === 2 ? ' module-node' : ''));
+  g.dataset.id = node.id;
+  g.dataset.lv = node.lv;
+
+  const w = NODE_W[node.lv], h = NODE_H[node.lv];
+
+  if (node.lv === 0) {
+    // Center node
+    const rect = svgEl('rect');
+    rect.setAttribute('x', -w/2); rect.setAttribute('y', -h/2);
+    rect.setAttribute('width', w); rect.setAttribute('height', h);
+    rect.setAttribute('rx', 14); rect.setAttribute('fill', 'url(#gc)');
+    rect.setAttribute('stroke', '#2980b9'); rect.setAttribute('stroke-width', '1.5');
+    g.appendChild(rect);
+    g.classList.add('pulse-anim');
+
+    const txt = svgEl('text');
+    txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('dy', '-4');
+    txt.setAttribute('fill', '#fff'); txt.setAttribute('font-size', '15');
+    txt.setAttribute('font-weight', '700');
+    txt.textContent = node.name;
+    g.appendChild(txt);
+
+    const sub = svgEl('text');
+    sub.setAttribute('text-anchor', 'middle'); sub.setAttribute('dy', '14');
+    sub.setAttribute('fill', 'rgba(255,255,255,0.55)'); sub.setAttribute('font-size', '9');
+    sub.textContent = 'Click to explore';
+    g.appendChild(sub);
+
+  } else if (node.lv === 1) {
+    // Cluster
+    const rect = svgEl('rect');
+    rect.setAttribute('x', -w/2); rect.setAttribute('y', -h/2);
+    rect.setAttribute('width', w); rect.setAttribute('height', h);
+    rect.setAttribute('rx', 12); rect.setAttribute('fill', node.color);
+    rect.setAttribute('stroke', 'rgba(0,0,0,0.1)'); rect.setAttribute('stroke-width', '1');
+    g.appendChild(rect);
+
+    const txt = svgEl('text');
+    txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('dy', '1');
+    txt.setAttribute('fill', '#fff'); txt.setAttribute('font-size', '13');
+    txt.setAttribute('font-weight', '700');
+    txt.textContent = node.name;
+    g.appendChild(txt);
+
+    // Badge
+    const bx = w/2 - 4;
+    const bc = svgEl('circle');
+    bc.setAttribute('cx', bx); bc.setAttribute('cy', -h/2);
+    bc.setAttribute('r', 12); bc.setAttribute('fill', '#fff');
+    bc.setAttribute('stroke', node.color); bc.setAttribute('stroke-width', '1.5');
+    g.appendChild(bc);
+    const bt = svgEl('text');
+    bt.setAttribute('x', bx); bt.setAttribute('y', -h/2 + 4);
+    bt.setAttribute('text-anchor', 'middle');
+    bt.setAttribute('fill', node.color); bt.setAttribute('font-size', '9');
+    bt.setAttribute('font-weight', '700');
+    bt.textContent = node.badge;
+    g.appendChild(bt);
+
+    // +/- indicator
+    const ind = svgEl('text');
+    ind.setAttribute('class', 'indicator');
+    ind.setAttribute('x', w/2 - 8); ind.setAttribute('y', h/2 - 6);
+    ind.setAttribute('text-anchor', 'middle');
+    ind.setAttribute('fill', 'rgba(255,255,255,0.6)');
+    ind.setAttribute('font-size', '14');
+    ind.textContent = node.expanded ? '\u2212' : '+';
+    g.appendChild(ind);
+
+  } else if (node.lv === 2) {
+    // Module — white card with colored left border
+    const shadow = svgEl('rect');
+    shadow.setAttribute('x', -w/2 + 1); shadow.setAttribute('y', -h/2 + 1);
+    shadow.setAttribute('width', w); shadow.setAttribute('height', h);
+    shadow.setAttribute('rx', 8); shadow.setAttribute('fill', 'rgba(0,0,0,0.04)');
+    g.appendChild(shadow);
+
+    const rect = svgEl('rect');
+    rect.setAttribute('x', -w/2); rect.setAttribute('y', -h/2);
+    rect.setAttribute('width', w); rect.setAttribute('height', h);
+    rect.setAttribute('rx', 8); rect.setAttribute('fill', '#fff');
+    rect.setAttribute('stroke', '#e0ddd5'); rect.setAttribute('stroke-width', '1');
+    g.appendChild(rect);
+
+    // Color bar on left
+    const bar = svgEl('rect');
+    bar.setAttribute('x', -w/2); bar.setAttribute('y', -h/2 + 4);
+    bar.setAttribute('width', 4); bar.setAttribute('height', h - 8);
+    bar.setAttribute('rx', 2); bar.setAttribute('fill', node.color);
+    g.appendChild(bar);
+
+    // Module name
+    let displayName = node.name;
+    if (displayName.length > 24) displayName = displayName.substring(0, 22) + '..';
+    const txt = svgEl('text');
+    txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('dy', '-2');
+    txt.setAttribute('fill', '#2c2c2c'); txt.setAttribute('font-size', '10');
+    txt.setAttribute('font-weight', '600');
+    txt.textContent = displayName;
+    g.appendChild(txt);
+
+    // Subtitle: "N features — click to open"
+    const sub = svgEl('text');
+    sub.setAttribute('text-anchor', 'middle'); sub.setAttribute('dy', '12');
+    sub.setAttribute('fill', '#999'); sub.setAttribute('font-size', '8');
+    sub.textContent = node.badge + ' features \u2014 click to open \u2197';
+    g.appendChild(sub);
+
+    // Badge
+    const bx = w/2 - 2;
+    const bg = svgEl('rect');
+    bg.setAttribute('x', bx - 12); bg.setAttribute('y', -h/2 - 4);
+    bg.setAttribute('width', 24); bg.setAttribute('height', 16);
+    bg.setAttribute('rx', 8); bg.setAttribute('fill', node.color);
+    g.appendChild(bg);
+    const bt = svgEl('text');
+    bt.setAttribute('x', bx); bt.setAttribute('y', -h/2 + 7);
+    bt.setAttribute('text-anchor', 'middle');
+    bt.setAttribute('fill', '#fff'); bt.setAttribute('font-size', '9');
+    bt.setAttribute('font-weight', '600');
+    bt.textContent = node.badge;
+    g.appendChild(bt);
+  }
+
+  g.setAttribute('transform', `translate(${node.x},${node.y})`);
+  node.el = g;
+  return g;
+}
+
+// Curved connector from parent to child
+function makeConnector(parent, child) {
+  const path = svgEl('path');
+  const d = calcCurve(parent, child);
+  path.setAttribute('d', d);
+
+  const widths = [0, 2.5, 1.8];
+  const opacs = [0, 0.45, 0.3];
+  path.setAttribute('stroke', child.color || '#ccc');
+  path.setAttribute('stroke-width', widths[child.lv] || 1.5);
+  path.setAttribute('stroke-opacity', opacs[child.lv] || 0.3);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke-linecap', 'round');
+
+  // Draw animation
+  const len = estimateLen(parent, child);
+  path.setAttribute('stroke-dasharray', len);
+  path.setAttribute('stroke-dashoffset', len);
+  path.style.transition = 'stroke-dashoffset 0.4s ease-out';
+  requestAnimationFrame(() => { path.setAttribute('stroke-dashoffset', '0'); });
+
+  return path;
+}
+
+function calcCurve(p, c) {
+  const dx = c.x - p.x, dy = c.y - p.y;
+  const len = Math.sqrt(dx*dx + dy*dy) || 1;
+  const off = len * 0.2;
+  const nx = -dy / len, ny = dx / len;
+  const mx = (p.x + c.x)/2 + nx * off;
+  const my = (p.y + c.y)/2 + ny * off;
+  return `M${p.x},${p.y} Q${mx},${my} ${c.x},${c.y}`;
+}
+
+function estimateLen(p, c) {
+  const dx = c.x - p.x, dy = c.y - p.y;
+  return Math.sqrt(dx*dx + dy*dy) * 1.2;
+}
+
+// ============================================================
+// EXPAND / COLLAPSE
+// ============================================================
+function expand(node) {
+  if (node.ch.length === 0) return;
+  node.expanded = true;
+  updateIndicator(node);
+  layoutAll();
+  repositionAll(T);
+
+  node.ch.forEach((child, i) => {
+    // Connector from THIS node (parent) to child
+    const line = makeConnector(node, child);
+    world.insertBefore(line, world.firstChild); // lines behind nodes
+    node.lines.push(line);
+
+    const el = makeNode(child);
+    el.style.opacity = '0';
+    el.style.transformOrigin = 'center center';
+    world.appendChild(el);
+
+    // Staggered entrance
+    setTimeout(() => {
+      el.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+      el.style.opacity = '1';
+      el.setAttribute('transform', `translate(${child.x},${child.y})`);
+    }, i * 40);
+  });
+
+  updateStats();
+  updateMinimap();
+}
+
+function collapse(node) {
+  collapseDeep(node);
+  node.expanded = false;
+  updateIndicator(node);
+  layoutAll();
+  repositionAll(T);
+  updateStats();
+  updateMinimap();
+}
+
+function collapseDeep(node) {
+  node.ch.forEach(child => {
+    collapseDeep(child);
+    child.expanded = false;
+    if (child.el) { child.el.remove(); child.el = null; }
+  });
+  node.lines.forEach(l => l.remove());
+  node.lines = [];
+}
+
+function repositionAll(node) {
+  if (node.el) {
+    node.el.setAttribute('transform', `translate(${node.x},${node.y})`);
+  }
+  if (node.expanded) {
+    node.ch.forEach((child, i) => {
+      if (node.lines[i]) node.lines[i].setAttribute('d', calcCurve(node, child));
+      repositionAll(child);
+    });
+  }
+}
+
+function updateIndicator(node) {
+  if (!node.el) return;
+  const ind = node.el.querySelector('.indicator');
+  if (ind) ind.textContent = node.expanded ? '\u2212' : '+';
+}
+
+// ============================================================
+// PAN & ZOOM
+// ============================================================
+let panX = 0, panY = 0, zoom = 1;
+let isPanning = false, panStartX, panStartY;
+
+function updateTransform() {
+  const cx = canvas.clientWidth / 2;
+  const cy = canvas.clientHeight / 2;
+  world.setAttribute('transform', `translate(${cx + panX},${cy + panY}) scale(${zoom})`);
+  document.getElementById('zoom-display').textContent = Math.round(zoom * 100) + '%';
+  updateMinimap();
+}
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = e.deltaY > 0 ? 0.92 : 1.08;
+  const newZ = Math.max(0.15, Math.min(3, zoom * factor));
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left - rect.width/2 - panX;
+  const my = e.clientY - rect.top - rect.height/2 - panY;
+  const scale = newZ / zoom;
+  panX -= mx * (scale - 1);
+  panY -= my * (scale - 1);
+  zoom = newZ;
+  updateTransform();
+}, { passive: false });
+
+canvas.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.node-g')) return;
+  isPanning = true;
+  panStartX = e.clientX - panX;
+  panStartY = e.clientY - panY;
+  canvas.style.cursor = 'grabbing';
+});
+window.addEventListener('mousemove', (e) => {
+  if (!isPanning) return;
+  panX = e.clientX - panStartX;
+  panY = e.clientY - panStartY;
+  updateTransform();
+});
+window.addEventListener('mouseup', () => {
+  isPanning = false;
+  canvas.style.cursor = 'grab';
+});
+
+function zoomToFit() {
+  const nodes = [];
+  function collect(n) { if (n.el) nodes.push(n); if (n.expanded) n.ch.forEach(collect); }
+  collect(T);
+  if (nodes.length === 0) return;
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    const w = NODE_W[n.lv] || 160;
+    minX = Math.min(minX, n.x - w/2 - 20);
+    maxX = Math.max(maxX, n.x + w/2 + 20);
+    minY = Math.min(minY, n.y - 40);
+    maxY = Math.max(maxY, n.y + 40);
+  });
+
+  const cw = canvas.clientWidth, ch = canvas.clientHeight;
+  const bw = maxX - minX || 1, bh = maxY - minY || 1;
+  zoom = Math.min(cw / bw, ch / bh) * 0.85;
+  zoom = Math.max(0.15, Math.min(3, zoom));
+  panX = -(minX + maxX) / 2 * zoom;
+  panY = -(minY + maxY) / 2 * zoom;
+  updateTransform();
+}
+
+// ============================================================
+// TOOLTIP
+// ============================================================
+const tooltip = document.getElementById('tooltip');
+
+function showTooltip(node, e) {
+  let html = '';
+  if (node.lv === 1) {
+    html = `<div class="tt-title">${node.name}</div>`;
+    html += `<div class="tt-row"><span class="tt-label">Modules</span><span class="tt-val">${node.modCount}</span></div>`;
+    html += `<div class="tt-row"><span class="tt-label">Features</span><span class="tt-val">${node.badge}</span></div>`;
+    html += `<div class="tt-hint">Click to expand modules</div>`;
+  } else if (node.lv === 2) {
+    const s = node.stats || {};
+    html = `<div class="tt-title">${node.name}</div>`;
+    html += `<div class="tt-row"><span class="tt-label">Total features</span><span class="tt-val">${s.total || 0}</span></div>`;
+    html += `<div class="tt-row"><span class="tt-label">Standard</span><span class="tt-val">${s.std || 0}</span></div>`;
+    html += `<div class="tt-row"><span class="tt-label">AI-Powered</span><span class="tt-val">${s.ai || 0}</span></div>`;
+    if ((s.add || 0) > 0) html += `<div class="tt-row"><span class="tt-label">Additional</span><span class="tt-val">${s.add}</span></div>`;
+    html += `<div class="tt-row"><span class="tt-label">Data points</span><span class="tt-val">${s.bul || 0}</span></div>`;
+    html += `<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;">`;
+    html += `<div class="tt-row"><span class="tt-label">Employee</span><span class="tt-val">${s.emp || 0}</span></div>`;
+    html += `<div class="tt-row"><span class="tt-label">Manager</span><span class="tt-val">${s.mgr || 0}</span></div>`;
+    html += `<div class="tt-row"><span class="tt-label">Admin</span><span class="tt-val">${s.adm || 0}</span></div>`;
+    html += `</div>`;
+    html += `<div class="tt-hint">Click to open full User Journey diagram \u2197</div>`;
+  }
+  if (!html) return;
+  tooltip.innerHTML = html;
+  tooltip.classList.add('show');
+  positionTooltip(e);
+}
+
+function positionTooltip(e) {
+  tooltip.style.left = Math.min(e.clientX + 14, window.innerWidth - 340) + 'px';
+  tooltip.style.top = Math.min(e.clientY + 14, window.innerHeight - 300) + 'px';
+}
+
+function hideTooltip() { tooltip.classList.remove('show'); }
+
+// ============================================================
+// STATS & MINIMAP
+// ============================================================
+function updateStats() {
+  let modVis = 0, clExp = 0;
+  T.ch.forEach(cl => {
+    if (cl.expanded) {
+      clExp++;
+      modVis += cl.ch.filter(m => m.el).length;
+    }
+  });
+  document.getElementById('sv').textContent = modVis + ' / 19';
+  document.getElementById('se').textContent = clExp + ' / 5';
+}
+
+function updateMinimap() {
+  const mmSvg = document.getElementById('mm-svg');
+  mmSvg.querySelectorAll('.mm-dot').forEach(d => d.remove());
+
+  const nodes = [];
+  function collect(n) { if (n.el) nodes.push(n); if (n.expanded) n.ch.forEach(collect); }
+  collect(T);
+  if (nodes.length === 0) return;
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    minX = Math.min(minX, n.x - 90); maxX = Math.max(maxX, n.x + 90);
+    minY = Math.min(minY, n.y - 40); maxY = Math.max(maxY, n.y + 40);
+  });
+
+  const bw = maxX - minX || 1, bh = maxY - minY || 1;
+  const mw = 160, mh = 110;
+
+  nodes.forEach(n => {
+    const dot = document.createElementNS(NS, 'circle');
+    dot.setAttribute('class', 'mm-dot');
+    dot.setAttribute('cx', ((n.x - minX) / bw) * mw);
+    dot.setAttribute('cy', ((n.y - minY) / bh) * mh);
+    dot.setAttribute('r', n.lv <= 1 ? 4 : 2.5);
+    dot.setAttribute('fill', n.color || '#3498db');
+    mmSvg.appendChild(dot);
+  });
+
+  const vp = document.getElementById('minimap-viewport');
+  const cw = canvas.clientWidth, ch_ = canvas.clientHeight;
+  const vpLeft = (-panX / zoom - cw / (2 * zoom));
+  const vpTop = (-panY / zoom - ch_ / (2 * zoom));
+  const vpW = cw / zoom, vpH = ch_ / zoom;
+  vp.setAttribute('x', ((vpLeft - minX) / bw) * mw);
+  vp.setAttribute('y', ((vpTop - minY) / bh) * mh);
+  vp.setAttribute('width', (vpW / bw) * mw);
+  vp.setAttribute('height', (vpH / bh) * mh);
+}
+
+// ============================================================
+// CLICK HANDLER
+// ============================================================
+function findNode(id, node) {
+  if (node.id === id) return node;
+  for (const c of node.ch) {
+    const found = findNode(id, c);
+    if (found) return found;
+  }
+  return null;
+}
+
+world.addEventListener('click', (e) => {
+  const g = e.target.closest('.node-g');
+  if (!g) return;
+  const node = findNode(g.dataset.id, T);
+  if (!node) return;
+
+  // L2 module → open its phase HTML
+  if (node.lv === 2 && node.link) {
+    window.open(node.link, '_blank');
+    return;
+  }
+
+  // L0 or L1 → expand/collapse
+  if (node.expanded) {
+    collapse(node);
+  } else {
+    expand(node);
+  }
+});
+
+// Double-click center → expand all
+world.addEventListener('dblclick', (e) => {
+  const g = e.target.closest('.node-g');
+  if (!g) return;
+  const node = findNode(g.dataset.id, T);
+  if (node && node.lv === 0) {
+    if (!node.expanded) expand(node);
+    node.ch.forEach(c => { if (!c.expanded) expand(c); });
+    setTimeout(zoomToFit, 500);
+  }
+});
+
+// Hover
+world.addEventListener('mouseover', (e) => {
+  const g = e.target.closest('.node-g');
+  if (g) {
+    const node = findNode(g.dataset.id, T);
+    if (node && node.lv >= 1) showTooltip(node, e);
+  }
+});
+world.addEventListener('mousemove', (e) => {
+  if (tooltip.classList.contains('show')) positionTooltip(e);
+});
+world.addEventListener('mouseout', (e) => {
+  if (e.target.closest('.node-g')) hideTooltip();
+});
+
+// ============================================================
+// HEADER BUTTONS
+// ============================================================
+document.getElementById('btn-expand').addEventListener('click', () => {
+  if (!T.expanded) expand(T);
+  T.ch.forEach(c => { if (!c.expanded) expand(c); });
+  setTimeout(zoomToFit, 500);
+});
+
+document.getElementById('btn-collapse').addEventListener('click', () => {
+  collapse(T);
+});
+
+document.getElementById('btn-fit').addEventListener('click', zoomToFit);
+
+// ============================================================
+// KEYBOARD
+// ============================================================
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') hideTooltip();
+});
+
+// ============================================================
+// INIT
+// ============================================================
+(function init() {
+  const el = makeNode(T);
+  world.appendChild(el);
+  updateTransform();
+  updateStats();
+  updateMinimap();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "name": "@hrms/web",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hrms/shared": "workspace:*",
+    "axios": "^1",
+    "lucide-react": "^0.468",
+    "next": "^15",
+    "react": "^19",
+    "react-dom": "^19",
+    "zustand": "^5"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.4",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15",
+    "tailwindcss": "^4",
+    "typescript": "^5.7"
+  }
+}

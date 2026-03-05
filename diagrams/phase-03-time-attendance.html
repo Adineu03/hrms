@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 3: Time & Attendance — User Journey Map</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0;padding:0;overflow:hidden;width:100vw;height:100vh;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f8f9fa}
+
+/* ── Header ── */
+.header{height:38px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#fff;flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-title{font-size:12px;font-weight:600;letter-spacing:.3px}
+.header-badge{background:linear-gradient(135deg,#e94560,#c23152);font-size:8px;padding:2px 8px;border-radius:10px;font-weight:600;letter-spacing:.5px}
+.legend{display:flex;align-items:center;gap:10px;font-size:8px}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-swatch{width:14px;height:10px;border-radius:2px;border:1.5px solid}
+.legend-swatch.std{background:#fff;border-color:#90a4ae}
+.legend-swatch.ai{background:linear-gradient(135deg,#fff9c4,#ffe082);border-color:#f9a825;border-style:dashed}
+.legend-swatch.add{background:#e8f5e9;border-color:#66bb6a;border-style:dotted}
+.legend-swatch.approval{background:none;border:none;width:18px;height:2px;position:relative}
+.legend-swatch.approval::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:#e94560}
+.legend-swatch.dataflow{background:none;border:none;width:18px;height:2px;position:relative}
+.legend-swatch.dataflow::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:#2196f3}
+.ai-toggle{display:flex;align-items:center;gap:5px;font-size:8px;cursor:pointer;user-select:none}
+.ai-toggle input{display:none}
+.toggle-track{width:28px;height:14px;background:#555;border-radius:7px;position:relative;transition:background .3s}
+.toggle-track::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;background:#fff;border-radius:50%;transition:transform .3s}
+.ai-toggle input:checked+.toggle-track{background:#f9a825}
+.ai-toggle input:checked+.toggle-track::after{transform:translateX(14px)}
+
+/* ── Lanes container ── */
+.lanes-container{height:calc(100vh - 38px);padding:5px 22px;display:flex;flex-direction:column;gap:4px;position:relative}
+
+/* ── Swim lane ── */
+.swim-lane{flex:1 1 0;min-height:0;display:flex;border-radius:8px;overflow:hidden;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.swim-lane.employee{background:#e3f2fd}
+.swim-lane.manager{background:#fff3e0}
+.swim-lane.admin{background:#f3e5f5}
+.lane-label{width:24px;min-width:24px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;flex-shrink:0}
+.swim-lane.employee .lane-label{background:linear-gradient(180deg,#1565c0,#1976d2)}
+.swim-lane.manager .lane-label{background:linear-gradient(180deg,#e65100,#ef6c00)}
+.swim-lane.admin .lane-label{background:linear-gradient(180deg,#6a1b9a,#8e24aa)}
+.lane-body{flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center;padding:6px 8px;min-width:0}
+.node-row{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;min-width:0}
+
+/* ── Nodes ── */
+.node{flex:1 1 0;min-width:0;height:32px;border-radius:6px;display:flex;align-items:center;padding:0 6px;cursor:pointer;position:relative;transition:transform .15s,box-shadow .15s;overflow:hidden;opacity:0;transform:scale(.92)}
+.node.visible{opacity:1;transform:scale(1)}
+.node:hover{transform:scale(1.04)!important;box-shadow:0 3px 12px rgba(0,0,0,.18);z-index:10}
+.node.standard{background:#fff;border:1.5px solid #90a4ae}
+.node.ai{background:linear-gradient(135deg,#fffde7,#fff9c4);border:1.5px dashed #f9a825}
+.node.additional{background:#e8f5e9;border:1.5px dotted #66bb6a}
+.node.ai.highlight{animation:aiGlow 2.5s ease-in-out infinite}
+@keyframes aiGlow{0%,100%{box-shadow:0 0 4px rgba(249,168,37,.3)}50%{box-shadow:0 0 14px rgba(249,168,37,.7)}}
+.node-title{font-size:7.5px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;line-height:1.2}
+.node-badge{min-width:14px;height:14px;border-radius:7px;background:rgba(0,0,0,.1);font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#555;margin-left:3px;flex-shrink:0}
+.node.ai .node-badge{background:rgba(249,168,37,.25);color:#e65100}
+.node.additional .node-badge{background:rgba(76,175,80,.2);color:#2e7d32}
+
+/* ── Within-lane arrows ── */
+.intra-arrow{flex-shrink:0;width:8px;height:8px;display:flex;align-items:center;justify-content:center}
+.intra-arrow svg{width:8px;height:8px}
+
+/* ── Tooltip ── */
+.tooltip{position:fixed;background:#1a1a2e;color:#fff;border-radius:8px;padding:10px 12px;font-size:8.5px;max-width:280px;z-index:1000;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 8px 24px rgba(0,0,0,.25);line-height:1.5}
+.tooltip.show{opacity:1}
+.tooltip-title{font-weight:700;font-size:9.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.15)}
+.tooltip-title.ai-title{color:#ffe082}
+.tooltip-title.add-title{color:#a5d6a7}
+.tooltip ul{list-style:none;padding:0;margin:0}
+.tooltip li{padding:1.5px 0;position:relative;padding-left:10px}
+.tooltip li::before{content:'•';position:absolute;left:0;color:#e94560}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:12px;padding:20px 24px;max-width:420px;width:90%;max-height:70vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative}
+.modal-close{position:absolute;top:10px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#999;line-height:1}
+.modal-close:hover{color:#333}
+.modal h2{font-size:14px;margin-bottom:4px;color:#1a1a2e}
+.modal .modal-type{font-size:9px;color:#888;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.modal .modal-type.ai-type{color:#f9a825}
+.modal .modal-type.add-type{color:#66bb6a}
+.modal ul{list-style:none;padding:0;margin:0}
+.modal li{padding:5px 0;font-size:11px;color:#444;border-bottom:1px solid #f0f0f0;position:relative;padding-left:16px;line-height:1.5}
+.modal li:last-child{border-bottom:none}
+.modal li::before{content:'→';position:absolute;left:0;color:#e94560;font-weight:700}
+.modal li.ai-bullet::before{color:#f9a825}
+.modal li.add-bullet::before{color:#66bb6a}
+
+/* ── SVG overlay for cross-lane arrows ── */
+.arrow-overlay{position:absolute;inset:0;pointer-events:none;z-index:5}
+.arrow-path{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.arrow-path.approval{stroke:#e94560}
+.arrow-path.dataflow{stroke:#2196f3}
+.arrow-dot{r:3}
+.arrow-dot.approval{fill:#e94560}
+.arrow-dot.dataflow{fill:#2196f3}
+.arrow-head{stroke-width:1.5;fill:none}
+.arrow-head.approval{stroke:#e94560}
+.arrow-head.dataflow{stroke:#2196f3}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-title">Module 3: Time & Attendance — User Journey Map</div>
+    <div class="header-badge">AI-Native HRMS</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch std"></div>Standard</div>
+    <div class="legend-item"><div class="legend-swatch ai"></div>AI-Powered</div>
+    <div class="legend-item"><div class="legend-swatch add"></div>Additional</div>
+    <div class="legend-item"><div class="legend-swatch approval"></div>Approval</div>
+    <div class="legend-item"><div class="legend-swatch dataflow"></div>Data Flow</div>
+    <label class="ai-toggle"><input type="checkbox" id="aiToggle"><span class="toggle-track"></span>Highlight AI</label>
+  </div>
+</div>
+
+<!-- Lanes -->
+<div class="lanes-container" id="lanesContainer">
+
+  <!-- EMPLOYEE LANE -->
+  <div class="swim-lane employee" id="laneEmployee">
+    <div class="lane-label">Employee</div>
+    <div class="lane-body">
+      <div class="node-row" id="empRow1"></div>
+      <div class="node-row" id="empRow2"></div>
+    </div>
+  </div>
+
+  <!-- MANAGER LANE -->
+  <div class="swim-lane manager" id="laneManager">
+    <div class="lane-label">Manager</div>
+    <div class="lane-body">
+      <div class="node-row" id="mgrRow1"></div>
+      <div class="node-row" id="mgrRow2"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN / HR LANE -->
+  <div class="swim-lane admin" id="laneAdmin">
+    <div class="lane-label">Admin / HR</div>
+    <div class="lane-body">
+      <div class="node-row" id="admRow1"></div>
+      <div class="node-row" id="admRow2"></div>
+    </div>
+  </div>
+
+  <!-- SVG arrow overlay -->
+  <svg class="arrow-overlay" id="arrowSvg"></svg>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <h2 id="modalTitle"></h2>
+    <div class="modal-type" id="modalType"></div>
+    <ul id="modalList"></ul>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// DATA — All features extracted from Excel
+// ════════════════════════════════════════
+const DATA = {
+  employee: {
+    standard: [
+      { id:'emp_punch', title:'Multi-Mode Punch', bullets:[
+        'Web-based clock-in from desktop browser with single click',
+        'Mobile app punch with GPS location capture and geo-fence validation',
+        'Biometric device integration (fingerprint, face recognition) auto-synced',
+        'NFC badge tap at office entry points',
+        'Kiosk terminal support for shared workspaces and factory floors',
+        'GPS geo-fenced punching for field workers with coordinates logged',
+        'Offline punch capability (syncs when connection restored)'
+      ]},
+      { id:'emp_timesheet', title:'Real-Time Timesheet', bullets:[
+        "Live view of today's hours worked with running timer",
+        'Break duration tracking with visual breakdown',
+        'Overtime accrual visualization (regular hours, OT hours, double-time)',
+        'Weekly and monthly views with visual timeline bars',
+        'Total hours worked this pay period with target comparison'
+      ]},
+      { id:'emp_breaks', title:'Break & Meal Tracking', bullets:[
+        'Start/stop break timer with configurable break types (tea, lunch, personal)',
+        'Auto-reminder if break exceeds policy limit',
+        'Break history for the day with duration per type',
+        'Compliance indicators (minimum mandatory break requirements met/unmet)'
+      ]},
+      { id:'emp_ot', title:'Overtime Requests', bullets:[
+        'Pre-approve OT before working extra hours with reason and estimated duration',
+        'Post-log OT after the fact with justification',
+        'Reason codes (project deadline, client request, operational need, etc.)',
+        'See remaining OT quota for the month/quarter',
+        'Auto-calculated rate display (1.5x, 2x, holiday rates) before submission',
+        'Approval status tracking with manager comments'
+      ]},
+      { id:'emp_reg', title:'Regularization Requests', bullets:[
+        'Submit missed punch correction with date, time, punch type (in/out), reason',
+        'Attach evidence (screenshot, email, manager confirmation) to support request',
+        'Full regularization history with status tracking',
+        'Reason code selection (forgot badge, system error, client site, travel)',
+        'Deadline indicator (regularization must be submitted within X days per policy)'
+      ]},
+      { id:'emp_shift', title:'Shift View & Swap', bullets:[
+        'Calendar view of assigned shifts for the week/month ahead',
+        'Shift details (start time, end time, break window, location)',
+        'Request swap with eligible colleagues (same skill, same location)',
+        "See who's available and eligible for swap before requesting",
+        'Instant notifications to swap partner and manager',
+        'Swap status tracking (pending partner acceptance, pending manager approval, approved)'
+      ]}
+    ],
+    ai: [
+      { id:'emp_ai_remind', title:'Smart Punch Reminder', bullets:[
+        'AI learns your daily routine and clock-in patterns',
+        "Nudges if you forgot to punch: 'You usually clock in at 9:05 — looks like you're at the office'",
+        'End-of-day reminder if clock-out not recorded',
+        'Adapts to schedule changes (detects new patterns after shift changes)'
+      ]},
+      { id:'emp_ai_commute', title:'Commute-Aware Clock-In', bullets:[
+        'Detects arrival at office via GPS proximity',
+        'Offers one-tap clock-in push notification when you enter geo-fence',
+        'Learns your commute pattern and timing'
+      ]},
+      { id:'emp_ai_pattern', title:'Work Pattern Insights', bullets:[
+        'Weekly personal summary: average hours, early/late trends, most productive days',
+        'Comparison to your own historical patterns (not others — privacy-safe)',
+        'Trend charts for hours worked, breaks taken, OT frequency'
+      ]},
+      { id:'emp_ai_anomaly', title:'Anomaly Self-Alert', bullets:[
+        'Flags your own unusual patterns: consecutive long days, irregular hours',
+        "Burnout early warning: 'You've worked 50+ hours for 3 consecutive weeks'",
+        'Suggests break or leave based on sustained high-activity patterns'
+      ]}
+    ],
+    additional: [
+      { id:'emp_add_field', title:'Field Worker Features', bullets:[
+        'GPS breadcrumb trail logging for field workers with configurable frequency',
+        'Client site check-in/check-out with location verification',
+        'Photo verification punch (selfie at location for compliance)',
+        'Route optimization suggestions for multi-site visits'
+      ]}
+    ]
+  },
+  manager: {
+    standard: [
+      { id:'mgr_board', title:'Team Attendance Board', bullets:[
+        "Real-time dashboard showing who's present, late, absent, on break per team",
+        'Color-coded status indicators with last punch timestamp',
+        'Headcount summary (X present out of Y expected today)',
+        "Click any team member to see their full day timeline",
+        'Filter by location, shift, or sub-team',
+        "Historical date picker (view any past day's attendance board)"
+      ]},
+      { id:'mgr_approve', title:'Approval Queue', bullets:[
+        'Unified queue for regularizations, OT requests, shift swaps',
+        'Priority tagging (urgent, overdue, SLA-breaching, routine)',
+        'One-click approve/reject with optional comment',
+        'Bulk approve for routine items (select multiple, approve all)',
+        'Auto-escalation timer showing time remaining before escalation',
+        "Approval history log for manager's own audit trail"
+      ]},
+      { id:'mgr_reports', title:'Attendance Reports', bullets:[
+        'Late arrivals report (frequency, average delay, trend per person)',
+        'Absenteeism rate by person, team, department with trend lines',
+        'Overtime hours breakdown by person with cost estimates',
+        'Filter by date range, department, individual, shift type',
+        'Export to Excel/PDF for payroll or management review',
+        'Scheduled report delivery (weekly email with key metrics)'
+      ]},
+      { id:'mgr_shift', title:'Shift Planning', bullets:[
+        'Drag-and-drop roster builder for weekly/monthly shift assignment',
+        'Minimum staffing level enforcement with warnings on under-coverage',
+        "Copy previous week's roster as starting point",
+        'On-call assignment management',
+        'Skill-based assignment filters (only assign qualified employees to certain shifts)',
+        'Visual conflict detection (double-booking, rest period violations)',
+        'Publish roster with notification to all affected employees'
+      ]},
+      { id:'mgr_exception', title:'Exception Management', bullets:[
+        'Dashboard of missed punches, short hours, and policy violations',
+        'Add notes and take corrective action per exception',
+        'Escalation to HR for repeated or serious violations',
+        'Exception trend analysis per employee over time',
+        'Auto-generated exception report for payroll team'
+      ]},
+      { id:'mgr_otmon', title:'Overtime Monitoring', bullets:[
+        'OT budget consumption per team (spent vs allocated)',
+        'Alerts when nearing OT budget limits (80%, 90%, 100%)',
+        'Planned vs actual OT comparison per week/month',
+        'Individual OT breakdown with cost impact',
+        'Forecasted OT spend for remaining period at current rate'
+      ]}
+    ],
+    ai: [
+      { id:'mgr_ai_absent', title:'Absenteeism Predictor', bullets:[
+        'Predicts likely absences for next week per team member with confidence scores',
+        'Considers historical patterns, day-of-week trends, seasonal factors, recent behavior',
+        'Suggests backup staffing arrangements proactively',
+        'Accuracy improves over time as more data accumulates'
+      ]},
+      { id:'mgr_ai_shift', title:'Smart Shift Optimizer', bullets:[
+        'AI suggests optimal shift assignments based on preferences, skills, fairness rotation',
+        'Factors in labor law constraints (max hours, mandatory rest, night shift limits)',
+        'Balances workload across team members equitably over time',
+        'One-click accept AI suggestion or manually adjust'
+      ]},
+      { id:'mgr_ai_health', title:'Team Health Pulse', bullets:[
+        'AI weekly digest: average hours, OT flags, irregular patterns across the team',
+        'Highlights members who may need check-in (sustained OT, irregular hours, no breaks)',
+        'Compares team patterns against company averages',
+        'Recommends specific actions per flagged individual'
+      ]},
+      { id:'mgr_ai_except', title:'Auto-Exception Resolution', bullets:[
+        'AI auto-resolves routine exceptions (badge swipe confirms presence despite missed punch)',
+        'Flags only genuine anomalies for manager review (reduces noise by 60-70%)',
+        "Learning engine: adapts resolution rules from manager's past decisions",
+        'Clear audit trail showing AI-resolved vs manager-resolved exceptions'
+      ]}
+    ],
+    additional: []
+  },
+  admin: {
+    standard: [
+      { id:'adm_policy', title:'Policy Configuration', bullets:[
+        'Grace period setting (minutes allowed after shift start before marking late)',
+        'Late-mark rules (how many late marks = half-day deduction, written warning, etc.)',
+        'Half-day threshold (minimum hours for half-day vs full-day vs absent)',
+        'OT eligibility rules (which grades, shifts, days are eligible for overtime pay)',
+        'Comp-off rules (working on holiday earns comp-off with expiry period)',
+        'Version control with effective dates (policy v2 applies from April 1 — v1 remains for historical records)',
+        "Policy preview ('See how this change would have affected last month\\'s data before applying')"
+      ]},
+      { id:'adm_device', title:'Device Management', bullets:[
+        'Register biometric devices (fingerprint scanners, face recognition terminals)',
+        'Register NFC readers and kiosk terminals with location mapping',
+        'Map devices to specific locations/buildings/floors',
+        'Third-party device sync via API (Anviz, ZKTeco, Suprema)',
+        'Device health monitoring (last sync time, error rates, offline alerts)',
+        'Bulk device firmware update management'
+      ]},
+      { id:'adm_shiftm', title:'Shift Master Setup', bullets:[
+        'Create shift types with names, start/end times, break windows',
+        'Night shift configuration with allowances and special rules',
+        'Flexible shift definitions (core hours + flex window)',
+        'Map shifts to grades, departments, or locations as defaults',
+        'Seasonal shift variations (summer timing, Ramadan timing)',
+        'Rotation pattern templates (weekly rotation, fortnightly)'
+      ]},
+      { id:'adm_compliance', title:'Labor Compliance Engine', bullets:[
+        'Maximum working hours per day/week/month by jurisdiction',
+        'Mandatory break rules (minimum break after X hours — per country)',
+        'Weekly off requirements (one day, two days — varies by country)',
+        'Night shift restrictions (gender-specific, age-specific — per local law)',
+        'Auto-flag violations before they reach payroll',
+        'Multi-jurisdiction support (UAE, India, US, UK — different rules per entity)'
+      ]},
+      { id:'adm_payroll', title:'Payroll Integration', bullets:[
+        'Map attendance events to payroll outcomes (late = X deduction, OT = Y payout)',
+        'Shift allowances (night premium, weekend premium, hazard premium)',
+        'LOP (Loss of Pay) calculation rules based on absence types',
+        'Overtime pay rate configuration (1.5x, 2x, 3x based on day type and hours)',
+        'Payroll data export in format compatible with payroll engine/third-party provider',
+        'Reconciliation dashboard (attendance data vs payroll inputs — differences highlighted)'
+      ]},
+      { id:'adm_audit', title:'Audit Trail & Forensics', bullets:[
+        'Every punch logged with timestamp, IP address, device ID, GPS coordinates',
+        'Every manual edit, override, or regularization logged with who, when, why',
+        'Tamper-proof immutable log for labor dispute evidence',
+        'Forensic search (find all punches from device X, or all edits by admin Y)',
+        'Export audit trail for specific date range or employee for legal/compliance requests'
+      ]}
+    ],
+    ai: [
+      { id:'adm_ai_sim', title:'Policy Impact Simulator', bullets:[
+        "'Reducing grace period from 15→10 min would affect 23% of employees, increase late-marks by 340%'",
+        'Models any policy change against historical data before implementation',
+        'Shows affected employees list and estimated payroll impact',
+        'Comparison view: current policy vs proposed policy side by side with impact metrics'
+      ]},
+      { id:'adm_ai_compmon', title:'Compliance Auto-Monitor', bullets:[
+        'Continuously checks attendance records against labor laws per jurisdiction',
+        'Proactive alerts on violations (before they become legal issues)',
+        'Daily/weekly compliance health score per entity/location',
+        'Auto-generates compliance reports for labor authorities'
+      ]},
+      { id:'adm_ai_fraud', title:'Fraud Detection', bullets:[
+        'Detects buddy punching (same device, too-close timestamps for different employees)',
+        'Impossible travel patterns (punched in Location A and Location B 5 min apart)',
+        'Pattern manipulation detection (systematic last-minute punches, identical times daily)',
+        'Time theft identification (punching in but leaving — no activity between punches)',
+        'Severity scoring and investigation queue for HR review'
+      ]},
+      { id:'adm_ai_recon', title:'Smart Payroll Reconciliation', bullets:[
+        'Pre-audits attendance-to-payroll mapping before processing',
+        'Catches mismatches (employee marked present but no punch, OT approved but not calculated)',
+        'Estimates financial impact of each discrepancy',
+        'Auto-fix suggestions for routine mismatches with one-click apply'
+      ]}
+    ],
+    additional: [
+      { id:'adm_add_geo', title:'Advanced Geo-Fencing', bullets:[
+        'Multi-zone geo-fencing (office, client site, home — different rules per zone)',
+        'Dynamic geo-fence creation from Google Maps integration',
+        'Geo-fence violation alerts with configurable tolerance',
+        'GPS privacy controls (tracking only during work hours, no personal location storage)'
+      ]},
+      { id:'adm_add_comp', title:'Compliance Automation', bullets:[
+        'Working time directive enforcement (EU 48-hour weekly limit, 11-hour daily rest)',
+        'Mandatory break enforcement with clock-out reminders',
+        'Fatigue management rules for shift workers (minimum hours between shifts)',
+        'Automated compliance reporting for labor inspections'
+      ]}
+    ]
+  }
+};
+
+// ════════════════════════════════════════
+// RENDER NODES
+// ════════════════════════════════════════
+const intraArrowSvg = `<svg viewBox="0 0 8 8" fill="none"><path d="M1 4h5M4.5 2L6.5 4L4.5 6" stroke="#b0bec5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function buildRow(containerId, features, type) {
+  const row = document.getElementById(containerId);
+  features.forEach((f, i) => {
+    if (i > 0) {
+      const arrow = document.createElement('div');
+      arrow.className = 'intra-arrow';
+      arrow.innerHTML = intraArrowSvg;
+      row.appendChild(arrow);
+    }
+    const node = document.createElement('div');
+    node.className = `node ${type}`;
+    node.dataset.id = f.id;
+    node.dataset.type = type;
+    node.id = f.id;
+    const prefix = type === 'ai' ? '✦ ' : '';
+    node.innerHTML = `<span class="node-title">${prefix}${f.title}</span><span class="node-badge">${f.bullets.length}</span>`;
+    node.addEventListener('mouseenter', showTooltip);
+    node.addEventListener('mousemove', moveTooltip);
+    node.addEventListener('mouseleave', hideTooltip);
+    node.addEventListener('click', () => openModal(f, type));
+    row.appendChild(node);
+  });
+}
+
+// Employee
+buildRow('empRow1', DATA.employee.standard, 'standard');
+buildRow('empRow2', [...DATA.employee.ai, ...DATA.employee.additional],
+  null); // handled individually below
+
+// Rebuild empRow2 with mixed types
+document.getElementById('empRow2').innerHTML = '';
+const empR2 = [...DATA.employee.ai.map(f=>({...f,type:'ai'})), ...DATA.employee.additional.map(f=>({...f,type:'additional'}))];
+empR2.forEach((f,i)=>{
+  const row = document.getElementById('empRow2');
+  if(i>0){const a=document.createElement('div');a.className='intra-arrow';a.innerHTML=intraArrowSvg;row.appendChild(a)}
+  const node=document.createElement('div');node.className=`node ${f.type}`;node.dataset.id=f.id;node.dataset.type=f.type;node.id=f.id;
+  const prefix=f.type==='ai'?'✦ ':'';
+  node.innerHTML=`<span class="node-title">${prefix}${f.title}</span><span class="node-badge">${f.bullets.length}</span>`;
+  node.addEventListener('mouseenter',showTooltip);node.addEventListener('mousemove',moveTooltip);node.addEventListener('mouseleave',hideTooltip);
+  node.addEventListener('click',()=>openModal(f,f.type));row.appendChild(node);
+});
+
+// Manager
+buildRow('mgrRow1', DATA.manager.standard, 'standard');
+document.getElementById('mgrRow2').innerHTML='';
+const mgrR2=[...DATA.manager.ai.map(f=>({...f,type:'ai'})),...DATA.manager.additional.map(f=>({...f,type:'additional'}))];
+mgrR2.forEach((f,i)=>{
+  const row=document.getElementById('mgrRow2');
+  if(i>0){const a=document.createElement('div');a.className='intra-arrow';a.innerHTML=intraArrowSvg;row.appendChild(a)}
+  const node=document.createElement('div');node.className=`node ${f.type}`;node.dataset.id=f.id;node.dataset.type=f.type;node.id=f.id;
+  const prefix=f.type==='ai'?'✦ ':'';
+  node.innerHTML=`<span class="node-title">${prefix}${f.title}</span><span class="node-badge">${f.bullets.length}</span>`;
+  node.addEventListener('mouseenter',showTooltip);node.addEventListener('mousemove',moveTooltip);node.addEventListener('mouseleave',hideTooltip);
+  node.addEventListener('click',()=>openModal(f,f.type));row.appendChild(node);
+});
+
+// Admin
+buildRow('admRow1', DATA.admin.standard, 'standard');
+document.getElementById('admRow2').innerHTML='';
+const admR2=[...DATA.admin.ai.map(f=>({...f,type:'ai'})),...DATA.admin.additional.map(f=>({...f,type:'additional'}))];
+admR2.forEach((f,i)=>{
+  const row=document.getElementById('admRow2');
+  if(i>0){const a=document.createElement('div');a.className='intra-arrow';a.innerHTML=intraArrowSvg;row.appendChild(a)}
+  const node=document.createElement('div');node.className=`node ${f.type}`;node.dataset.id=f.id;node.dataset.type=f.type;node.id=f.id;
+  const prefix=f.type==='ai'?'✦ ':'';
+  node.innerHTML=`<span class="node-title">${prefix}${f.title}</span><span class="node-badge">${f.bullets.length}</span>`;
+  node.addEventListener('mouseenter',showTooltip);node.addEventListener('mousemove',moveTooltip);node.addEventListener('mouseleave',hideTooltip);
+  node.addEventListener('click',()=>openModal(f,f.type));row.appendChild(node);
+});
+
+// ════════════════════════════════════════
+// NODE ENTRANCE ANIMATION
+// ════════════════════════════════════════
+const allNodes = document.querySelectorAll('.node');
+allNodes.forEach((n, i) => {
+  setTimeout(() => n.classList.add('visible'), 80 + i * 30);
+});
+
+// ════════════════════════════════════════
+// TOOLTIP
+// ════════════════════════════════════════
+const tooltip = document.getElementById('tooltip');
+function findFeatureData(id) {
+  for (const role of Object.values(DATA)) {
+    for (const group of Object.values(role)) {
+      const f = group.find(x => x.id === id);
+      if (f) return f;
+    }
+  }
+  return null;
+}
+function showTooltip(e) {
+  const node = e.currentTarget;
+  const f = findFeatureData(node.dataset.id);
+  if (!f) return;
+  const type = node.dataset.type;
+  const titleClass = type === 'ai' ? 'ai-title' : type === 'additional' ? 'add-title' : '';
+  const prefix = type === 'ai' ? '✦ ' : '';
+  tooltip.innerHTML = `<div class="tooltip-title ${titleClass}">${prefix}${f.title}</div><ul>${f.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`;
+  tooltip.classList.add('show');
+}
+function moveTooltip(e) {
+  const x = e.clientX + 12;
+  const y = e.clientY + 12;
+  const tw = tooltip.offsetWidth;
+  const th = tooltip.offsetHeight;
+  tooltip.style.left = (x + tw > window.innerWidth ? e.clientX - tw - 8 : x) + 'px';
+  tooltip.style.top = (y + th > window.innerHeight ? e.clientY - th - 8 : y) + 'px';
+}
+function hideTooltip() { tooltip.classList.remove('show'); }
+
+// ════════════════════════════════════════
+// MODAL
+// ════════════════════════════════════════
+const modalOverlay = document.getElementById('modalOverlay');
+const modal = document.getElementById('modal');
+function openModal(f, type) {
+  const prefix = type === 'ai' ? '✦ ' : '';
+  document.getElementById('modalTitle').textContent = prefix + f.title;
+  const typeEl = document.getElementById('modalType');
+  typeEl.textContent = type === 'ai' ? 'AI-Powered Feature' : type === 'additional' ? 'Additional Feature' : 'Standard Feature';
+  typeEl.className = 'modal-type' + (type === 'ai' ? ' ai-type' : type === 'additional' ? ' add-type' : '');
+  const list = document.getElementById('modalList');
+  list.innerHTML = f.bullets.map(b => `<li class="${type === 'ai' ? 'ai-bullet' : type === 'additional' ? 'add-bullet' : ''}">${b}</li>`).join('');
+  modalOverlay.classList.add('show');
+}
+document.getElementById('modalClose').addEventListener('click', () => modalOverlay.classList.remove('show'));
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) modalOverlay.classList.remove('show'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') modalOverlay.classList.remove('show'); });
+
+// ════════════════════════════════════════
+// AI HIGHLIGHT TOGGLE
+// ════════════════════════════════════════
+document.getElementById('aiToggle').addEventListener('change', function() {
+  document.querySelectorAll('.node.ai').forEach(n => {
+    n.classList.toggle('highlight', this.checked);
+  });
+});
+
+// ════════════════════════════════════════
+// CROSS-LANE ARROWS (routed via margins)
+// ════════════════════════════════════════
+function drawArrows() {
+  const svg = document.getElementById('arrowSvg');
+  const container = document.getElementById('lanesContainer');
+  const cRect = container.getBoundingClientRect();
+  svg.setAttribute('viewBox', `0 0 ${cRect.width} ${cRect.height}`);
+  svg.innerHTML = '';
+
+  // Arrow definitions:
+  // 1. emp_punch → mgr_board (approval - Employee punches → Manager attendance board)
+  // 2. emp_reg → mgr_approve (approval - Employee regularization/OT → Manager approval)
+  // 3. emp_ot → mgr_approve (approval - Employee OT → Manager approval)
+  // 4. emp_shift → mgr_shift (approval - Employee shift swap → Manager shift planning)
+  // 5. adm_policy → emp_punch (dataflow - Admin policies → Employee experience)
+  // 6. adm_policy → mgr_board (dataflow - Admin policies → Manager experience)
+  // 7. mgr_approve → adm_payroll (dataflow - Manager approved attendance → Admin payroll)
+
+  const arrows = [
+    { from:'emp_punch', to:'mgr_board', type:'approval', side:'left', offset:0 },
+    { from:'emp_reg', to:'mgr_approve', type:'approval', side:'left', offset:1 },
+    { from:'emp_ot', to:'mgr_approve', type:'approval', side:'right', offset:0 },
+    { from:'emp_shift', to:'mgr_shift', type:'approval', side:'right', offset:1 },
+    { from:'adm_policy', to:'emp_punch', type:'dataflow', side:'left', offset:2 },
+    { from:'mgr_approve', to:'adm_payroll', type:'dataflow', side:'right', offset:2 },
+  ];
+
+  const leftBase = 4;
+  const rightBase = cRect.width - 4;
+  const channelStep = 5;
+
+  arrows.forEach(a => {
+    const fromEl = document.getElementById(a.from);
+    const toEl = document.getElementById(a.to);
+    if (!fromEl || !toEl) return;
+
+    const fRect = fromEl.getBoundingClientRect();
+    const tRect = toEl.getBoundingClientRect();
+
+    // Convert to container-relative coordinates
+    const fx = fRect.left - cRect.left + fRect.width / 2;
+    const fy_bottom = fRect.bottom - cRect.top;
+    const fy_top = fRect.top - cRect.top;
+    const tx = tRect.left - cRect.left + tRect.width / 2;
+    const ty_top = tRect.top - cRect.top;
+    const ty_bottom = tRect.bottom - cRect.top;
+
+    let channelX;
+    if (a.side === 'left') {
+      channelX = leftBase + a.offset * channelStep;
+    } else {
+      channelX = rightBase - a.offset * channelStep;
+    }
+
+    let path;
+    const goingDown = fy_bottom < ty_top; // source above target
+    if (goingDown) {
+      // Down: source bottom → horizontal to channel → vertical down → horizontal to target → target top
+      const sy = fy_bottom + 1;
+      const ey = ty_top - 1;
+      path = `M${fx},${sy} L${fx},${sy+3} L${channelX},${sy+3} L${channelX},${ey-3} L${tx},${ey-3} L${tx},${ey}`;
+    } else {
+      // Up: source top → horizontal to channel → vertical up → horizontal to target → target bottom
+      const sy = fy_top - 1;
+      const ey = ty_bottom + 1;
+      path = `M${fx},${sy} L${fx},${sy-3} L${channelX},${sy-3} L${channelX},${ey+3} L${tx},${ey+3} L${tx},${ey}`;
+    }
+
+    // Draw path
+    const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pathEl.setAttribute('d', path);
+    pathEl.setAttribute('class', `arrow-path ${a.type}`);
+    pathEl.setAttribute('fill', 'none');
+    pathEl.id = `arrow_${a.from}_${a.to}`;
+    svg.appendChild(pathEl);
+
+    // Arrowhead at end
+    const headSize = 5;
+    let headPath;
+    if (goingDown) {
+      headPath = `M${tx-headSize},${ty_top-1-headSize} L${tx},${ty_top-1} L${tx+headSize},${ty_top-1-headSize}`;
+    } else {
+      headPath = `M${tx-headSize},${ty_bottom+1+headSize} L${tx},${ty_bottom+1} L${tx+headSize},${ty_bottom+1+headSize}`;
+    }
+    const head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    head.setAttribute('d', headPath);
+    head.setAttribute('class', `arrow-head ${a.type}`);
+    svg.appendChild(head);
+
+    // Animated dot
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('class', `arrow-dot ${a.type}`);
+    dot.setAttribute('r', '3');
+    const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+    anim.setAttribute('dur', '3s');
+    anim.setAttribute('repeatCount', 'indefinite');
+    anim.setAttribute('path', path);
+    dot.appendChild(anim);
+    svg.appendChild(dot);
+  });
+}
+
+// Draw arrows after layout settles
+setTimeout(drawArrows, 500);
+window.addEventListener('resize', () => { clearTimeout(window._arrowTimer); window._arrowTimer = setTimeout(drawArrows, 100); });
+</script>
+</body>
+</html>

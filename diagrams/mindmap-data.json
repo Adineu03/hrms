@@ -1,0 +1,4911 @@
+{
+ "stats": {
+  "features": 465,
+  "bullets": 1958,
+  "standard": 265,
+  "ai": 176,
+  "additional": 24
+ },
+ "modules": {
+  "Cold Start & Setup": {
+   "Employee": [
+    {
+     "n": "Accept Invitation & Onboard",
+     "t": "Standard",
+     "b": [
+      "Receive welcome email with secure one-time login link",
+      "Set password with strength meter and optional MFA setup (TOTP, SMS)",
+      "Complete personal profile (photo, emergency contacts, bank details, address)",
+      "Review and correct pre-populated information from admin import",
+      "Acknowledge company policies (handbook, code of conduct, data privacy consent)",
+      "Download mobile app via QR code or direct app store link from welcome screen",
+      "Choose notification preferences (email, push, in-app — per category)"
+     ]
+    },
+    {
+     "n": "Explore System with Guided Tour",
+     "t": "Standard",
+     "b": [
+      "Interactive walkthrough highlighting key sections (dashboard, leave, attendance, profile)",
+      "Contextual tooltips on first visit to each module explaining its purpose",
+      "Help center with searchable FAQs, video guides, and contact HR option",
+      "Dismissible tips that don't reappear once acknowledged"
+     ]
+    },
+    {
+     "n": "None at Cold Start",
+     "t": "AI",
+     "b": [
+      "AI features activate as organizational data accumulates over time"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "View Pre-Configured Team Structure",
+     "t": "Standard",
+     "b": [
+      "See auto-generated team org chart based on imported data",
+      "Review direct reports list with imported details (name, role, department, hire date)",
+      "Verify reporting relationships are correct before go-live",
+      "Flag incorrect assignments for admin to fix"
+     ]
+    },
+    {
+     "n": "Getting Started Checklist",
+     "t": "Standard",
+     "b": [
+      "Role-specific onboarding steps (review team, set up shifts, schedule 1:1s)",
+      "Progress tracker showing completed vs pending setup tasks",
+      "Contextual tips per step with links to help articles and video tutorials",
+      "Estimated time per task to set expectations"
+     ]
+    },
+    {
+     "n": "None at Cold Start",
+     "t": "AI",
+     "b": [
+      "AI features activate as organizational data accumulates over time"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Setup Wizard — Company Profile",
+     "t": "Standard",
+     "b": [
+      "Company name, legal name, and trade license number input",
+      "Country of incorporation selection → auto-loads labor law defaults, currency, date format, timezone",
+      "Industry selection → auto-loads industry-specific policy templates, comp benchmarks, competency frameworks",
+      "Company size bracket selection → adjusts default approval chains, org structure templates, module recommendations",
+      "Logo and brand color upload → applied across portal, careers page, offer letters, payslips",
+      "Fiscal year configuration (calendar year, April-March, custom — affects accrual, budgets, review cycles)",
+      "Multi-entity toggle for multi-country operations → enables entity-level policy separation"
+     ]
+    },
+    {
+     "n": "Auto-Configuration Engine",
+     "t": "Standard",
+     "b": [
+      "Leave policies pre-loaded per country labor law (annual, sick, maternity/paternity minimums, bereavement)",
+      "Payroll tax structure configured (income tax slabs, PF/ESI/GOSI/Social Security, employer contributions)",
+      "Public holiday calendar auto-imported from government gazette for selected country and year",
+      "Attendance policy defaults set (grace period, late-mark threshold, half-day rules, OT eligibility)",
+      "Currency, timezone, date format, and language defaults applied",
+      "Working week auto-set per region (Mon-Fri, Sun-Thu for GCC, Mon-Sat for certain regions)",
+      "Statutory reporting templates loaded (WPS for UAE, PF returns for India, P60 for UK, W-2 for US)",
+      "Compliance checklists activated per jurisdiction (document retention, mandatory training, labor inspection readiness)"
+     ]
+    },
+    {
+     "n": "Work Structure Setup",
+     "t": "Standard",
+     "b": [
+      "Department creation with parent hierarchy, cost center code, and department head assignment",
+      "Location/office setup with address, timezone, GPS coordinates for geo-fencing, entity mapping",
+      "Grade/level structure definition (names, level order, salary band linkage, promotion path)",
+      "Designation master (job titles mapped to grades — used across offer letters, org chart, reporting)",
+      "Work model selection per entity/department (office, hybrid, remote, field/shift — sets attendance defaults)",
+      "Working hours definition (standard start/end, flexible window, core hours for hybrid)",
+      "Shift template auto-loading based on work model selection"
+     ]
+    },
+    {
+     "n": "Employee Import",
+     "t": "Standard",
+     "b": [
+      "Excel/CSV upload with drag-and-drop file zone and column preview showing first 10 rows",
+      "Manual column mapping interface (drag source to target fields) with auto-save",
+      "Template download (pre-formatted Excel with all accepted columns, data validation, sample data)",
+      "Bulk validation report showing all errors, warnings, and suggestions before import commits",
+      "Row-level error details (which row, which column, what's wrong, suggested fix)",
+      "Partial import option (import valid rows, skip errored, download error report for fixing)",
+      "Duplicate detection (match on email, phone, national ID — merge/skip/override options)",
+      "Manager relationship mapping → auto-build reporting hierarchy from manager column",
+      "Incremental import support (add new or update existing without duplicating)",
+      "Historical data import (hire dates, salary history, leave balances from previous system)",
+      "API-based import (connect to existing HRMS, map fields, schedule sync for migration)",
+      "Manual single-employee add form and start-empty option to defer import",
+      "Welcome invitation toggle (send login invites immediately or defer to later)"
+     ]
+    },
+    {
+     "n": "Module Activation",
+     "t": "Standard",
+     "b": [
+      "Visual grid of all 11 modules with on/off toggle",
+      "Recommended starter pack highlighted (Time + Leave + Core HR)",
+      "Module dependency indicators (e.g., 'Compensation benefits from Performance data')",
+      "Instant activation — no setup required, all modules pre-configured with defaults",
+      "Deactivation hides module but retains data (re-enable anytime without data loss)",
+      "Per-entity module control (enable Recruitment for HQ but not branches)",
+      "Sub-feature flags within each module (e.g., toggle Shift Management within Time & Attendance)"
+     ]
+    },
+    {
+     "n": "Demo Company Loader",
+     "t": "Standard",
+     "b": [
+      "One-click 'Load Demo Company' button during setup",
+      "Loads complete fictional company (200 employees, 12 months history, all modules populated)",
+      "Persistent 'Demo Mode' banner across the interface — clearly labeled",
+      "Tenant-isolated from any real data the admin may add",
+      "Includes realistic transactional data (attendance, leave, timesheets, reviews, recruitment)",
+      "AI features active on demo data showcasing predictions, insights, smart suggestions",
+      "One-click wipe (removes all demo data, resets to fresh empty system)",
+      "Option to keep configurations (policies, workflows) while wiping employee data",
+      "Demo login credentials for all three roles (admin, manager, employee)"
+     ]
+    },
+    {
+     "n": "Empty State UX & Defaults",
+     "t": "Standard",
+     "b": [
+      "Every screen shows purposeful empty state with contextual guidance (not blank/error)",
+      "Call-to-action buttons on each empty screen ('Add your first employee,' 'Configure shifts')",
+      "Getting started checklist widget on admin dashboard with completion percentage",
+      "Video walkthrough links on complex setup screens (policy config, payroll mapping)",
+      "Country-specific policy packs, industry-specific templates — all version-controlled",
+      "One-click reset to default if customization goes wrong"
+     ]
+    },
+    {
+     "n": "AI Column Mapper",
+     "t": "AI",
+     "b": [
+      "Auto-detects column types from headers and sample data patterns",
+      "Maps variant names ('Emp Name', 'Full Name', 'Name') to correct field automatically",
+      "Detects and normalizes date formats (DD/MM/YYYY vs MM/DD/YYYY) automatically",
+      "Confidence score per mapping with manual override option",
+      "Learns from admin corrections for future imports"
+     ]
+    },
+    {
+     "n": "Smart Org Chart Builder",
+     "t": "AI",
+     "b": [
+      "Infers reporting hierarchy from manager columns in imported data",
+      "Detects circular references and flags them for admin to fix",
+      "Identifies orphan employees and suggests likely managers based on department",
+      "Detects unreasonable spans of control and suggests intermediate levels"
+     ]
+    },
+    {
+     "n": "Data Quality Scorer",
+     "t": "AI",
+     "b": [
+      "Scores overall import quality (e.g., '78% complete — 44 records missing phone')",
+      "Categorizes issues by severity (critical, warning, info)",
+      "Suggests likely values for missing fields based on patterns in the dataset",
+      "Data enrichment suggestions (validate national ID formats, email domains)"
+     ]
+    }
+   ]
+  },
+  "Core HR & People Data": {
+   "Employee": [
+    {
+     "n": "My Profile",
+     "t": "Standard",
+     "b": [
+      "View and edit personal information (full name, DOB, gender, nationality, marital status)",
+      "Update contact details (personal email, phone, current address, permanent address)",
+      "Manage emergency contacts (multiple with name, relationship, phone, priority order)",
+      "Bank details management (add/update account, IBAN, SWIFT, set primary for salary)",
+      "Dependent information (spouse, children, parents — for benefits and tax declarations)",
+      "Profile photo upload with crop and resize tool",
+      "Personal ID section (national ID, passport, visa, driving license — with expiry tracking)",
+      "Employment summary (DOJ, designation, department, grade, manager, tenure calculator)",
+      "Skills and interests section (self-declared skills, languages, hobbies — for internal matching)",
+      "Profile completeness indicator with suggestions to reach 100%",
+      "Edit history (all profile changes with timestamps)"
+     ]
+    },
+    {
+     "n": "Document Vault",
+     "t": "Standard",
+     "b": [
+      "View documents organized by category (contracts, identity, financial, certificates, letters)",
+      "Download any document (offer letter, salary revisions, payslips, tax forms)",
+      "Upload personal documents (scanned IDs, certificates, visa copies — with category tagging)",
+      "Document expiry alerts (visa in 60 days, ID renewal, certification lapsing)",
+      "Version history for updated documents",
+      "Secure encrypted access (employee and authorized HR only)",
+      "Bulk download as ZIP for personal record-keeping",
+      "Mobile upload directly from phone camera"
+     ]
+    },
+    {
+     "n": "Org Chart Explorer",
+     "t": "Standard",
+     "b": [
+      "Interactive visual org chart from CEO to individual contributors",
+      "Click any person for profile card (name, role, department, email, phone)",
+      "Navigate up (manager, skip-level), down (peers' reports), sideways (peers)",
+      "Dotted-line and matrix reporting relationships visible",
+      "Search by name, department, or designation within org chart",
+      "Filter by department, location, or entity",
+      "Vacant positions shown as dotted-border nodes",
+      "Export org chart as PDF or image"
+     ]
+    },
+    {
+     "n": "Payslip & Tax",
+     "t": "Standard",
+     "b": [
+      "Monthly payslip view (gross, basic, allowances, deductions, employer contributions, net pay)",
+      "Download payslips as PDF (individual or bulk for the year)",
+      "Annual tax summary (total earnings, deductions, tax paid, Form 16/W-2 equivalent)",
+      "Year-to-date earnings tracker (running gross, deductions, tax totals)",
+      "Salary structure breakdown (visual pie chart of composition)",
+      "Historical month-over-month and year-over-year comparison",
+      "Tax declaration submission (investment declarations, rent receipts, HRA claims)",
+      "Employer contribution visibility (PF, gratuity, insurance — full CTC view)"
+     ]
+    },
+    {
+     "n": "Benefits Enrollment",
+     "t": "Standard",
+     "b": [
+      "Browse all available benefit plans (health, dental, vision, life, retirement, wellness)",
+      "Plan comparison view (side-by-side tiers with coverage, premiums, copays)",
+      "Enroll during open enrollment window with countdown timer",
+      "Life event enrollment triggers (marriage, child birth, adoption)",
+      "Manage dependents for coverage (add/remove with documentation)",
+      "Cost impact calculator (per-paycheck deduction preview before enrolling)",
+      "Digital benefits ID card accessible from mobile",
+      "Claims history view with status and amounts"
+     ]
+    },
+    {
+     "n": "Self-Service Requests",
+     "t": "Standard",
+     "b": [
+      "Employment verification letter (auto-generated with letterhead, digital signature, QR verification code)",
+      "NOC generation (for visa, travel, education — multiple templates by purpose)",
+      "Experience letter request (auto-generates with tenure, designation, performance summary)",
+      "Salary certificate request (for loans, visa, tenancy — auto-populated from payroll)",
+      "Name change request (with supporting documents, triggers update across all systems)",
+      "Bank account change request (new details with verification doc, routed to payroll)",
+      "Address change request (self-service with proof if required)",
+      "Request tracking dashboard (status of all pending requests with SLA timers)"
+     ]
+    },
+    {
+     "n": "AI Profile Assistant",
+     "t": "AI",
+     "b": [
+      "'When does my visa expire?' 'What's my remaining probation?' — instant answers from your data",
+      "Proactive alerts for upcoming expirations and milestones",
+      "Natural language queries about any personal HR data"
+     ]
+    },
+    {
+     "n": "Benefits Recommender",
+     "t": "AI",
+     "b": [
+      "Suggests optimal plan selections based on profile, family status, usage patterns",
+      "Cost-benefit comparison personalized to your situation",
+      "Alerts during enrollment window if better options exist"
+     ]
+    },
+    {
+     "n": "Smart Document Search",
+     "t": "AI",
+     "b": [
+      "Natural language: 'Find my last appraisal letter' → retrieves correct document",
+      "Search across all documents regardless of file name or category",
+      "Fuzzy matching for partial or approximate queries"
+     ]
+    },
+    {
+     "n": "Tax Optimization Hints",
+     "t": "AI",
+     "b": [
+      "Suggests tax-saving declarations based on salary structure and local tax law",
+      "Investment options recommended for maximum tax benefit",
+      "Alerts before declaration deadlines with estimated savings"
+     ]
+    },
+    {
+     "n": "Contractor Self-Service",
+     "t": "Additional",
+     "b": [
+      "Contractor profile with contract dates, scope of work, billing rate, and engagement type",
+      "Contract renewal tracking with expiry alerts",
+      "Timesheet and invoice submission for contractors",
+      "Limited access scope (only relevant modules visible)"
+     ]
+    },
+    {
+     "n": "Multi-Language Support",
+     "t": "Additional",
+     "b": [
+      "Interface language selection (English, Arabic, Hindi, Spanish, French, German, Mandarin, Portuguese)",
+      "RTL layout support for Arabic and Hebrew",
+      "Localized date, number, and currency formats per user preference",
+      "Policy documents available in multiple languages"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Directory",
+     "t": "Standard",
+     "b": [
+      "Full team roster with role, tenure, location, contact info, reporting chain",
+      "Quick filters (by location, grade, employment type, tenure range)",
+      "Team size history chart (how team has grown/shrunk over time)",
+      "Export team list to Excel with selected fields"
+     ]
+    },
+    {
+     "n": "Team Org Management",
+     "t": "Standard",
+     "b": [
+      "View current team structure in org chart format",
+      "Propose org changes (transfers, promotions, reporting line changes) with approval workflow",
+      "View impact of proposed changes before submitting (affects on spans, structure)",
+      "Track status of submitted org change requests"
+     ]
+    },
+    {
+     "n": "Compensation Overview",
+     "t": "Standard",
+     "b": [
+      "Team salary summary (bands, compa-ratios, band positioning per member — within access rights)",
+      "Bonus eligibility and target overview per team member",
+      "Equity vesting schedules and grant status (where applicable)",
+      "Historical comp changes for each team member"
+     ]
+    },
+    {
+     "n": "Headcount Tracking",
+     "t": "Standard",
+     "b": [
+      "Approved vs filled positions dashboard",
+      "Open requisitions with stage and ETA",
+      "Budget vs actual headcount comparison",
+      "Planned vs actual cost per head"
+     ]
+    },
+    {
+     "n": "Team Compliance",
+     "t": "Standard",
+     "b": [
+      "Track certifications and mandatory training completion per member",
+      "Visa expiration dashboard with renewal countdown",
+      "Probation milestone tracker (confirmation due dates, review scheduling)",
+      "Compliance gap report (who's missing what)"
+     ]
+    },
+    {
+     "n": "Letter & Change Requests",
+     "t": "Standard",
+     "b": [
+      "Initiate salary changes, promotions, transfers, role changes for team members",
+      "Approval workflow with justification and budget impact documentation",
+      "View status of all submitted requests",
+      "Generate and send letters (promotion, transfer) after approval"
+     ]
+    },
+    {
+     "n": "Team Insights Brief",
+     "t": "AI",
+     "b": [
+      "AI-generated monthly summary: tenure distribution, upcoming milestones, compliance gaps, org health",
+      "Highlights changes since last month (new joiners, exits, role changes)",
+      "Proactive alerts for items needing attention"
+     ]
+    },
+    {
+     "n": "Org Design Suggestions",
+     "t": "AI",
+     "b": [
+      "'Your team has 12 direct reports — research suggests 7±2. Consider creating a sub-team.'",
+      "Suggests optimal structures based on team size, function, and industry benchmarks",
+      "Models impact of proposed restructuring on reporting load and communication flow"
+     ]
+    },
+    {
+     "n": "Comp Equity Alerts",
+     "t": "AI",
+     "b": [
+      "Flags pay disparities within team by role, tenure, or demographics for proactive review",
+      "Shows compa-ratio outliers with suggested adjustments",
+      "Benchmarks team comp against market and internal peers"
+     ]
+    },
+    {
+     "n": "Succession Readiness",
+     "t": "AI",
+     "b": [
+      "AI assesses team member readiness for critical/leadership roles",
+      "Scores based on skills, performance trajectory, tenure, and development activities",
+      "Identifies gaps and recommends development actions per candidate"
+     ]
+    },
+    {
+     "n": "Blended Workforce View",
+     "t": "Additional",
+     "b": [
+      "Unified team roster showing FTEs, contractors, and interns in one view",
+      "Engagement type filter and distinct visual indicators",
+      "Contract expiry calendar for contingent workers",
+      "Contractor performance tracking with simplified review forms"
+     ]
+    },
+    {
+     "n": "Org Modeling",
+     "t": "Additional",
+     "b": [
+      "What-if org structure simulator (drag-and-drop team restructuring)",
+      "Impact analysis: span of control changes, cost implications, reporting chain effects",
+      "Propose changes with approval workflow — applied only after approval"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Employee Master Data",
+     "t": "Standard",
+     "b": [
+      "Complete employee records management with all standard and custom fields",
+      "Custom field creation per entity (add country-specific fields, industry-specific fields)",
+      "Data import/export in bulk (Excel, CSV) with field mapping",
+      "Deduplication engine (identify and merge duplicate records)",
+      "Mass update capability (change department for 50 employees at once)"
+     ]
+    },
+    {
+     "n": "Multi-Entity Setup",
+     "t": "Standard",
+     "b": [
+      "Configure legal entities across countries (name, registration, tax ID, address)",
+      "Entity-level policy separation (different leave policies per country entity)",
+      "Department and cost center mapping per entity",
+      "Grade and designation framework per entity or shared across entities",
+      "Inter-entity transfer workflows with data migration"
+     ]
+    },
+    {
+     "n": "Payroll Engine",
+     "t": "Standard",
+     "b": [
+      "Multi-country payroll processing with country-specific tax calculations",
+      "Statutory deduction configuration (PF, ESI, GOSI, Social Security, etc.)",
+      "Arrears calculation and processing (back-dated salary changes)",
+      "Reversal and correction workflows for payroll errors",
+      "Payslip generation and distribution (email, portal, bulk PDF)",
+      "Payroll calendar management (cutoff dates, processing dates, payment dates)",
+      "Integration with banking for salary transfers (WPS for UAE, NEFT for India)"
+     ]
+    },
+    {
+     "n": "Benefits Administration",
+     "t": "Standard",
+     "b": [
+      "Configure benefit plans with eligibility rules (by grade, tenure, entity)",
+      "Contribution structures (employer %, employee %, flat amounts)",
+      "Vendor integrations (insurance companies, retirement fund managers)",
+      "Open enrollment period configuration with auto-notifications",
+      "Life event trigger rules for mid-cycle enrollment"
+     ]
+    },
+    {
+     "n": "Compliance Management",
+     "t": "Standard",
+     "b": [
+      "Labor law compliance tracking per jurisdiction",
+      "Statutory reporting (PF returns, ESI, GOSI, WPS, P60, W-2 — auto-generated)",
+      "Document retention policy configuration and enforcement",
+      "Mandatory training tracking with escalation for non-compliance",
+      "Labor inspection readiness dashboard"
+     ]
+    },
+    {
+     "n": "Data Governance",
+     "t": "Standard",
+     "b": [
+      "Field-level access controls (who can see salary, national ID, bank details)",
+      "PII encryption at rest and in transit",
+      "GDPR consent management (employee consent tracking, right to erasure workflows)",
+      "Complete audit log of every data mutation (who, when, what, old value, new value)",
+      "Data export and portability tools for compliance requests"
+     ]
+    },
+    {
+     "n": "AI Org Designer",
+     "t": "AI",
+     "b": [
+      "Suggests optimal structures from performance data, collaboration patterns, and cost data",
+      "Models impact of restructuring (reporting load, communication overhead, cost changes)",
+      "Benchmarks against industry-standard org shapes for company size and stage"
+     ]
+    },
+    {
+     "n": "Smart Document Parser",
+     "t": "AI",
+     "b": [
+      "OCR + NLP auto-extracts fields from uploaded ID cards, contracts, certificates",
+      "Auto-populates employee records from scanned documents",
+      "Supports multiple languages and document formats",
+      "Confidence scores per extracted field with manual review for low-confidence items"
+     ]
+    },
+    {
+     "n": "Payroll Anomaly Detection",
+     "t": "AI",
+     "b": [
+      "Flags calculation errors, unusual amounts, and policy violations before payroll finalizes",
+      "Compares current month to historical patterns per employee",
+      "Detects duplicate payments, missed deductions, incorrect tax calculations",
+      "Pre-audit report with severity classification before processing"
+     ]
+    },
+    {
+     "n": "Predictive Compliance",
+     "t": "AI",
+     "b": [
+      "Monitors regulatory changes globally and predicts impact on your policies per jurisdiction",
+      "Alerts when new legislation requires policy updates",
+      "Estimates effort and cost of compliance changes",
+      "Suggests policy modifications to stay ahead of regulatory shifts"
+     ]
+    },
+    {
+     "n": "Multi-Entity Management",
+     "t": "Additional",
+     "b": [
+      "Manage multiple legal entities from single instance with entity-level data isolation",
+      "Cross-entity reporting with consolidation views",
+      "Entity-specific policy configuration with inheritance from parent",
+      "Inter-entity transfer workflow with compliance handling"
+     ]
+    },
+    {
+     "n": "Contractor Lifecycle Management",
+     "t": "Additional",
+     "b": [
+      "Contractor onboarding workflow (separate from employee onboarding)",
+      "Contract management with version control and renewal tracking",
+      "Contractor billing rate and invoice management",
+      "Auto-classification checker (contractor vs employee per jurisdiction rules)",
+      "Contractor offboarding with access revocation and IP handover"
+     ]
+    },
+    {
+     "n": "Custom Field Engine",
+     "t": "Additional",
+     "b": [
+      "Create unlimited custom fields per module (text, number, date, dropdown, multi-select, file)",
+      "Conditional field visibility rules (show field X only if field Y equals Z)",
+      "Custom fields available in reports, workflows, and API",
+      "Field-level permissions (who can view/edit each custom field)"
+     ]
+    },
+    {
+     "n": "Smart Entity Setup",
+     "t": "Additional",
+     "b": [
+      "When adding a new entity/country, AI pre-configures all statutory requirements",
+      "Suggests policy adjustments based on local labor law and entity characteristics",
+      "Migration assistant for employee transfers between entities"
+     ]
+    }
+   ]
+  },
+  "Time & Attendance": {
+   "Employee": [
+    {
+     "n": "Multi-Mode Punch",
+     "t": "Standard",
+     "b": [
+      "Web-based clock-in from desktop browser with single click",
+      "Mobile app punch with GPS location capture and geo-fence validation",
+      "Biometric device integration (fingerprint, face recognition) auto-synced",
+      "NFC badge tap at office entry points",
+      "Kiosk terminal support for shared workspaces and factory floors",
+      "GPS geo-fenced punching for field workers with coordinates logged",
+      "Offline punch capability (syncs when connection restored)"
+     ]
+    },
+    {
+     "n": "Real-Time Timesheet",
+     "t": "Standard",
+     "b": [
+      "Live view of today's hours worked with running timer",
+      "Break duration tracking with visual breakdown",
+      "Overtime accrual visualization (regular hours, OT hours, double-time)",
+      "Weekly and monthly views with visual timeline bars",
+      "Total hours worked this pay period with target comparison"
+     ]
+    },
+    {
+     "n": "Break & Meal Tracking",
+     "t": "Standard",
+     "b": [
+      "Start/stop break timer with configurable break types (tea, lunch, personal)",
+      "Auto-reminder if break exceeds policy limit",
+      "Break history for the day with duration per type",
+      "Compliance indicators (minimum mandatory break requirements met/unmet)"
+     ]
+    },
+    {
+     "n": "Overtime Requests",
+     "t": "Standard",
+     "b": [
+      "Pre-approve OT before working extra hours with reason and estimated duration",
+      "Post-log OT after the fact with justification",
+      "Reason codes (project deadline, client request, operational need, etc.)",
+      "See remaining OT quota for the month/quarter",
+      "Auto-calculated rate display (1.5x, 2x, holiday rates) before submission",
+      "Approval status tracking with manager comments"
+     ]
+    },
+    {
+     "n": "Regularization Requests",
+     "t": "Standard",
+     "b": [
+      "Submit missed punch correction with date, time, punch type (in/out), reason",
+      "Attach evidence (screenshot, email, manager confirmation) to support request",
+      "Full regularization history with status tracking",
+      "Reason code selection (forgot badge, system error, client site, travel)",
+      "Deadline indicator (regularization must be submitted within X days per policy)"
+     ]
+    },
+    {
+     "n": "Shift View & Swap",
+     "t": "Standard",
+     "b": [
+      "Calendar view of assigned shifts for the week/month ahead",
+      "Shift details (start time, end time, break window, location)",
+      "Request swap with eligible colleagues (same skill, same location)",
+      "See who's available and eligible for swap before requesting",
+      "Instant notifications to swap partner and manager",
+      "Swap status tracking (pending partner acceptance, pending manager approval, approved)"
+     ]
+    },
+    {
+     "n": "Smart Punch Reminder",
+     "t": "AI",
+     "b": [
+      "AI learns your daily routine and clock-in patterns",
+      "Nudges if you forgot to punch: 'You usually clock in at 9:05 — looks like you're at the office'",
+      "End-of-day reminder if clock-out not recorded",
+      "Adapts to schedule changes (detects new patterns after shift changes)"
+     ]
+    },
+    {
+     "n": "Commute-Aware Clock-In",
+     "t": "AI",
+     "b": [
+      "Detects arrival at office via GPS proximity",
+      "Offers one-tap clock-in push notification when you enter geo-fence",
+      "Learns your commute pattern and timing"
+     ]
+    },
+    {
+     "n": "Work Pattern Insights",
+     "t": "AI",
+     "b": [
+      "Weekly personal summary: average hours, early/late trends, most productive days",
+      "Comparison to your own historical patterns (not others — privacy-safe)",
+      "Trend charts for hours worked, breaks taken, OT frequency"
+     ]
+    },
+    {
+     "n": "Anomaly Self-Alert",
+     "t": "AI",
+     "b": [
+      "Flags your own unusual patterns: consecutive long days, irregular hours",
+      "Burnout early warning: 'You've worked 50+ hours for 3 consecutive weeks'",
+      "Suggests break or leave based on sustained high-activity patterns"
+     ]
+    },
+    {
+     "n": "Field Worker Features",
+     "t": "Additional",
+     "b": [
+      "GPS breadcrumb trail logging for field workers with configurable frequency",
+      "Client site check-in/check-out with location verification",
+      "Photo verification punch (selfie at location for compliance)",
+      "Route optimization suggestions for multi-site visits"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Attendance Board",
+     "t": "Standard",
+     "b": [
+      "Real-time dashboard showing who's present, late, absent, on break per team",
+      "Color-coded status indicators with last punch timestamp",
+      "Headcount summary (X present out of Y expected today)",
+      "Click any team member to see their full day timeline",
+      "Filter by location, shift, or sub-team",
+      "Historical date picker (view any past day's attendance board)"
+     ]
+    },
+    {
+     "n": "Approval Queue",
+     "t": "Standard",
+     "b": [
+      "Unified queue for regularizations, OT requests, shift swaps",
+      "Priority tagging (urgent, overdue, SLA-breaching, routine)",
+      "One-click approve/reject with optional comment",
+      "Bulk approve for routine items (select multiple, approve all)",
+      "Auto-escalation timer showing time remaining before escalation",
+      "Approval history log for manager's own audit trail"
+     ]
+    },
+    {
+     "n": "Attendance Reports",
+     "t": "Standard",
+     "b": [
+      "Late arrivals report (frequency, average delay, trend per person)",
+      "Absenteeism rate by person, team, department with trend lines",
+      "Overtime hours breakdown by person with cost estimates",
+      "Filter by date range, department, individual, shift type",
+      "Export to Excel/PDF for payroll or management review",
+      "Scheduled report delivery (weekly email with key metrics)"
+     ]
+    },
+    {
+     "n": "Shift Planning",
+     "t": "Standard",
+     "b": [
+      "Drag-and-drop roster builder for weekly/monthly shift assignment",
+      "Minimum staffing level enforcement with warnings on under-coverage",
+      "Copy previous week's roster as starting point",
+      "On-call assignment management",
+      "Skill-based assignment filters (only assign qualified employees to certain shifts)",
+      "Visual conflict detection (double-booking, rest period violations)",
+      "Publish roster with notification to all affected employees"
+     ]
+    },
+    {
+     "n": "Exception Management",
+     "t": "Standard",
+     "b": [
+      "Dashboard of missed punches, short hours, and policy violations",
+      "Add notes and take corrective action per exception",
+      "Escalation to HR for repeated or serious violations",
+      "Exception trend analysis per employee over time",
+      "Auto-generated exception report for payroll team"
+     ]
+    },
+    {
+     "n": "Overtime Monitoring",
+     "t": "Standard",
+     "b": [
+      "OT budget consumption per team (spent vs allocated)",
+      "Alerts when nearing OT budget limits (80%, 90%, 100%)",
+      "Planned vs actual OT comparison per week/month",
+      "Individual OT breakdown with cost impact",
+      "Forecasted OT spend for remaining period at current rate"
+     ]
+    },
+    {
+     "n": "Absenteeism Predictor",
+     "t": "AI",
+     "b": [
+      "Predicts likely absences for next week per team member with confidence scores",
+      "Considers historical patterns, day-of-week trends, seasonal factors, recent behavior",
+      "Suggests backup staffing arrangements proactively",
+      "Accuracy improves over time as more data accumulates"
+     ]
+    },
+    {
+     "n": "Smart Shift Optimizer",
+     "t": "AI",
+     "b": [
+      "AI suggests optimal shift assignments based on preferences, skills, fairness rotation",
+      "Factors in labor law constraints (max hours, mandatory rest, night shift limits)",
+      "Balances workload across team members equitably over time",
+      "One-click accept AI suggestion or manually adjust"
+     ]
+    },
+    {
+     "n": "Team Health Pulse",
+     "t": "AI",
+     "b": [
+      "AI weekly digest: average hours, OT flags, irregular patterns across the team",
+      "Highlights members who may need check-in (sustained OT, irregular hours, no breaks)",
+      "Compares team patterns against company averages",
+      "Recommends specific actions per flagged individual"
+     ]
+    },
+    {
+     "n": "Auto-Exception Resolution",
+     "t": "AI",
+     "b": [
+      "AI auto-resolves routine exceptions (badge swipe confirms presence despite missed punch)",
+      "Flags only genuine anomalies for manager review (reduces noise by 60-70%)",
+      "Learning engine: adapts resolution rules from manager's past decisions",
+      "Clear audit trail showing AI-resolved vs manager-resolved exceptions"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Policy Configuration",
+     "t": "Standard",
+     "b": [
+      "Grace period setting (minutes allowed after shift start before marking late)",
+      "Late-mark rules (how many late marks = half-day deduction, written warning, etc.)",
+      "Half-day threshold (minimum hours for half-day vs full-day vs absent)",
+      "OT eligibility rules (which grades, shifts, days are eligible for overtime pay)",
+      "Comp-off rules (working on holiday earns comp-off with expiry period)",
+      "Version control with effective dates (policy v2 applies from April 1 — v1 remains for historical records)",
+      "Policy preview ('See how this change would have affected last month's data before applying')"
+     ]
+    },
+    {
+     "n": "Device Management",
+     "t": "Standard",
+     "b": [
+      "Register biometric devices (fingerprint scanners, face recognition terminals)",
+      "Register NFC readers and kiosk terminals with location mapping",
+      "Map devices to specific locations/buildings/floors",
+      "Third-party device sync via API (Anviz, ZKTeco, Suprema)",
+      "Device health monitoring (last sync time, error rates, offline alerts)",
+      "Bulk device firmware update management"
+     ]
+    },
+    {
+     "n": "Shift Master Setup",
+     "t": "Standard",
+     "b": [
+      "Create shift types with names, start/end times, break windows",
+      "Night shift configuration with allowances and special rules",
+      "Flexible shift definitions (core hours + flex window)",
+      "Map shifts to grades, departments, or locations as defaults",
+      "Seasonal shift variations (summer timing, Ramadan timing)",
+      "Rotation pattern templates (weekly rotation, fortnightly)"
+     ]
+    },
+    {
+     "n": "Labor Compliance Engine",
+     "t": "Standard",
+     "b": [
+      "Maximum working hours per day/week/month by jurisdiction",
+      "Mandatory break rules (minimum break after X hours — per country)",
+      "Weekly off requirements (one day, two days — varies by country)",
+      "Night shift restrictions (gender-specific, age-specific — per local law)",
+      "Auto-flag violations before they reach payroll",
+      "Multi-jurisdiction support (UAE, India, US, UK — different rules per entity)"
+     ]
+    },
+    {
+     "n": "Payroll Integration",
+     "t": "Standard",
+     "b": [
+      "Map attendance events to payroll outcomes (late = X deduction, OT = Y payout)",
+      "Shift allowances (night premium, weekend premium, hazard premium)",
+      "LOP (Loss of Pay) calculation rules based on absence types",
+      "Overtime pay rate configuration (1.5x, 2x, 3x based on day type and hours)",
+      "Payroll data export in format compatible with payroll engine/third-party provider",
+      "Reconciliation dashboard (attendance data vs payroll inputs — differences highlighted)"
+     ]
+    },
+    {
+     "n": "Audit Trail & Forensics",
+     "t": "Standard",
+     "b": [
+      "Every punch logged with timestamp, IP address, device ID, GPS coordinates",
+      "Every manual edit, override, or regularization logged with who, when, why",
+      "Tamper-proof immutable log for labor dispute evidence",
+      "Forensic search (find all punches from device X, or all edits by admin Y)",
+      "Export audit trail for specific date range or employee for legal/compliance requests"
+     ]
+    },
+    {
+     "n": "Policy Impact Simulator",
+     "t": "AI",
+     "b": [
+      "'Reducing grace period from 15→10 min would affect 23% of employees, increase late-marks by 340%'",
+      "Models any policy change against historical data before implementation",
+      "Shows affected employees list and estimated payroll impact",
+      "Comparison view: current policy vs proposed policy side by side with impact metrics"
+     ]
+    },
+    {
+     "n": "Compliance Auto-Monitor",
+     "t": "AI",
+     "b": [
+      "Continuously checks attendance records against labor laws per jurisdiction",
+      "Proactive alerts on violations (before they become legal issues)",
+      "Daily/weekly compliance health score per entity/location",
+      "Auto-generates compliance reports for labor authorities"
+     ]
+    },
+    {
+     "n": "Fraud Detection",
+     "t": "AI",
+     "b": [
+      "Detects buddy punching (same device, too-close timestamps for different employees)",
+      "Impossible travel patterns (punched in Location A and Location B 5 min apart)",
+      "Pattern manipulation detection (systematic last-minute punches, identical times daily)",
+      "Time theft identification (punching in but leaving — no activity between punches)",
+      "Severity scoring and investigation queue for HR review"
+     ]
+    },
+    {
+     "n": "Smart Payroll Reconciliation",
+     "t": "AI",
+     "b": [
+      "Pre-audits attendance-to-payroll mapping before processing",
+      "Catches mismatches (employee marked present but no punch, OT approved but not calculated)",
+      "Estimates financial impact of each discrepancy",
+      "Auto-fix suggestions for routine mismatches with one-click apply"
+     ]
+    },
+    {
+     "n": "Advanced Geo-Fencing",
+     "t": "Additional",
+     "b": [
+      "Multi-zone geo-fencing (office, client site, home — different rules per zone)",
+      "Dynamic geo-fence creation from Google Maps integration",
+      "Geo-fence violation alerts with configurable tolerance",
+      "GPS privacy controls (tracking only during work hours, no personal location storage)"
+     ]
+    },
+    {
+     "n": "Compliance Automation",
+     "t": "Additional",
+     "b": [
+      "Working time directive enforcement (EU 48-hour weekly limit, 11-hour daily rest)",
+      "Mandatory break enforcement with clock-out reminders",
+      "Fatigue management rules for shift workers (minimum hours between shifts)",
+      "Automated compliance reporting for labor inspections"
+     ]
+    }
+   ]
+  },
+  "Leave Management": {
+   "Employee": [
+    {
+     "n": "Leave Balance Dashboard",
+     "t": "Standard",
+     "b": [
+      "All leave types at a glance: annual, sick, casual, parental, comp-off, unpaid",
+      "Per-type breakdown: accrued, used, pending approval, available balance",
+      "Visual progress bars showing usage vs entitlement",
+      "Year-to-date summary with monthly trend chart",
+      "Carry-forward balance from previous year clearly shown",
+      "Projected balance at year-end based on current usage rate"
+     ]
+    },
+    {
+     "n": "Quick Apply",
+     "t": "Standard",
+     "b": [
+      "Apply in 3 taps: select type, pick dates, add reason",
+      "Attach supporting documents (medical certificate, travel itinerary)",
+      "See team availability calendar before applying (avoid conflicts)",
+      "Half-day option (first half / second half selection)",
+      "Multi-day leave with individual day type selection (2 annual + 1 sick in one request)",
+      "Draft and save for later submission",
+      "Delegate assignment before submitting (who covers your work)"
+     ]
+    },
+    {
+     "n": "Team Calendar View",
+     "t": "Standard",
+     "b": [
+      "Visual calendar showing team members' leave, holidays, and availability",
+      "Color-coded by leave type (annual=blue, sick=red, WFH=green)",
+      "Overlapping leave detection with warning indicator",
+      "Public holidays marked by location",
+      "Click any date to see who's available and who's out",
+      "Toggle views: weekly, monthly, quarterly"
+     ]
+    },
+    {
+     "n": "Leave History",
+     "t": "Standard",
+     "b": [
+      "Full history with status (approved, rejected, cancelled, pending)",
+      "Filter by year, leave type, or status",
+      "Download leave history as Excel/PDF for personal records",
+      "View manager comments on rejected/modified requests"
+     ]
+    },
+    {
+     "n": "Holiday Calendar",
+     "t": "Standard",
+     "b": [
+      "Company + location-specific holidays for the year",
+      "Optional holidays with opt-in (choose X from Y optional holidays)",
+      "Calendar integration (sync holidays to Google Calendar / Outlook)",
+      "Upcoming holiday countdown on dashboard"
+     ]
+    },
+    {
+     "n": "Comp-Off & WFH",
+     "t": "Standard",
+     "b": [
+      "Claim comp-off for working on holidays/weekends with date and reason",
+      "Comp-off balance tracking with expiry dates",
+      "WFH request with same approval workflow as leave",
+      "WFH tracking dashboard (days used this month/quarter)"
+     ]
+    },
+    {
+     "n": "Smart Leave Planner",
+     "t": "AI",
+     "b": [
+      "'Take Dec 24-26 off for 9-day break using only 3 leaves (weekends + holidays)'",
+      "Suggests optimal dates combining weekends, public holidays, and bridge days",
+      "Considers team coverage and project deadlines in suggestions",
+      "Long weekend opportunity alerts throughout the year"
+     ]
+    },
+    {
+     "n": "Balance Forecast",
+     "t": "AI",
+     "b": [
+      "Projects year-end balance based on current usage rate",
+      "Warns about use-it-or-lose-it policies before expiry",
+      "Recommends leave schedule to avoid last-minute rush in Q4"
+     ]
+    },
+    {
+     "n": "Conversational Apply",
+     "t": "AI",
+     "b": [
+      "'I need next Friday off' → AI auto-selects leave type, sets date, routes for approval",
+      "'I'm sick today' → creates sick leave for today with appropriate type",
+      "Handles complex requests: 'I want 2 weeks off in August' → suggests best dates"
+     ]
+    },
+    {
+     "n": "Wellness Nudge",
+     "t": "AI",
+     "b": [
+      "Notices 4+ months without leave and suggests taking time off",
+      "Detects sustained high-hour patterns and recommends wellness leave",
+      "Gentle, non-intrusive suggestions respecting individual preferences"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Approval Dashboard",
+     "t": "Standard",
+     "b": [
+      "Pending requests with employee name, leave type, dates, reason visible",
+      "Leave balance shown alongside each request (can they afford this leave?)",
+      "Team coverage impact indicator (who else is out during this period)",
+      "Project deadline context (any critical deliverables during requested dates)",
+      "Approve/reject with comments field",
+      "Counter-suggest alternative dates with one click",
+      "Approval SLA timer (auto-escalates if unactioned within policy timeframe)"
+     ]
+    },
+    {
+     "n": "Team Leave Calendar",
+     "t": "Standard",
+     "b": [
+      "Monthly and quarterly view of team availability",
+      "Minimum staffing alert when too many leaves overlap",
+      "Drag-to-suggest: propose alternative dates directly on calendar",
+      "Department-wide view (see cross-team overlaps)",
+      "Holiday and event overlay for context"
+     ]
+    },
+    {
+     "n": "Delegation Setup",
+     "t": "Standard",
+     "b": [
+      "Assign responsibilities when team members go on leave",
+      "Auto-notify delegates of their temporary responsibilities",
+      "Delegate task list generation from the leaving member's active assignments",
+      "Track delegation completion status"
+     ]
+    },
+    {
+     "n": "Leave Analytics",
+     "t": "Standard",
+     "b": [
+      "Absenteeism rate per team member with trend over 6-12 months",
+      "Average leaves taken vs entitlement (utilization percentage)",
+      "Sick leave trend analysis (spikes, seasonal patterns)",
+      "Cross-team benchmark comparison",
+      "Leave forecast for upcoming months based on historical patterns"
+     ]
+    },
+    {
+     "n": "Escalation Rules",
+     "t": "Standard",
+     "b": [
+      "Auto-escalate unactioned requests after X hours to backup approver",
+      "Configure backup approvers per team/module",
+      "Auto-approve rules for specific leave types (e.g., auto-approve half-day casual if balance > 5)",
+      "Escalation notification chain (manager → skip-level → HR)"
+     ]
+    },
+    {
+     "n": "Bulk Management",
+     "t": "Standard",
+     "b": [
+      "Declare team shutdown days (year-end closure, team offsite)",
+      "Mandatory leave assignment during slow periods",
+      "Force leave for compliance (mandatory leave encashment reduction)",
+      "Bulk approve/reject for team-wide requests"
+     ]
+    },
+    {
+     "n": "Coverage Risk Analyzer",
+     "t": "AI",
+     "b": [
+      "'Approving this leaves frontend at 40% capacity during sprint close'",
+      "Suggests alternative dates with better coverage impact",
+      "Considers skills overlap — can remaining team cover the absent person's work?",
+      "Risk scoring: green (safe), amber (manageable), red (critical coverage gap)"
+     ]
+    },
+    {
+     "n": "Pattern Alerting",
+     "t": "AI",
+     "b": [
+      "Flags concerning patterns: repeated Monday sick leaves, every Friday off",
+      "Increasing absence frequency trend detection",
+      "Suggests manager check-in conversation when patterns emerge",
+      "Distinguishes genuine patterns from coincidental clustering"
+     ]
+    },
+    {
+     "n": "Approval Copilot",
+     "t": "AI",
+     "b": [
+      "Pre-evaluates each request on coverage, balance, policy, fairness, project impact",
+      "Suggests approve/reject with reasoning for each factor",
+      "Fairness check: has this employee been denied more than peers?",
+      "One-click accept AI recommendation or override with reason"
+     ]
+    },
+    {
+     "n": "Quarterly Planning Brief",
+     "t": "AI",
+     "b": [
+      "Predicts leave demand for next quarter based on holidays and historical data",
+      "Pre-plan coverage for peak leave periods (summer, year-end, festivals)",
+      "Suggests proactive conversations with team about leave scheduling",
+      "Staffing risk calendar overlay"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Leave Policy Builder",
+     "t": "Standard",
+     "b": [
+      "Accrual rules configuration (monthly, quarterly, annual, front-loaded)",
+      "Carry-forward limits (max days, expiry period for carried balance)",
+      "Encashment rules (eligible types, cap, payout formula)",
+      "Pro-rata calculation for mid-year joiners and exiters",
+      "Sandwich rule configuration (weekends/holidays between leave days count or not)",
+      "Minimum/maximum consecutive days per leave type",
+      "Per entity, per country, per grade policy variation support",
+      "Version control with effective dates (new policy from April 1, old preserved for history)"
+     ]
+    },
+    {
+     "n": "Entitlement Engine",
+     "t": "Standard",
+     "b": [
+      "Auto-calculate entitlements by tenure, grade, and location",
+      "Handle mid-year joiners (pro-rata from join date)",
+      "Handle grade changes and transfers (recalculate entitlements automatically)",
+      "Seniority-based incremental entitlements (5+ years = extra 5 days)",
+      "Custom entitlement overrides for specific employees with approval trail"
+     ]
+    },
+    {
+     "n": "Holiday Management",
+     "t": "Standard",
+     "b": [
+      "Per-location holiday calendars (HQ vs branch vs factory)",
+      "Optional holidays with employee opt-in (choose 3 from 8 optional)",
+      "Government gazette import for public holidays",
+      "Floating holidays (employee picks any day as holiday from a pool)",
+      "Multi-year holiday calendar planning"
+     ]
+    },
+    {
+     "n": "Leave-Payroll Mapping",
+     "t": "Standard",
+     "b": [
+      "LOP deduction rules (which leave types trigger deduction, formula)",
+      "Half-day calculation rules for payroll",
+      "Maternity/paternity pay configuration (full pay, half pay, statutory minimum)",
+      "Sick leave pay thresholds (first X days full pay, then half, then unpaid)",
+      "Encashment payout calculation and trigger rules"
+     ]
+    },
+    {
+     "n": "Year-End Processing",
+     "t": "Standard",
+     "b": [
+      "Carry-forward calculation batch run",
+      "Lapse processing (zero out expired balances)",
+      "Encashment calculation and payout generation",
+      "Year-end leave statement generation for all employees",
+      "Balance rollover verification report"
+     ]
+    },
+    {
+     "n": "Compliance Configuration",
+     "t": "Standard",
+     "b": [
+      "Jurisdiction-specific minimums (maternity: 45 days UAE, 26 weeks India, 12 weeks US FMLA)",
+      "Paternity leave requirements by country",
+      "Bereavement leave (duration by relationship, documentation requirements)",
+      "Voting leave, jury duty leave, military leave — per applicable jurisdiction",
+      "Regulatory change tracking with policy update alerts"
+     ]
+    },
+    {
+     "n": "Policy Benchmarking",
+     "t": "AI",
+     "b": [
+      "'Your 20 days annual leave is below market median of 25 for tech companies in UAE'",
+      "Compares your policies against industry, region, and company-size benchmarks",
+      "Identifies competitive gaps that may affect talent attraction/retention",
+      "Recommends specific policy changes with cost impact estimates"
+     ]
+    },
+    {
+     "n": "Abuse Detection",
+     "t": "AI",
+     "b": [
+      "Identifies suspicious patterns: coordinated team absences, systematic weekend extensions",
+      "Medical certificate pattern analysis (same clinic, same day patterns)",
+      "Flags for investigation without false accusations — human decision required",
+      "Severity scoring and investigation priority queue"
+     ]
+    },
+    {
+     "n": "Liability Forecast",
+     "t": "AI",
+     "b": [
+      "Predicts leave encashment liability at year-end based on current balances and trends",
+      "Recommends encouraging leave usage to reduce financial exposure",
+      "Models impact of policy changes on liability (e.g., reducing carry-forward cap)",
+      "Quarterly liability report for finance team"
+     ]
+    },
+    {
+     "n": "Regulatory Auto-Update",
+     "t": "AI",
+     "b": [
+      "Monitors labor law changes globally across all operating jurisdictions",
+      "Alerts when new legislation requires policy updates",
+      "Drafts updated policy language for admin review",
+      "Impact analysis: how many employees affected, cost implications"
+     ]
+    }
+   ]
+  },
+  "Daily Work Logging": {
+   "Employee": [
+    {
+     "n": "Daily Timesheet",
+     "t": "Standard",
+     "b": [
+      "Log hours against projects, tasks, clients, cost centers",
+      "Start/stop timer mode or manual hour entry",
+      "Copy previous day's entries as template",
+      "Multiple entries per day across different projects",
+      "Notes and description field per entry"
+     ]
+    },
+    {
+     "n": "Project & Task Picker",
+     "t": "Standard",
+     "b": [
+      "Browse assigned projects with search and favorites",
+      "Task breakdown within projects for granular logging",
+      "Recent activity auto-suggest (last 5 used project-task combos)",
+      "Client and cost center auto-populated from project settings"
+     ]
+    },
+    {
+     "n": "Activity Notes",
+     "t": "Standard",
+     "b": [
+      "Rich text descriptions per time entry (what was done, blockers, next steps)",
+      "File attachments per entry (documents, screenshots)",
+      "Tagging (client meeting, internal, development, admin, etc.)"
+     ]
+    },
+    {
+     "n": "Weekly Submit",
+     "t": "Standard",
+     "b": [
+      "Review full week in spreadsheet-like grid view",
+      "Edit any day before submission",
+      "Submit for manager approval with optional summary note",
+      "Track submission status (draft, submitted, approved, rejected, revision requested)"
+     ]
+    },
+    {
+     "n": "Billable Tracking",
+     "t": "Standard",
+     "b": [
+      "Tag each entry as billable or non-billable",
+      "Personal utilization rate dashboard (billable hours / total hours)",
+      "Auto-feed billable hours to invoicing system",
+      "Utilization trend over weeks/months"
+     ]
+    },
+    {
+     "n": "Tool Integration Sync",
+     "t": "Standard",
+     "b": [
+      "Auto-pull activity from Jira (tickets worked on, time logged)",
+      "GitHub/GitLab integration (commits, PRs → time entries)",
+      "Calendar sync (meetings → pre-populated time entries)",
+      "Asana/Monday.com task completion → timesheet drafts"
+     ]
+    },
+    {
+     "n": "Auto-Fill Timesheet",
+     "t": "AI",
+     "b": [
+      "AI reconstructs your day from calendar events, Jira activity, Slack patterns, app usage",
+      "Presents complete draft timesheet for your review and confirmation",
+      "Learns your patterns: recurring meetings always mapped to same project",
+      "Accuracy improves weekly as more data trains the model"
+     ]
+    },
+    {
+     "n": "Smart Categorization",
+     "t": "AI",
+     "b": [
+      "Auto-tags meetings as billable/non-billable based on attendees and context",
+      "Maps Jira tickets to correct internal projects automatically",
+      "Detects and categorizes admin time, training time, client time"
+     ]
+    },
+    {
+     "n": "Gap Detector",
+     "t": "AI",
+     "b": [
+      "Notices unlogged hours between known activities and prompts you",
+      "'You had 2 hours between your 10 AM meeting and 12 PM Jira activity — what were you doing?'",
+      "End-of-day prompt if total logged hours below expected"
+     ]
+    },
+    {
+     "n": "Productivity Insights",
+     "t": "AI",
+     "b": [
+      "Weekly personal summary: meeting time %, deep work %, admin %, context switches",
+      "Most productive day and time-of-day analysis",
+      "Trend comparison week-over-week"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Dashboard",
+     "t": "Standard",
+     "b": [
+      "View all team members' timesheet status (submitted, pending, draft, not started)",
+      "Who hasn't submitted this week — with reminder nudge button",
+      "Drill into any member's timesheet for detailed review",
+      "Summary stats: total team hours, billable %, project distribution"
+     ]
+    },
+    {
+     "n": "Approval Workflow",
+     "t": "Standard",
+     "b": [
+      "Review timesheets with line-item detail",
+      "Approve/reject individual entries or entire timesheet",
+      "Add comments per line item or overall",
+      "Bulk approve for routine weeks",
+      "Send back for revision with specific feedback"
+     ]
+    },
+    {
+     "n": "Project Hours Tracker",
+     "t": "Standard",
+     "b": [
+      "Hours burned vs budgeted per project with visual burn-down chart",
+      "Budget threshold alerts (80%, 90%, 100% consumed)",
+      "Breakdown by team member and task within each project",
+      "Variance analysis (planned hours vs actual)"
+     ]
+    },
+    {
+     "n": "Utilization Reports",
+     "t": "Standard",
+     "b": [
+      "Billable vs non-billable split per team member",
+      "Individual utilization trends over 3/6/12 months",
+      "Comparison against utilization targets",
+      "Non-billable time categorization (admin, training, bench, internal)"
+     ]
+    },
+    {
+     "n": "Resource Allocation",
+     "t": "Standard",
+     "b": [
+      "Who's working on what this week — visual Gantt-style view",
+      "Over-allocated members flagged (>100% capacity)",
+      "Under-allocated members highlighted for rebalancing",
+      "Drag-and-drop workload redistribution"
+     ]
+    },
+    {
+     "n": "Client Reporting",
+     "t": "Standard",
+     "b": [
+      "Client-ready time reports by project phase, task, person",
+      "PDF and Excel export with company branding",
+      "Customizable report templates per client",
+      "Automated monthly client report generation"
+     ]
+    },
+    {
+     "n": "Utilization Optimizer",
+     "t": "AI",
+     "b": [
+      "'Sarah at 95% (burnout risk), Tom at 55%. Suggest shifting Dashboard task — skills match.'",
+      "Balances workload across team considering skills, availability, and project priorities",
+      "Weekly rebalancing recommendations"
+     ]
+    },
+    {
+     "n": "Budget Burn Predictor",
+     "t": "AI",
+     "b": [
+      "'At current rate, Project X exhausts budget by March 15, 3 weeks early'",
+      "Forecasts budget depletion date per project",
+      "Suggests scope or staffing adjustments to stay within budget"
+     ]
+    },
+    {
+     "n": "Work Pattern Analysis",
+     "t": "AI",
+     "b": [
+      "'Team spends 31% on meetings — 40% above company average. Audit recurring meetings.'",
+      "Identifies time sinks and inefficiencies",
+      "Compares team patterns against high-performing teams"
+     ]
+    },
+    {
+     "n": "Entry Anomaly Detection",
+     "t": "AI",
+     "b": [
+      "Flags unusual entries: 14 hours on a 3-hour task, weekend logging without OT approval",
+      "Detects scope creep signals (task hours consistently exceeding estimates)",
+      "Distinguishes genuine anomalies from legitimate edge cases"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Timesheet Policy",
+     "t": "Standard",
+     "b": [
+      "Submission deadlines (weekly, bi-weekly, monthly)",
+      "Mandatory fields (project, task, description — configurable per policy)",
+      "Minimum/maximum hours per day",
+      "Rounding rules (nearest 15 min, 30 min, 1 hour)",
+      "Lock dates (prevent edits after X days)"
+     ]
+    },
+    {
+     "n": "Project Master",
+     "t": "Standard",
+     "b": [
+      "Manage projects, phases, tasks, cost centers, client codes",
+      "Active date ranges and budget caps per project",
+      "Eligible team assignment (who can log to this project)",
+      "Project archival when completed"
+     ]
+    },
+    {
+     "n": "Billing Rates",
+     "t": "Standard",
+     "b": [
+      "Rates per employee, role, project, or client",
+      "Rate cards with effective dates and currency",
+      "Blended rate configuration for mixed teams",
+      "Rate override capability for special agreements"
+     ]
+    },
+    {
+     "n": "Integration Admin",
+     "t": "Standard",
+     "b": [
+      "Configure Jira, Asana, GitHub, calendar integrations",
+      "Field mapping between external tools and internal project structure",
+      "Sync frequency and error handling settings",
+      "Connection health monitoring"
+     ]
+    },
+    {
+     "n": "Compliance & Audit",
+     "t": "Standard",
+     "b": [
+      "Labor law record-keeping requirements by jurisdiction",
+      "Audit-ready time reports for labor inspections",
+      "Retroactive edit prevention after lock date",
+      "Compliance certification for regulated industries"
+     ]
+    },
+    {
+     "n": "Payroll & Invoicing Feed",
+     "t": "Standard",
+     "b": [
+      "Auto-generate payroll inputs from approved timesheets (OT hours, allowances)",
+      "Auto-generate client invoices from billable hours",
+      "Reconciliation dashboard (timesheet data vs payroll/invoice outputs)",
+      "Export formats for third-party payroll and accounting systems"
+     ]
+    },
+    {
+     "n": "Utilization Intelligence",
+     "t": "AI",
+     "b": [
+      "Org-wide utilization by department, grade, location, project type",
+      "'Engineering in Dubai 22% less utilized than Bangalore — meeting overhead'",
+      "Benchmarks against industry standards"
+     ]
+    },
+    {
+     "n": "Revenue Leakage Detector",
+     "t": "AI",
+     "b": [
+      "'340 unbilled client hours last month. Potential leakage: ~$51K. Here are the entries.'",
+      "Identifies billable work logged as non-billable",
+      "Quantifies financial impact of categorization errors"
+     ]
+    },
+    {
+     "n": "Compliance Auto-Check",
+     "t": "AI",
+     "b": [
+      "Validates all timesheets against labor laws before payroll across 50+ jurisdictions",
+      "Flags violations (max hours, missing breaks, under-age restrictions)",
+      "Pre-payroll compliance clearance report"
+     ]
+    },
+    {
+     "n": "Capacity Planner",
+     "t": "AI",
+     "b": [
+      "'15% engineering capacity shortfall by Q3 at current project load'",
+      "Models future capacity from project pipeline, attrition forecast, hiring plan",
+      "Recommends hiring quantity, timing, or project scope adjustments"
+     ]
+    }
+   ]
+  },
+  "Talent Acquisition": {
+   "Employee": [
+    {
+     "n": "Internal Job Board",
+     "t": "Standard",
+     "b": [
+      "Browse all open positions across the company",
+      "Apply internally with streamlined application (profile auto-populated)",
+      "Filter by department, location, grade, skills",
+      "Track application status"
+     ]
+    },
+    {
+     "n": "Referral Portal",
+     "t": "Standard",
+     "b": [
+      "Refer candidates from your network with their details",
+      "Track referral status through pipeline stages",
+      "Reward tracking and payout history",
+      "Share job openings on social media with referral tracking link"
+     ]
+    },
+    {
+     "n": "Interview Participation",
+     "t": "Standard",
+     "b": [
+      "View interview schedule as a panelist",
+      "Access candidate profile, resume, and evaluation criteria before interview",
+      "Complete scorecard during or after interview",
+      "View other interviewers' feedback (after all interviews done)"
+     ]
+    },
+    {
+     "n": "Career Opportunities",
+     "t": "Standard",
+     "b": [
+      "Set job alerts matching your skills and interests",
+      "Express interest in lateral moves, stretch projects, or rotations",
+      "View required skills and experience for aspirational roles"
+     ]
+    },
+    {
+     "n": "Smart Referral Match",
+     "t": "AI",
+     "b": [
+      "AI analyzes open roles and suggests people from your LinkedIn/contacts who match",
+      "Fit percentage per suggested referral",
+      "One-click refer with auto-populated details"
+     ]
+    },
+    {
+     "n": "Interview Prep Copilot",
+     "t": "AI",
+     "b": [
+      "Generates role-specific interview questions tailored to the candidate's background",
+      "Evaluation rubric with clear criteria per competency",
+      "Red flag indicators to watch for during conversation"
+     ]
+    },
+    {
+     "n": "Internal Mobility Match",
+     "t": "AI",
+     "b": [
+      "Proactively suggests internal openings matching your skills, experience, and stated interests",
+      "Gap analysis: 'You need X and Y skills to qualify — here are learning paths'",
+      "Confidential expression of interest (manager not notified until formal application)"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Requisition Management",
+     "t": "Standard",
+     "b": [
+      "Create hiring requisitions with role details, requirements, justification",
+      "Attach job description and compensation range",
+      "Submit for approval (budget, headcount, band validation)",
+      "Track requisition status through approval chain"
+     ]
+    },
+    {
+     "n": "Pipeline Dashboard",
+     "t": "Standard",
+     "b": [
+      "View all candidates per requisition by stage (sourced, screened, interviewed, offered, hired)",
+      "Time-in-stage tracking with bottleneck identification",
+      "Source mix analysis (referrals, job boards, agency, direct)",
+      "Conversion rates per stage"
+     ]
+    },
+    {
+     "n": "Interview Scheduling",
+     "t": "Standard",
+     "b": [
+      "Auto-detect calendar availability across interview panel",
+      "Send interview invites with video call links",
+      "Reschedule with one click — auto-updates all parties",
+      "Panel coordination for multi-round interviews"
+     ]
+    },
+    {
+     "n": "Candidate Evaluation",
+     "t": "Standard",
+     "b": [
+      "Score candidates on defined competencies using structured scorecard",
+      "Compare scores across multiple interviewers for same candidate",
+      "Structured decision framework (strong hire, hire, no hire, strong no hire)",
+      "Debrief notes and final recommendation"
+     ]
+    },
+    {
+     "n": "Offer Management",
+     "t": "Standard",
+     "b": [
+      "Review and approve offer details (compensation, start date, terms)",
+      "Compare offer against salary band, budget, and internal equity",
+      "Counter-offer negotiation tracking",
+      "Digital offer generation and e-signature trigger"
+     ]
+    },
+    {
+     "n": "Hiring Analytics",
+     "t": "Standard",
+     "b": [
+      "Time-to-fill per role, department, and level",
+      "Cost-per-hire breakdown (agency fees, job board spend, referral rewards)",
+      "Source effectiveness (which channels produce best hires)",
+      "Offer acceptance rate and decline reason tracking"
+     ]
+    },
+    {
+     "n": "AI Candidate Ranking",
+     "t": "AI",
+     "b": [
+      "Ranks applicants by fit score with explainable reasoning per factor",
+      "Skills match, experience relevance, culture fit indicators",
+      "Highlights top 5 candidates with strengths and concerns per person"
+     ]
+    },
+    {
+     "n": "Interview Transcript Analysis",
+     "t": "AI",
+     "b": [
+      "AI analyzes interview recordings for competency signals and red flags",
+      "Identifies potential bias patterns in interviewer questions",
+      "Generates structured summary for hiring committee review"
+     ]
+    },
+    {
+     "n": "Offer Intelligence",
+     "t": "AI",
+     "b": [
+      "Suggests competitive compensation based on market data + internal equity + candidate expectations",
+      "Models acceptance probability at different comp levels",
+      "Alerts if offer is below market for the candidate's profile"
+     ]
+    },
+    {
+     "n": "Diversity Pipeline Nudges",
+     "t": "AI",
+     "b": [
+      "Real-time alerts if pipeline diversity is skewing at any stage",
+      "Suggests sourcing channel adjustments to improve diversity",
+      "Tracks diversity metrics through entire funnel"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "ATS Configuration",
+     "t": "Standard",
+     "b": [
+      "Configure hiring stages and pipeline per role type",
+      "Scorecard template builder with custom competencies",
+      "Approval workflow setup (who approves requisitions, offers)",
+      "SLA configuration per stage (max days in screening, interview scheduling)"
+     ]
+    },
+    {
+     "n": "Job Board Integrations",
+     "t": "Standard",
+     "b": [
+      "Connect LinkedIn, Indeed, Glassdoor, Naukri, Bayt",
+      "Auto-post jobs to connected boards from single interface",
+      "Application sync (candidates auto-imported from all sources)",
+      "Source tracking for analytics"
+     ]
+    },
+    {
+     "n": "Careers Site Builder",
+     "t": "Standard",
+     "b": [
+      "Branded careers portal with CMS for content management",
+      "Department pages with team descriptions and photos",
+      "Employee stories and testimonials section",
+      "Benefits showcase with visual layout",
+      "SEO optimization for job postings"
+     ]
+    },
+    {
+     "n": "Background Check Integration",
+     "t": "Standard",
+     "b": [
+      "Connect Checkr, Sterling, HireRight via API",
+      "Auto-trigger background check on offer acceptance",
+      "Status tracking within candidate profile",
+      "Results handling workflow (clear, flagged, requires review)"
+     ]
+    },
+    {
+     "n": "Offer Template Management",
+     "t": "Standard",
+     "b": [
+      "Templates per entity and country with dynamic field insertion",
+      "Multi-language support for international offers",
+      "E-signature integration (DocuSign, Adobe Sign)",
+      "Offer versioning (track changes between negotiation rounds)"
+     ]
+    },
+    {
+     "n": "Recruitment Analytics",
+     "t": "Standard",
+     "b": [
+      "Org-wide hiring metrics dashboard",
+      "Source ROI analysis (spend per channel vs quality of hire)",
+      "Recruiter performance metrics (speed, quality, volume)",
+      "Diversity analytics across the entire funnel"
+     ]
+    },
+    {
+     "n": "AI JD Generator",
+     "t": "AI",
+     "b": [
+      "Generates inclusive, SEO-optimized job descriptions from role requirements",
+      "Bias-checked language (removes gendered, exclusionary, or unnecessary requirements)",
+      "Industry-specific terminology and keyword optimization"
+     ]
+    },
+    {
+     "n": "Sourcing Agent",
+     "t": "AI",
+     "b": [
+      "Autonomously searches talent pools and databases for matching candidates",
+      "Drafts personalized outreach messages per candidate",
+      "Tracks response rates and optimizes outreach approach over time"
+     ]
+    },
+    {
+     "n": "Recruitment Forecasting",
+     "t": "AI",
+     "b": [
+      "Predicts hiring needs from business plans, attrition models, and growth targets",
+      "Time-to-fill estimates per role type based on historical data",
+      "Headcount planning recommendations for next quarter/year"
+     ]
+    },
+    {
+     "n": "Bias Audit Dashboard",
+     "t": "AI",
+     "b": [
+      "Tracks bias signals across the entire funnel by demographics",
+      "Stage-by-stage conversion rate comparison across demographic groups",
+      "Alerts on statistically significant disparities",
+      "Quarterly bias audit report for leadership"
+     ]
+    },
+    {
+     "n": "Assessment Platform",
+     "t": "Additional",
+     "b": [
+      "Built-in skills assessment library (coding tests, aptitude, personality, domain knowledge)",
+      "Custom assessment builder with question bank management",
+      "Proctored online testing with fraud detection (tab switching, copy-paste alerts)",
+      "Assessment results auto-integrated into candidate scorecard",
+      "Video interview platform with async (recorded) and live interview support"
+     ]
+    },
+    {
+     "n": "Employer Branding",
+     "t": "Additional",
+     "b": [
+      "Careers site builder with drag-and-drop page designer",
+      "Employee testimonial and culture video showcase",
+      "Glassdoor/Indeed review monitoring and response management",
+      "Social media job posting with branded templates",
+      "Candidate NPS tracking (measure candidate experience at each stage)"
+     ]
+    },
+    {
+     "n": "Offer & Contract Automation",
+     "t": "Additional",
+     "b": [
+      "Dynamic offer letter templates with merge fields (salary, title, start date, benefits)",
+      "E-signature integration (DocuSign, Adobe Sign, native)",
+      "Multi-stage offer workflow (draft → review → approve → send → accept/decline)",
+      "Automated contract generation per entity and employment type",
+      "Background verification integration with third-party providers"
+     ]
+    },
+    {
+     "n": "AI Resume Screening",
+     "t": "Additional",
+     "b": [
+      "Parses and scores resumes against job requirements with explainable ranking",
+      "Removes identifying information for blind screening (name, photo, university — configurable)",
+      "Suggests candidates from talent pool who match new requisitions"
+     ]
+    },
+    {
+     "n": "Predictive Hiring Analytics",
+     "t": "Additional",
+     "b": [
+      "Predicts time-to-fill based on role, market, and historical data",
+      "Models offer acceptance probability at different compensation levels",
+      "Identifies bottleneck stages in hiring pipeline with root cause analysis"
+     ]
+    }
+   ]
+  },
+  "Onboarding & Offboarding": {
+   "Employee": [
+    {
+     "n": "Pre-boarding Portal",
+     "t": "Standard",
+     "b": [
+      "Complete paperwork digitally before day 1 (contracts, tax forms, NDA)",
+      "Upload required documents (ID, certificates, photos)",
+      "Select equipment preferences (laptop model, monitor, accessories)",
+      "View welcome kit contents and company swag",
+      "Access company handbook and orientation materials early"
+     ]
+    },
+    {
+     "n": "Onboarding Checklist",
+     "t": "Standard",
+     "b": [
+      "Step-by-step tasks: IT setup, compliance training, team introductions, tool access",
+      "Progress tracker with completion percentage",
+      "Due dates per task with priority indicators",
+      "Direct links to complete each task (training portal, IT ticket, calendar invite)"
+     ]
+    },
+    {
+     "n": "Buddy/Mentor Access",
+     "t": "Standard",
+     "b": [
+      "View assigned buddy/mentor profile with contact details",
+      "Schedule intro coffee chats via built-in calendar integration",
+      "Ask questions in a dedicated buddy chat channel",
+      "Buddy feedback form at 30/60/90 days"
+     ]
+    },
+    {
+     "n": "Learning Path",
+     "t": "Standard",
+     "b": [
+      "Role-specific onboarding courses and certifications",
+      "Milestone tracking with achievement badges",
+      "Estimated time to complete each module",
+      "Self-paced with recommended completion schedule"
+     ]
+    },
+    {
+     "n": "Offboarding Checklist",
+     "t": "Standard",
+     "b": [
+      "Return company assets (laptop, badge, keys) with tracking",
+      "Knowledge transfer tasks and handover document creation",
+      "Exit interview scheduling with HR",
+      "Reference letter request option",
+      "Access revocation timeline (when accounts will be deactivated)"
+     ]
+    },
+    {
+     "n": "Personalized Onboarding",
+     "t": "AI",
+     "b": [
+      "AI adapts path by role, seniority, and location",
+      "Senior hire gets strategy decks, leadership intros; junior gets hands-on tutorials",
+      "Content recommended based on role-specific needs"
+     ]
+    },
+    {
+     "n": "AI Onboarding Buddy",
+     "t": "AI",
+     "b": [
+      "24/7 chatbot: 'Where's the parking?' 'How do I set up VPN?' 'Who handles procurement?'",
+      "Answers from company knowledge base, policies, and org data",
+      "Escalates to human buddy/HR when confidence is low"
+     ]
+    },
+    {
+     "n": "Sentiment Tracking",
+     "t": "AI",
+     "b": [
+      "Monitors first 90 days via weekly pulse checks",
+      "Flags early disengagement signals (low activity, negative sentiment, missed tasks)",
+      "Alerts manager and HR for proactive intervention"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "New Hire Dashboard",
+     "t": "Standard",
+     "b": [
+      "Track onboarding progress per new team member",
+      "Completed vs pending tasks with status indicators",
+      "Alert when tasks are overdue or blocked",
+      "Quick actions: send reminder, reassign task, schedule check-in"
+     ]
+    },
+    {
+     "n": "30-60-90 Day Plans",
+     "t": "Standard",
+     "b": [
+      "Create milestone-based plans with clear expectations per phase",
+      "Day 30: learn and observe / Day 60: contribute / Day 90: independently deliver",
+      "Review points at each milestone with structured feedback form",
+      "Adjust plan if new hire is ahead or behind track"
+     ]
+    },
+    {
+     "n": "Feedback Touchpoints",
+     "t": "Standard",
+     "b": [
+      "Scheduled check-ins at 30, 60, 90 days with calendar integration",
+      "Structured feedback form (strengths, areas for growth, support needed)",
+      "Probation assessment at appropriate milestone",
+      "Historical feedback comparison across touchpoints"
+     ]
+    },
+    {
+     "n": "Exit Management",
+     "t": "Standard",
+     "b": [
+      "Conduct exit interviews using structured template",
+      "Manage knowledge transfer (assign tasks, track completion)",
+      "Coordinate final settlement inputs (last working day, leave encashment)",
+      "Transition plan for distributing departing member's responsibilities"
+     ]
+    },
+    {
+     "n": "Onboarding Risk Alert",
+     "t": "AI",
+     "b": [
+      "Flags new hires showing disengagement: low task completion, missed meetings, negative pulse responses",
+      "Risk scoring: green (on track), amber (needs attention), red (intervention needed)",
+      "Recommended actions per risk level"
+     ]
+    },
+    {
+     "n": "Smart Knowledge Transfer",
+     "t": "AI",
+     "b": [
+      "Auto-generates handover documents from departing employee's projects, documents, and activity",
+      "Identifies critical knowledge areas that need explicit transfer",
+      "Suggests appropriate recipients for each knowledge area"
+     ]
+    },
+    {
+     "n": "Exit Prediction",
+     "t": "AI",
+     "b": [
+      "Identifies flight risk signals before formal resignation",
+      "Factors: engagement scores, comp competitiveness, manager relationship, tenure, market activity",
+      "Proactive retention intervention suggestions"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Workflow Builder",
+     "t": "Standard",
+     "b": [
+      "Configure onboarding/offboarding workflows per entity, role, location, and grade",
+      "Cross-department task assignments (IT, Facilities, Finance, Compliance, team manager)",
+      "Sequential and parallel task dependencies",
+      "Conditional logic (if remote hire → skip office badge task)",
+      "Template library of pre-built workflows by role type"
+     ]
+    },
+    {
+     "n": "Document Collection",
+     "t": "Standard",
+     "b": [
+      "Mandatory document checklists per country and role",
+      "Auto-reminders at configurable intervals until complete",
+      "Document verification workflow (HR reviews and approves uploaded docs)",
+      "Integration with document vault for permanent storage"
+     ]
+    },
+    {
+     "n": "IT Provisioning Integration",
+     "t": "Standard",
+     "b": [
+      "Auto-trigger account creation (email, Slack, tools) via ITSM integration",
+      "Laptop and equipment assignment tracking",
+      "Badge issuance and access card provisioning",
+      "Automatic access revocation on offboarding trigger date"
+     ]
+    },
+    {
+     "n": "Compliance Training",
+     "t": "Standard",
+     "b": [
+      "Assign mandatory compliance modules to new hires",
+      "Track completion with deadline enforcement",
+      "Escalate non-compliance to manager and HR",
+      "Jurisdiction-specific modules (POSH for India, anti-harassment, data privacy)"
+     ]
+    },
+    {
+     "n": "Alumni Management",
+     "t": "Standard",
+     "b": [
+      "Alumni portal with continued access to select resources",
+      "Re-hire pipeline tracking (former employees interested in returning)",
+      "Boomerang employee fast-track onboarding (pre-populated from previous data)",
+      "Alumni communication for networking and events"
+     ]
+    },
+    {
+     "n": "Process Optimization",
+     "t": "AI",
+     "b": [
+      "Analyzes onboarding completion times and identifies bottlenecks",
+      "'IT provisioning averages 4 days — automate via API to reduce to same-day'",
+      "Compares onboarding experience across departments and locations"
+     ]
+    },
+    {
+     "n": "Exit Interview Analyzer",
+     "t": "AI",
+     "b": [
+      "NLP analysis of exit interview transcripts for themes and sentiment",
+      "Aggregated trend reports (top 5 reasons for leaving this quarter)",
+      "Department-specific issue identification",
+      "Actionable recommendations based on exit feedback patterns"
+     ]
+    },
+    {
+     "n": "Predictive Attrition Model",
+     "t": "AI",
+     "b": [
+      "Org-wide flight risk scores per employee",
+      "Factors: tenure, engagement, compensation, manager quality, market conditions, peer attrition",
+      "Early warning dashboard with intervention priority queue",
+      "ROI of retention interventions (which actions have historically reduced attrition)"
+     ]
+    }
+   ]
+  },
+  "Performance & Growth": {
+   "Employee": [
+    {
+     "n": "Goal Setting",
+     "t": "Standard",
+     "b": [
+      "Set OKRs, KPIs, or SMART goals aligned to team and company objectives",
+      "Visual progress tracking with milestones and percentage complete",
+      "Link goals to company/department OKRs for alignment visibility",
+      "Update progress with notes and evidence throughout the cycle",
+      "Carry forward or close goals at cycle end"
+     ]
+    },
+    {
+     "n": "Continuous Feedback",
+     "t": "Standard",
+     "b": [
+      "Give/receive feedback to/from any colleague anytime",
+      "Peer recognition with badges and kudos",
+      "Structured 1:1 notes with manager (talking points, action items, follow-ups)",
+      "Feedback inbox showing all received feedback with date and source"
+     ]
+    },
+    {
+     "n": "Self-Assessment",
+     "t": "Standard",
+     "b": [
+      "Complete self-reviews during review cycles",
+      "Reflect on achievements, challenges, and growth areas",
+      "Attach evidence (project outcomes, metrics, recognitions)",
+      "Compare self-assessment against goals set at cycle start"
+     ]
+    },
+    {
+     "n": "Skill Profile",
+     "t": "Standard",
+     "b": [
+      "Competency matrix showing required vs current skills for your role",
+      "Self-assess skill levels with evidence",
+      "Gap visualization (where you are vs where you need to be)",
+      "Track skill development over time"
+     ]
+    },
+    {
+     "n": "Career Path Explorer",
+     "t": "Standard",
+     "b": [
+      "Browse available career tracks (IC, management, specialist)",
+      "Requirements for next level (skills, experience, certifications)",
+      "Growth trajectory visualization from current role to target",
+      "Compare multiple career paths side by side"
+     ]
+    },
+    {
+     "n": "AI Review Draft",
+     "t": "AI",
+     "b": [
+      "Generates self-assessment drafts from goals, feedback, and tracked achievements",
+      "Summarizes your key accomplishments from connected tools (Jira, GitHub, Salesforce)",
+      "Suggests improvement areas based on feedback themes"
+     ]
+    },
+    {
+     "n": "Goal Suggestions",
+     "t": "AI",
+     "b": [
+      "Recommends goals based on role, team OKRs, and skill development needs",
+      "Suggests stretch goals based on performance trajectory",
+      "Aligns suggestions with career path aspirations"
+     ]
+    },
+    {
+     "n": "Career Path Simulator",
+     "t": "AI",
+     "b": [
+      "'What if I learn Python and get PM cert?' → shows projected career trajectories",
+      "Time-to-promotion estimates based on different development paths",
+      "Compares your profile against successful internal promotions"
+     ]
+    },
+    {
+     "n": "Feedback Digest",
+     "t": "AI",
+     "b": [
+      "Summarizes all received feedback into themes and actionable takeaways",
+      "Identifies recurring strengths and growth areas across multiple feedback sources",
+      "Tracks sentiment trend in feedback over time"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Goals Dashboard",
+     "t": "Standard",
+     "b": [
+      "Cascaded view: company → department → team → individual goals",
+      "Alignment visualization (which team goals connect to which company goals)",
+      "Progress tracking across all direct reports",
+      "Red/amber/green status per goal based on progress vs timeline"
+     ]
+    },
+    {
+     "n": "Review Cycle Management",
+     "t": "Standard",
+     "b": [
+      "Complete manager reviews for each direct report",
+      "Access peer feedback, self-assessments, and prior cycle reviews",
+      "Side-by-side comparison of self-rating vs manager rating",
+      "Document evidence for each rating with specific examples"
+     ]
+    },
+    {
+     "n": "Calibration Tools",
+     "t": "Standard",
+     "b": [
+      "9-box grid (performance vs potential matrix)",
+      "Stack ranking within team and across peer managers",
+      "Bell curve distribution enforcement or guidance",
+      "Cross-manager calibration sessions with shared view"
+     ]
+    },
+    {
+     "n": "1:1 Tracker",
+     "t": "Standard",
+     "b": [
+      "Schedule recurring 1:1s with calendar integration",
+      "Shared agenda with talking points added by both parties",
+      "Action item tracking with due dates and follow-ups",
+      "Historical 1:1 notes searchable across all meetings"
+     ]
+    },
+    {
+     "n": "PIP Management",
+     "t": "Standard",
+     "b": [
+      "Create Performance Improvement Plans with clear milestones and success criteria",
+      "Scheduled check-in dates with structured review forms",
+      "Progress tracking against PIP objectives",
+      "Outcome documentation (improved, extended, terminated)"
+     ]
+    },
+    {
+     "n": "Promotion & Succession",
+     "t": "Standard",
+     "b": [
+      "Nominate team members for promotion with evidence and justification",
+      "Succession planning for key/critical roles",
+      "Readiness assessment per candidate (ready now, 6 months, 12 months)",
+      "Development recommendations for succession candidates"
+     ]
+    },
+    {
+     "n": "Review Copilot",
+     "t": "AI",
+     "b": [
+      "Drafts manager reviews from performance data, feedback received, goal completion, and activity signals",
+      "Incorporates data from connected tools (Jira velocity, sales numbers, project outcomes)",
+      "Highlights both strengths and development areas with specific evidence"
+     ]
+    },
+    {
+     "n": "Bias Detector",
+     "t": "AI",
+     "b": [
+      "Scans review text for gendered language, recency bias, halo/horns effect",
+      "Compares rating distribution across demographics within the manager's team",
+      "Suggests alternative phrasing for biased language"
+     ]
+    },
+    {
+     "n": "Calibration Copilot",
+     "t": "AI",
+     "b": [
+      "Surfaces data inconsistencies: similar performers rated differently by different managers",
+      "Provides statistical context for rating decisions",
+      "Recommends calibration adjustments with evidence"
+     ]
+    },
+    {
+     "n": "Performance Trajectory",
+     "t": "AI",
+     "b": [
+      "Predicts performance trend per employee for next cycle",
+      "Early warning for declining performance (before it becomes a PIP situation)",
+      "Identifies high-potential employees based on growth trajectory"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Review Cycle Setup",
+     "t": "Standard",
+     "b": [
+      "Configure review cadence (annual, semi-annual, quarterly, continuous)",
+      "Template builder for review forms with custom sections and questions",
+      "Participant rules (who reviews whom — manager, peers, skip-level, 360)",
+      "Rating scale configuration (1-5 numeric, exceeds/meets/below, descriptive)",
+      "Timeline with automated reminders at each phase"
+     ]
+    },
+    {
+     "n": "Competency Library",
+     "t": "Standard",
+     "b": [
+      "Build and maintain org-wide competency frameworks",
+      "Map competencies to roles and levels",
+      "Define proficiency levels per competency with behavioral indicators",
+      "Import industry-standard frameworks or build custom"
+     ]
+    },
+    {
+     "n": "Goal Framework Config",
+     "t": "Standard",
+     "b": [
+      "Choose framework: OKR, KPI, SMART, or hybrid",
+      "Cascading rules (company→department→team→individual)",
+      "Weighting configuration (which goals count more toward final rating)",
+      "Scoring methodology (absolute achievement, relative improvement, manager judgment)"
+     ]
+    },
+    {
+     "n": "Analytics & Reporting",
+     "t": "Standard",
+     "b": [
+      "Performance distribution charts (bell curve, histogram)",
+      "Rating trend analysis over multiple cycles",
+      "Calibration outcome reports",
+      "Goal completion rates by department, grade, location",
+      "Review completion tracking (who hasn't submitted yet)"
+     ]
+    },
+    {
+     "n": "Integration Config",
+     "t": "Standard",
+     "b": [
+      "Connect Jira, GitHub, Salesforce for real-time performance signals",
+      "Map external metrics to internal competencies",
+      "Automated data pull frequency and quality monitoring"
+     ]
+    },
+    {
+     "n": "Real-Time Signals",
+     "t": "AI",
+     "b": [
+      "Aggregates continuous performance signals from connected tools into live indicators",
+      "Replaces once-a-year reviews with ongoing performance pulse",
+      "Anomaly detection: sudden productivity drop, quality change, engagement shift"
+     ]
+    },
+    {
+     "n": "Skills Gap Analysis",
+     "t": "AI",
+     "b": [
+      "Org-wide current vs required skills inventory",
+      "Critical gaps identified by department, role, and urgency",
+      "Maps gaps to learning programs and hiring needs"
+     ]
+    },
+    {
+     "n": "Review Quality Scorer",
+     "t": "AI",
+     "b": [
+      "Scores review quality across the org: substantive vs generic, specific vs vague",
+      "Identifies managers writing low-quality reviews (copy-paste, too short, no evidence)",
+      "Coaching recommendations for low-quality reviewers"
+     ]
+    },
+    {
+     "n": "Promotion Equity Audit",
+     "t": "AI",
+     "b": [
+      "Analyzes promotion patterns for systemic bias by gender, ethnicity, location, tenure",
+      "Statistical significance testing on disparities",
+      "Quarterly equity report for leadership with actionable findings"
+     ]
+    }
+   ]
+  },
+  "Learning & Development": {
+   "Employee": [
+    {
+     "n": "Course Catalog",
+     "t": "Standard",
+     "b": [
+      "Internal courses + external marketplace (Udemy, Coursera, LinkedIn Learning)",
+      "Filter by skill, topic, duration, difficulty level, format (video, text, interactive)",
+      "Course ratings and reviews from peers",
+      "Bookmarking and wishlist"
+     ]
+    },
+    {
+     "n": "My Learning Path",
+     "t": "Standard",
+     "b": [
+      "Personalized track by role and career goals",
+      "Progress tracking with completion percentage and estimated time remaining",
+      "Completion certificates auto-generated",
+      "Recommended next course after completion"
+     ]
+    },
+    {
+     "n": "Certification Tracker",
+     "t": "Standard",
+     "b": [
+      "Professional certifications with renewal dates and CPE credits",
+      "Expiry alerts (30, 60, 90 days before)",
+      "Upload proof of certification and renewal",
+      "Certification history log"
+     ]
+    },
+    {
+     "n": "Learning Budget",
+     "t": "Standard",
+     "b": [
+      "Personal L&D budget allocation and remaining balance",
+      "Spend history with reimbursement status",
+      "Request approval for external courses and conferences",
+      "Budget reset and rollover rules visibility"
+     ]
+    },
+    {
+     "n": "AI Learning Curator",
+     "t": "AI",
+     "b": [
+      "Recommends courses based on skill gaps, career goals, learning style, and high-performer patterns",
+      "Adapts recommendations based on completions and ratings",
+      "Discovers content you wouldn't find through manual search"
+     ]
+    },
+    {
+     "n": "AI Tutor",
+     "t": "AI",
+     "b": [
+      "Ask questions about course content and get instant explanations",
+      "Practice quizzes auto-generated from learning material",
+      "Concept breakdowns in simpler terms",
+      "Follow-up Q&A for deeper understanding"
+     ]
+    },
+    {
+     "n": "Skill Inference Engine",
+     "t": "AI",
+     "b": [
+      "Detects skills from your projects, code commits, documents, and completed courses",
+      "Skills you have but haven't formally claimed — added to your profile with your approval",
+      "Continuous skill profile enrichment as you work"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Learning Dashboard",
+     "t": "Standard",
+     "b": [
+      "Course completions, certifications, and learning hours per team member",
+      "Compliance training status (who's completed, who's overdue)",
+      "Team total learning hours and engagement metrics",
+      "Comparison against company learning targets"
+     ]
+    },
+    {
+     "n": "Learning Assignments",
+     "t": "Standard",
+     "b": [
+      "Assign specific courses to team members with deadlines",
+      "Track completion status and follow up on overdue assignments",
+      "Mandatory vs recommended distinction",
+      "Progress visibility without micro-managing"
+     ]
+    },
+    {
+     "n": "Development Planning",
+     "t": "Standard",
+     "b": [
+      "Create individual development plans with learning as a key component",
+      "Link development goals to performance review objectives",
+      "Quarterly development check-ins with structured template",
+      "Track development progress over 6-12 months"
+     ]
+    },
+    {
+     "n": "Team Skill Map",
+     "t": "AI",
+     "b": [
+      "AI-generated visual of team capabilities, strengths, and gaps",
+      "Recommended learning investments to close critical gaps",
+      "Skill coverage matrix (which skills are single-person dependencies)"
+     ]
+    },
+    {
+     "n": "Learning ROI Insights",
+     "t": "AI",
+     "b": [
+      "Connects training completion to performance improvement signals",
+      "'Employees who completed cloud cert showed 23% improvement in deployment metrics'",
+      "Cost-effectiveness ranking of different learning programs"
+     ]
+    },
+    {
+     "n": "Development Copilot",
+     "t": "AI",
+     "b": [
+      "Suggests personalized development plans per team member",
+      "Based on aspirations, current gaps, and high-performer development patterns",
+      "Auto-generates plan draft for manager review and customization"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "LMS Configuration",
+     "t": "Standard",
+     "b": [
+      "SCORM and xAPI content standard support",
+      "Internal course creation tools (upload video, slides, quizzes)",
+      "Content partnership management (Udemy Business, Coursera, LinkedIn Learning)",
+      "Compliance training mandates configuration per jurisdiction"
+     ]
+    },
+    {
+     "n": "Budget Management",
+     "t": "Standard",
+     "b": [
+      "L&D budget allocation per department, grade, and entity",
+      "Spend tracking and variance reporting",
+      "Vendor management (training providers, conference budgets)",
+      "Budget forecasting for next fiscal year"
+     ]
+    },
+    {
+     "n": "Training Calendar",
+     "t": "Standard",
+     "b": [
+      "Instructor-led training (ILT) scheduling and room management",
+      "Virtual classroom session management",
+      "Waitlist handling and auto-enrollment",
+      "Attendance tracking for live sessions"
+     ]
+    },
+    {
+     "n": "Reporting & Analytics",
+     "t": "Standard",
+     "b": [
+      "Completion rates by course, department, and individual",
+      "Learner engagement metrics (time spent, quiz scores, drop-off points)",
+      "Most popular content and trending topics",
+      "Budget utilization reporting"
+     ]
+    },
+    {
+     "n": "AI Content Generator",
+     "t": "AI",
+     "b": [
+      "Creates micro-courses from internal SOPs, policies, and documents",
+      "Auto-generates quizzes and assessments from course material",
+      "Converts long documents into bite-sized learning modules"
+     ]
+    },
+    {
+     "n": "Skill Taxonomy Engine",
+     "t": "AI",
+     "b": [
+      "Builds and maintains org-wide skill taxonomy from JDs, learning data, market trends",
+      "Auto-categorizes and normalizes skill names across departments",
+      "Maps emerging skills from industry trends into taxonomy"
+     ]
+    },
+    {
+     "n": "Learning Impact Modeler",
+     "t": "AI",
+     "b": [
+      "'$50K investment in cloud certs closes 60% of infrastructure skill gap in 6 months'",
+      "ROI modeling for proposed learning investments",
+      "Scenario planning: 'What if we train internally vs hire externally?'"
+     ]
+    }
+   ]
+  },
+  "Compensation & Rewards": {
+   "Employee": [
+    {
+     "n": "Total Rewards Statement",
+     "t": "Standard",
+     "b": [
+      "Complete compensation view: base salary, bonuses, equity, benefits, perks",
+      "Total compensation value in single number",
+      "Visual breakdown (pie chart of comp components)",
+      "Year-over-year comparison of total comp",
+      "Downloadable PDF for personal records or loan applications"
+     ]
+    },
+    {
+     "n": "Equity Dashboard",
+     "t": "Standard",
+     "b": [
+      "Vesting schedule with timeline visualization",
+      "Exercised vs unvested shares/options",
+      "Grant history (all grants with dates, quantities, prices)",
+      "Current estimated value based on latest valuation/stock price",
+      "Upcoming vesting events on dashboard calendar"
+     ]
+    },
+    {
+     "n": "Bonus Tracker",
+     "t": "Standard",
+     "b": [
+      "Eligibility status and target bonus percentage",
+      "Payout schedule and upcoming payment dates",
+      "Achievement vs target metrics visualization",
+      "Historical bonus payouts with performance linkage"
+     ]
+    },
+    {
+     "n": "Peer Recognition",
+     "t": "Standard",
+     "b": [
+      "Give points-based recognition to any colleague",
+      "Category selection (above & beyond, teamwork, innovation, customer focus)",
+      "Recognition wall with company-wide visibility",
+      "Redeem accumulated points for rewards (gift cards, experiences, donations)",
+      "Leaderboard (top recognizers and top recognized)"
+     ]
+    },
+    {
+     "n": "Comp Clarity Bot",
+     "t": "AI",
+     "b": [
+      "'How is my bonus calculated?' → instant personalized breakdown with your data",
+      "'When does my next equity vest?' → exact date and estimated value",
+      "'What's my total comp vs market?' → benchmarked comparison"
+     ]
+    },
+    {
+     "n": "Tax-Smart Insights",
+     "t": "AI",
+     "b": [
+      "Suggests optimal equity exercise timing based on tax implications",
+      "Models tax impact of different exercise strategies",
+      "Alerts before tax-advantaged windows close"
+     ]
+    },
+    {
+     "n": "Rewards Recommender",
+     "t": "AI",
+     "b": [
+      "Suggests how to maximize your benefits and perks based on usage patterns",
+      "'You haven't used your wellness stipend — here are popular options'",
+      "Personalized benefit optimization based on life stage"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Comp Overview",
+     "t": "Standard",
+     "b": [
+      "Salary ranges and band positioning per team member (compa-ratio)",
+      "Bonus targets and eligibility status across team",
+      "Equity grants and vesting status",
+      "Tenure vs compensation scatter plot for equity visibility",
+      "Comparison to department and company averages"
+     ]
+    },
+    {
+     "n": "Salary Revision Planning",
+     "t": "Standard",
+     "b": [
+      "Propose raises for team members within budget and band constraints",
+      "See real-time budget consumption as you allocate",
+      "Equity impact preview (how each raise affects team parity)",
+      "Priority ranking when budget doesn't cover all desired raises",
+      "Submit for approval with justification per person"
+     ]
+    },
+    {
+     "n": "Recognition Tools",
+     "t": "Standard",
+     "b": [
+      "Manager spot awards with predefined budget",
+      "Team celebration tools (birthday, anniversary, milestone achievements)",
+      "Nominate for company-wide awards",
+      "Track recognition distribution across team (equity of recognition)"
+     ]
+    },
+    {
+     "n": "Retention Tools",
+     "t": "Standard",
+     "b": [
+      "Retention bonus proposal workflow for flight-risk employees",
+      "Counter-offer workflow when employee has external offer",
+      "Compensation adjustment request with market data justification",
+      "Flight risk vs comp competitiveness analysis"
+     ]
+    },
+    {
+     "n": "Smart Raise Recommender",
+     "t": "AI",
+     "b": [
+      "Suggests raise amounts optimized for retention, equity, budget, and market per person",
+      "Priority ordering when budget is constrained",
+      "Models long-term cost impact of each raise decision"
+     ]
+    },
+    {
+     "n": "Retention × Comp Model",
+     "t": "AI",
+     "b": [
+      "'What raise keeps this person?' → models impact of different comp changes on flight risk",
+      "Shows diminishing returns ('above $X, additional raise has minimal retention impact')",
+      "Suggests non-monetary retention actions when comp isn't the primary driver"
+     ]
+    },
+    {
+     "n": "Recognition Nudges",
+     "t": "AI",
+     "b": [
+      "'Sarah shipped 3 major features this month with zero recognition. Consider recognizing her.'",
+      "Alerts when recognition distribution is uneven across team",
+      "Suggests recognition moments based on activity signals"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Compensation Bands",
+     "t": "Standard",
+     "b": [
+      "Grade-based salary ranges (minimum, midpoint, maximum) per entity/location",
+      "Geographic differentials for multi-location companies",
+      "Currency handling for multi-country operations",
+      "Band overlap management and career level progression",
+      "Annual band revision workflow"
+     ]
+    },
+    {
+     "n": "Revision Cycle Engine",
+     "t": "Standard",
+     "b": [
+      "Annual or semi-annual revision cycle configuration",
+      "Budget allocation per department/grade with approval workflow",
+      "Increment letter generation and distribution",
+      "Effective date management and payroll integration",
+      "Revision history per employee"
+     ]
+    },
+    {
+     "n": "Equity Administration",
+     "t": "Standard",
+     "b": [
+      "Grant management (new grants, additional grants, adjustments)",
+      "Vesting schedule tracking across all employees",
+      "ESOP pool utilization monitoring",
+      "Cap table integration for startups",
+      "Exercise and sale administration"
+     ]
+    },
+    {
+     "n": "Market Benchmarking",
+     "t": "Standard",
+     "b": [
+      "Radford, Mercer, Glassdoor, Levels.fyi data integrations",
+      "Job matching (map internal roles to benchmark roles)",
+      "Benchmark refresh cadence management",
+      "Market positioning analysis (lead, match, lag vs market)"
+     ]
+    },
+    {
+     "n": "Statutory Compliance",
+     "t": "Standard",
+     "b": [
+      "Minimum wage compliance per jurisdiction",
+      "Overtime pay regulations and calculations",
+      "Equal pay audit requirements",
+      "Reporting obligations (gender pay gap reporting for UK, pay data reporting for US)"
+     ]
+    },
+    {
+     "n": "Pay Equity Analyzer",
+     "t": "AI",
+     "b": [
+      "Detects and quantifies pay gaps by gender, ethnicity, age, and location",
+      "Statistical regression analysis controlling for legitimate factors",
+      "Remediation cost modeling (cost to close identified gaps)",
+      "Scenario planning for different remediation approaches"
+     ]
+    },
+    {
+     "n": "Total Rewards Optimizer",
+     "t": "AI",
+     "b": [
+      "Finds benefit mix maximizing employee satisfaction per dollar spent",
+      "Analyzes utilization data to identify underused/overused benefits",
+      "Recommends reallocation of benefits budget for maximum impact"
+     ]
+    },
+    {
+     "n": "Scenario Planner",
+     "t": "AI",
+     "b": [
+      "Model cost of promotions, new bands, market adjustments, location changes on total comp budget",
+      "What-if analysis: 'What if we raise all bands by 5%?' → total cost impact",
+      "Acquisition modeling: 'Absorbing 50 employees from acquired company at our bands'"
+     ]
+    },
+    {
+     "n": "Market Intelligence Feed",
+     "t": "AI",
+     "b": [
+      "Real-time compensation benchmark updates from aggregated data sources",
+      "Trend alerts when market rates shift significantly for key roles",
+      "Competitive intelligence on peer company compensation moves"
+     ]
+    }
+   ]
+  },
+  "Engagement & Culture": {
+   "Employee": [
+    {
+     "n": "Pulse Surveys",
+     "t": "Standard",
+     "b": [
+      "Quick regular surveys (2-5 questions, takes < 2 minutes)",
+      "Topics: engagement, manager quality, workload, belonging, growth",
+      "Anonymous submission with confidentiality assurance",
+      "View aggregated team results after survey closes",
+      "Historical trend of your own responses (private)"
+     ]
+    },
+    {
+     "n": "Recognition Feed",
+     "t": "Standard",
+     "b": [
+      "Company-wide recognition wall showing all kudos and awards",
+      "Give kudos to any colleague with category and message",
+      "React to others' recognitions (celebrate, applaud)",
+      "Filter by department, team, or recognition type",
+      "Monthly/quarterly recognition highlights"
+     ]
+    },
+    {
+     "n": "ERG Membership",
+     "t": "Standard",
+     "b": [
+      "Browse and join Employee Resource Groups (Women in Tech, LGBTQ+, Parents, etc.)",
+      "ERG events calendar with RSVP",
+      "Discussion forums per ERG",
+      "ERG activity feed and announcements"
+     ]
+    },
+    {
+     "n": "Wellness Hub",
+     "t": "Standard",
+     "b": [
+      "Wellness challenges (step counts, meditation streaks, hydration tracking)",
+      "Mental health resources (EAP access, counseling service links, self-help content)",
+      "Fitness benefit redemption and tracking",
+      "Wellness score dashboard (optional, personal)"
+     ]
+    },
+    {
+     "n": "Internal Communications",
+     "t": "Standard",
+     "b": [
+      "Company news feed and CEO updates",
+      "Department announcements",
+      "Event calendar (town halls, team outings, celebrations)",
+      "Read receipts for important communications"
+     ]
+    },
+    {
+     "n": "Personalized Wellness",
+     "t": "AI",
+     "b": [
+      "'You've had 6 back-to-back meeting days. Try a walking break or block focus time.'",
+      "Suggests wellness resources based on work patterns (not personal data — privacy-safe)",
+      "Seasonal wellness tips (winter blues, summer burnout)"
+     ]
+    },
+    {
+     "n": "Anonymous Voice Insights",
+     "t": "AI",
+     "b": [
+      "Submit anonymous feedback that AI aggregates into themes without attribution",
+      "See what themes are trending across the company anonymously",
+      "Upvote/downvote themes that resonate"
+     ]
+    },
+    {
+     "n": "Culture Match Pulse",
+     "t": "AI",
+     "b": [
+      "Periodic alignment check: how well do your daily experiences match stated company values?",
+      "AI tracks your culture alignment trend over time (private to you)",
+      "Suggests actions to improve alignment if desired"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Engagement Scores",
+     "t": "Standard",
+     "b": [
+      "Aggregated survey results for your team (minimum 5 responses for anonymity)",
+      "Trend lines over multiple survey cycles",
+      "Benchmark against other teams (anonymized), department, and company average",
+      "Drill into specific question areas (manager quality, growth, belonging)"
+     ]
+    },
+    {
+     "n": "Action Planning",
+     "t": "Standard",
+     "b": [
+      "Create action items from survey results",
+      "Track progress on each action item",
+      "Share updates with team on what you're doing about their feedback",
+      "Link actions to specific engagement drivers"
+     ]
+    },
+    {
+     "n": "Recognition Dashboard",
+     "t": "Standard",
+     "b": [
+      "Who in your team is being recognized and who isn't",
+      "Recognition equity view (ensure recognition isn't concentrated on few people)",
+      "Your own recognition activity (how often you recognize team members)",
+      "Recognition trends over time"
+     ]
+    },
+    {
+     "n": "Team Pulse Check",
+     "t": "Standard",
+     "b": [
+      "Quick informal check-in tools (mood tracker, energy level, confidence)",
+      "Conversation starters for 1:1s based on pulse data",
+      "Team morale trend over time",
+      "Aggregate pulse data (no individual tracking — privacy-safe)"
+     ]
+    },
+    {
+     "n": "Engagement Driver Analysis",
+     "t": "AI",
+     "b": [
+      "Identifies what actually drives engagement for YOUR specific team — not generic advice",
+      "'For your team, growth opportunities and recognition are 2x more impactful than compensation'",
+      "Prioritized action list based on maximum impact potential"
+     ]
+    },
+    {
+     "n": "Smart Nudges",
+     "t": "AI",
+     "b": [
+      "'Haven't had a 1:1 with Ravi in 3 weeks and his engagement dipped. Schedule one?'",
+      "'Your team's recognition frequency dropped 40% this month — consider a team shoutout'",
+      "Context-aware timing (doesn't nudge during busy periods)"
+     ]
+    },
+    {
+     "n": "Attrition Risk Dashboard",
+     "t": "AI",
+     "b": [
+      "Per-person flight risk score with contributing factors",
+      "Recommended retention interventions per individual",
+      "Risk trend over time (improving or worsening)",
+      "Cost-of-loss estimate per person"
+     ]
+    },
+    {
+     "n": "Feedback Summary",
+     "t": "AI",
+     "b": [
+      "Synthesizes anonymous team feedback into themes and actionable insights",
+      "Sentiment analysis across open-ended survey responses",
+      "Highlights new emerging themes vs recurring issues"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Survey Builder",
+     "t": "Standard",
+     "b": [
+      "Custom survey creation with question bank and templates",
+      "Pulse program scheduling (weekly, bi-weekly, monthly)",
+      "eNPS tracking configuration",
+      "Targeting rules (by department, location, tenure)",
+      "Multi-language survey support"
+     ]
+    },
+    {
+     "n": "Recognition Config",
+     "t": "Standard",
+     "b": [
+      "Points system setup (earning and redemption rules)",
+      "Badge and award design tools",
+      "Reward catalog management (gift cards, experiences, donations)",
+      "Budget allocation per manager/department",
+      "Redemption and fulfillment tracking"
+     ]
+    },
+    {
+     "n": "Comms Platform",
+     "t": "Standard",
+     "b": [
+      "Newsletter builder with drag-and-drop editor",
+      "Announcement targeting (by entity, department, location, grade)",
+      "Read receipt tracking for critical communications",
+      "Translation support for multi-language organizations"
+     ]
+    },
+    {
+     "n": "Wellness Program Admin",
+     "t": "Standard",
+     "b": [
+      "Program configuration (challenges, resources, vendor integrations)",
+      "Budget allocation and spend tracking",
+      "Participation metrics and engagement reporting",
+      "Vendor management for EAP, fitness, mental health services"
+     ]
+    },
+    {
+     "n": "DEI Analytics",
+     "t": "Standard",
+     "b": [
+      "Representation dashboards (demographics across levels, departments, locations)",
+      "Inclusion index from survey data",
+      "Pay equity metrics integrated from Compensation module",
+      "Promotion equity analysis integrated from Performance module",
+      "ERG participation and impact metrics"
+     ]
+    },
+    {
+     "n": "Sentiment Analysis Engine",
+     "t": "AI",
+     "b": [
+      "Analyzes survey open-ended responses using NLP for themes and sentiment",
+      "Slack/Teams tone analysis for cultural health signals (opt-in, aggregated, anonymized)",
+      "Department-level and location-level sentiment comparison"
+     ]
+    },
+    {
+     "n": "Culture Health Score",
+     "t": "AI",
+     "b": [
+      "Composite AI metric combining surveys, attrition, recognition, feedback, Glassdoor",
+      "Tracked over time with trend indicators",
+      "Decomposed into sub-scores per cultural dimension",
+      "Benchmark against industry culture scores"
+     ]
+    },
+    {
+     "n": "Org-Wide Attrition Model",
+     "t": "AI",
+     "b": [
+      "Predicts who will leave, when they'll leave, and why — across entire organization",
+      "Department, grade, tenure, and location risk heat maps",
+      "Proactive retention budget allocation recommendations"
+     ]
+    },
+    {
+     "n": "Engagement ROI Calculator",
+     "t": "AI",
+     "b": [
+      "'5-point eNPS improvement = $2.1M saved in reduced attrition based on your data'",
+      "Models financial impact of engagement initiatives",
+      "Helps prioritize programs with highest retention ROI"
+     ]
+    },
+    {
+     "n": "Town Hall & Events Platform",
+     "t": "Additional",
+     "b": [
+      "Virtual town hall scheduling with RSVP and live Q&A",
+      "Anonymous question submission for leadership AMAs",
+      "Event creation and management (team outings, celebrations, volunteering)",
+      "Post-event feedback collection and NPS"
+     ]
+    },
+    {
+     "n": "Internal Social Platform",
+     "t": "Additional",
+     "b": [
+      "Interest-based groups and communities beyond ERGs",
+      "Knowledge sharing posts and articles by employees",
+      "Mentorship matching program with structured goals and check-ins",
+      "Employee-generated content (blogs, tips, how-tos) with moderation workflow"
+     ]
+    },
+    {
+     "n": "Culture Health Index",
+     "t": "Additional",
+     "b": [
+      "AI-computed composite culture score from surveys, recognition, ERG activity, voluntary attrition, and communication patterns",
+      "Department-level culture comparison with anonymized benchmarking",
+      "Leading indicators that predict culture deterioration 3-6 months ahead"
+     ]
+    }
+   ]
+  },
+  "Platform & Experience Layer": {
+   "Employee": [
+    {
+     "n": "Unified Dashboard",
+     "t": "Standard",
+     "b": [
+      "Single homepage with pending tasks, upcoming events, quick actions, announcements",
+      "Personalized widgets based on role and frequently used features",
+      "Configurable layout (drag-and-drop widgets)",
+      "Recent activity feed across all modules",
+      "Quick action buttons (apply leave, punch in, log time, search)"
+     ]
+    },
+    {
+     "n": "Mobile App",
+     "t": "Standard",
+     "b": [
+      "Full-featured iOS and Android app",
+      "Push notifications for approvals, reminders, announcements",
+      "Offline punching capability (syncs when connection restored)",
+      "Biometric app login (Face ID, fingerprint)",
+      "All self-service features accessible from mobile"
+     ]
+    },
+    {
+     "n": "Search",
+     "t": "Standard",
+     "b": [
+      "Universal search bar across policies, people, documents, FAQs",
+      "Search from any screen in the application",
+      "Recent searches and favorites",
+      "Category filters (people, documents, policies, help articles)"
+     ]
+    },
+    {
+     "n": "Notification Center",
+     "t": "Standard",
+     "b": [
+      "All alerts in one place: approvals needed, reminders, announcements, updates",
+      "Configurable preferences per notification type (email, push, in-app, off)",
+      "Mark as read, snooze, or dismiss",
+      "Priority indicators for urgent notifications"
+     ]
+    },
+    {
+     "n": "Universal AI Assistant",
+     "t": "AI",
+     "b": [
+      "Single conversational interface for everything: 'Apply for leave Friday', 'Show my payslip', 'Who's my skip-level?'",
+      "Actions across all modules from one chat interface",
+      "Context-aware: remembers previous queries in the conversation",
+      "Handles complex multi-step requests"
+     ]
+    },
+    {
+     "n": "Intelligent Search",
+     "t": "AI",
+     "b": [
+      "Semantic search: 'maternity policy in UAE' finds correct doc even if wording differs",
+      "Understands synonyms, abbreviations, and natural language queries",
+      "Results ranked by relevance and recency"
+     ]
+    },
+    {
+     "n": "Proactive Suggestions",
+     "t": "AI",
+     "b": [
+      "'Your certification expires in 30 days — renew now?'",
+      "'You haven't taken leave in 4 months — consider a break'",
+      "'Timesheet due tomorrow — auto-fill from your calendar?'",
+      "Contextual and non-intrusive — learns what you care about"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Manager Command Center",
+     "t": "Standard",
+     "b": [
+      "Unified approval queue aggregating all modules (leave, OT, regularization, timesheets, requisitions, offers, salary changes)",
+      "Priority tagging (urgent, SLA-breaching, overdue, normal) with color-coded indicators",
+      "One-click approve/reject with optional comment and bulk approve for routine items",
+      "Team alerts feed (new joiner Monday, probation ending, certification expiring, visa renewal, birthdays)",
+      "Action items tracker (overdue reviews, pending 1:1s, incomplete onboarding, unactioned surveys)",
+      "At-a-glance health widgets (attendance today, leave this week, utilization, open reqs, pending PIPs)",
+      "Quick-action shortcuts (start 1:1, recognize someone, create requisition, schedule interview)",
+      "SLA countdown timers on each approval with auto-escalation warning",
+      "Approval history log for personal audit trail",
+      "Configurable dashboard layout (drag-and-drop, pin, collapse)",
+      "Desktop and mobile push notifications with deep-link to approval detail",
+      "Filter and search within command center (by module, team member, date, urgency)"
+     ]
+    },
+    {
+     "n": "Delegation & Proxy",
+     "t": "Standard",
+     "b": [
+      "Delegate all approval authority to a person for defined date range",
+      "Module-specific delegation (leave approvals to A, timesheets to B, keep salary to yourself)",
+      "Partial delegation rules (only below certain grade, only certain leave types)",
+      "Auto-activation and auto-deactivation on scheduled dates",
+      "Delegate receives notification with clear scope of delegated authority",
+      "Complete audit trail (delegate actions logged as 'on behalf of' original manager)",
+      "Fallback chain (if delegate doesn't act within SLA → escalate to skip-level or HR)",
+      "Emergency revocation from mobile if plans change",
+      "Proxy access mode (read-only dashboard access for assistant/HRBP without approval rights)",
+      "Multi-level sub-delegation with permission",
+      "Delegation history log of all past delegations"
+     ]
+    },
+    {
+     "n": "Reports Hub",
+     "t": "Standard",
+     "b": [
+      "Pre-built reports across all HR modules (attendance summary, leave utilization, team performance)",
+      "Custom report builder (drag-and-drop fields, filters, grouping)",
+      "Scheduled report delivery (weekly/monthly email with selected reports)",
+      "Export to Excel, PDF, or CSV",
+      "Report favorites and recent reports for quick access",
+      "Share reports with other managers or HR via link"
+     ]
+    },
+    {
+     "n": "Manager Copilot",
+     "t": "AI",
+     "b": [
+      "Surfaces what needs attention today: '3 pending approvals, 1 overdue review, new hire starting Monday'",
+      "Prioritizes items by urgency and impact",
+      "Learns your patterns and highlights what you typically handle first"
+     ]
+    },
+    {
+     "n": "Natural Language Reports",
+     "t": "AI",
+     "b": [
+      "'Who in my team hasn't taken leave in 3 months?' → instant data table without building a report",
+      "'Show me overtime trends for Q4' → chart generated in seconds",
+      "Handles complex queries across multiple data sources"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "RBAC & Security",
+     "t": "Standard",
+     "b": [
+      "Granular permissions per module, action, and data scope",
+      "SSO integration (SAML 2.0, OIDC) for enterprise identity providers",
+      "Multi-factor authentication (TOTP, SMS, hardware keys)",
+      "Session management (timeout, concurrent session limits)",
+      "IP whitelisting for sensitive admin operations",
+      "Password policy configuration (complexity, expiry, history)"
+     ]
+    },
+    {
+     "n": "Workflow Engine",
+     "t": "Standard",
+     "b": [
+      "Visual drag-and-drop workflow builder",
+      "Approval chain configuration (sequential, parallel, conditional)",
+      "Notification triggers at each workflow step",
+      "Escalation rules (time-based auto-escalation)",
+      "Conditional routing (if amount > X → add VP approval)",
+      "SLA enforcement with alerting"
+     ]
+    },
+    {
+     "n": "API & Integrations",
+     "t": "Standard",
+     "b": [
+      "RESTful API with comprehensive documentation",
+      "GraphQL endpoint for flexible data queries",
+      "Webhook configuration for real-time event notifications",
+      "Pre-built connectors (Slack, Teams, Google, Jira, SAP, Salesforce)",
+      "API key management with rate limiting",
+      "Integration health monitoring dashboard"
+     ]
+    },
+    {
+     "n": "Multi-Entity Configuration",
+     "t": "Standard",
+     "b": [
+      "Multi-language support (interface, communications, documents)",
+      "Multi-currency handling with exchange rate management",
+      "Multi-timezone support for global operations",
+      "Localized compliance per country entity",
+      "Entity-level branding (logos, colors for sub-brands)"
+     ]
+    },
+    {
+     "n": "Data Migration Tools",
+     "t": "Standard",
+     "b": [
+      "Legacy system import wizards with field mapping",
+      "Data validation and quality checks before migration",
+      "Rollback capability for failed migrations",
+      "Migration audit trail and verification reports",
+      "Incremental sync support for phased migration"
+     ]
+    },
+    {
+     "n": "Audit & Security",
+     "t": "Standard",
+     "b": [
+      "SOC 2 Type II compliance controls",
+      "ISO 27001 information security management",
+      "AES-256 encryption at rest, TLS 1.3 in transit",
+      "Session management and IP restriction",
+      "Vulnerability scanning and penetration testing schedule",
+      "Incident response procedures and documentation"
+     ]
+    },
+    {
+     "n": "Auto-Workflow Builder",
+     "t": "AI",
+     "b": [
+      "Describe process in English → AI builds executable workflow",
+      "Auto-detects steps, conditions, approvers, notifications from natural language description",
+      "Generates visual workflow diagram for review before activation",
+      "Iterative refinement ('Add a VP approval step if amount exceeds $10K')"
+     ]
+    },
+    {
+     "n": "Anomaly Watchdog",
+     "t": "AI",
+     "b": [
+      "Detects unusual access patterns (login from new country, bulk data export, off-hours access)",
+      "Data quality monitoring (sudden spike in errors, incomplete records)",
+      "Cross-module fraud signals (attendance + expense + timesheet inconsistencies)",
+      "Severity-scored alert queue for security team"
+     ]
+    },
+    {
+     "n": "AI Governance Dashboard",
+     "t": "AI",
+     "b": [
+      "Model cards for every AI feature (training data, performance metrics, known limitations)",
+      "Bias audit results per AI feature with trend over time",
+      "Explainability logs (why each AI recommendation was made)",
+      "Accuracy and reliability tracking per feature",
+      "Data threshold indicators (which features have enough data, which need more)"
+     ]
+    },
+    {
+     "n": "Agentic HR Ops",
+     "t": "AI",
+     "b": [
+      "AI agents execute multi-step processes autonomously with human approval gates",
+      "Offboarding agent: revokes access, triggers surveys, calculates settlement, notifies stakeholders",
+      "Compliance agent: monitors regulations, flags violations, suggests policy updates",
+      "Payroll agent: pre-audits, reconciles, flags exceptions, generates reports"
+     ]
+    },
+    {
+     "n": "White-Label & Branding",
+     "t": "Additional",
+     "b": [
+      "Full white-label capability (custom domain, logo, colors, email sender name)",
+      "Custom login page branding per entity",
+      "Branded employee portal with company-specific URL",
+      "Custom email templates with brand colors and footer"
+     ]
+    },
+    {
+     "n": "Accessibility (WCAG 2.1 AA)",
+     "t": "Additional",
+     "b": [
+      "Screen reader compatibility across all modules",
+      "Keyboard navigation for all actions (no mouse-only interactions)",
+      "High contrast mode and adjustable font sizes",
+      "Alt text on all images and icons",
+      "Accessibility audit report per release"
+     ]
+    },
+    {
+     "n": "Multi-Tenancy Architecture",
+     "t": "Additional",
+     "b": [
+      "True multi-tenant SaaS with data isolation per tenant",
+      "Tenant-level configuration (modules, features, branding, policies)",
+      "Partner/reseller portal for multi-tenant management",
+      "Tenant provisioning and deprovisioning automation",
+      "Cross-tenant analytics for platform operators (anonymized)"
+     ]
+    },
+    {
+     "n": "Notification Engine",
+     "t": "Additional",
+     "b": [
+      "Omni-channel notifications (email, push, in-app, SMS, Slack, Teams, WhatsApp Business)",
+      "Notification template builder with personalization tokens",
+      "Notification scheduling (batch digests vs real-time per category)",
+      "Delivery tracking and failure alerts",
+      "Employee preference center (opt-in/out per channel per notification type)"
+     ]
+    },
+    {
+     "n": "Uptime & Performance",
+     "t": "Additional",
+     "b": [
+      "99.9% uptime SLA with public status page",
+      "Auto-scaling infrastructure for peak periods (payroll days, open enrollment)",
+      "Data residency options (region-specific hosting for compliance)",
+      "Disaster recovery with RPO < 1 hour and RTO < 4 hours",
+      "SOC 2 Type II and ISO 27001 certified infrastructure"
+     ]
+    }
+   ]
+  },
+  "Payroll Processing": {
+   "Employee": [
+    {
+     "n": "Payslip Access",
+     "t": "Standard",
+     "b": [
+      "View monthly payslip with full breakdown (basic, allowances, deductions, employer contributions, net pay)",
+      "Download payslips as PDF (individual month or bulk annual download)",
+      "Payslip comparison view (month-over-month, year-over-year changes highlighted)",
+      "Push notification when payslip is published",
+      "Historical payslip archive (full employment history)"
+     ]
+    },
+    {
+     "n": "Tax Management",
+     "t": "Standard",
+     "b": [
+      "Submit tax declarations (investment proofs, rent receipts, HRA claims, 80C/80D for India, W-4 for US)",
+      "Provisional tax computation updated in real-time as declarations are submitted",
+      "Year-end tax summary (Form 16/W-2/P60 equivalent per jurisdiction)",
+      "Download annual tax certificates",
+      "Tax regime selection where applicable (old vs new regime for India)",
+      "Document upload for proof submission with category tagging"
+     ]
+    },
+    {
+     "n": "Salary Advance & Loans",
+     "t": "Standard",
+     "b": [
+      "Request salary advance with reason and repayment schedule preference",
+      "View active loan balances and EMI deduction schedule",
+      "Track repayment progress with remaining balance",
+      "Download loan statement for personal records"
+     ]
+    },
+    {
+     "n": "Reimbursement Claims",
+     "t": "Standard",
+     "b": [
+      "Submit reimbursement claims (medical, travel, relocation, internet, phone)",
+      "Attach receipts and supporting documents per claim line",
+      "Track claim status (submitted, approved, processed, paid)",
+      "View reimbursement history with payout details"
+     ]
+    },
+    {
+     "n": "Pay Calendar",
+     "t": "Standard",
+     "b": [
+      "View upcoming pay dates for the year",
+      "Countdown to next payday on dashboard",
+      "Bonus payout schedule visibility",
+      "Cut-off date reminders (declaration deadlines, reimbursement submission windows)"
+     ]
+    },
+    {
+     "n": "Smart Tax Advisor",
+     "t": "AI",
+     "b": [
+      "Suggests optimal tax-saving declarations based on salary structure and local tax law",
+      "Investment recommendations for maximum tax benefit per regime",
+      "Alerts before declaration deadlines with estimated savings amount",
+      "'You can save ₹47,000 more by declaring NPS contribution' — actionable specific advice"
+     ]
+    },
+    {
+     "n": "Pay Anomaly Alert",
+     "t": "AI",
+     "b": [
+      "Detects unusual changes in net pay and explains the reason before you ask",
+      "'Your net pay dropped ₹8,200 this month due to insurance premium increase from dependent addition'",
+      "Proactive notification on payslip publish day with change summary"
+     ]
+    },
+    {
+     "n": "Earnings Forecast",
+     "t": "AI",
+     "b": [
+      "Projects annual take-home based on current deductions, upcoming increments, and bonus targets",
+      "Models impact of tax declaration changes on monthly take-home",
+      "'If you submit HRA receipts, your monthly take-home increases by ₹3,400 from next month'"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Payroll Overview",
+     "t": "Standard",
+     "b": [
+      "Team payroll cost summary (total CTC, gross, net — aggregated, not individual salaries unless authorized)",
+      "Month-over-month team payroll cost trend",
+      "Headcount vs payroll cost correlation chart",
+      "New joiners and exits impact on team payroll"
+     ]
+    },
+    {
+     "n": "Reimbursement Approvals",
+     "t": "Standard",
+     "b": [
+      "Approve/reject team reimbursement claims with receipt review",
+      "Policy compliance indicators per claim (within limits, requires exception)",
+      "Bulk approval for routine claims",
+      "Claim history per team member"
+     ]
+    },
+    {
+     "n": "Salary Advance Approvals",
+     "t": "Standard",
+     "b": [
+      "Review and approve salary advance requests",
+      "View employee's existing loan/advance balance before approving",
+      "Policy guard rails (max advance amount, frequency limits)"
+     ]
+    },
+    {
+     "n": "Payroll Input Verification",
+     "t": "Standard",
+     "b": [
+      "Verify variable inputs before payroll close (overtime hours, shift allowances, bonus recommendations)",
+      "Confirm attendance data accuracy for team",
+      "Flag and correct discrepancies before pay run",
+      "Sign-off workflow with deadline tracking"
+     ]
+    },
+    {
+     "n": "Payroll Cost Predictor",
+     "t": "AI",
+     "b": [
+      "Forecasts next month's team payroll cost based on approved changes, new hires, exits",
+      "'Team payroll will increase 8% next month due to 2 new hires and annual increment cycle'",
+      "Budget vs actual variance prediction"
+     ]
+    },
+    {
+     "n": "Anomaly Flagger",
+     "t": "AI",
+     "b": [
+      "Flags unusual payroll inputs before processing (sudden OT spike, unusual reimbursement patterns)",
+      "'Raj's overtime hours are 3x his 6-month average — please verify'",
+      "Reduces payroll errors before they reach employees"
+     ]
+    },
+    {
+     "n": "Smart Input Reminder",
+     "t": "AI",
+     "b": [
+      "Reminds managers of pending payroll inputs approaching cut-off",
+      "Auto-populates variable inputs from attendance, leave, and timesheet data",
+      "Highlights items needing manual override vs auto-calculated"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Pay Run Engine",
+     "t": "Standard",
+     "b": [
+      "Configure pay frequency per entity (monthly, bi-weekly, weekly)",
+      "Pay run calendar with cut-off dates, processing dates, and disbursement dates",
+      "Multi-step pay run: input lock → gross calculation → deductions → net calculation → review → approve → disburse",
+      "Draft pay run preview before finalization (full payroll register with every line item)",
+      "Differential pay run for corrections, arrears, and supplementary payments",
+      "Off-cycle pay run for terminations, bonuses, and one-time payments",
+      "Pay run comparison (this month vs last month with variance highlighting)",
+      "Multi-entity pay run management (run payroll for different entities independently)",
+      "Maker-checker workflow (preparer, reviewer, approver roles)",
+      "Pay run audit log (who changed what, when, with before/after values)"
+     ]
+    },
+    {
+     "n": "Salary Structure Configuration",
+     "t": "Standard",
+     "b": [
+      "Define salary components (basic, HRA, DA, special allowance, transport — fully customizable)",
+      "Component calculation rules (percentage of basic, fixed amount, formula-based)",
+      "Multiple salary structures per entity/grade/location",
+      "CTC-to-net breakdown simulator (model new structures before applying)",
+      "Component tax treatment configuration (taxable, exempt, partially exempt with limits)",
+      "Employer contribution components (PF, ESI, gratuity, insurance — auto-calculated)"
+     ]
+    },
+    {
+     "n": "Statutory Compliance",
+     "t": "Standard",
+     "b": [
+      "Country-specific tax calculation engine (income tax slabs, surcharge, cess — updated annually)",
+      "Provident fund / social security calculation and employer contribution",
+      "ESI / health insurance statutory deductions where applicable",
+      "Professional tax per state/emirate",
+      "Gratuity provisioning and calculation per labor law",
+      "WPS file generation for UAE (SIF file format)",
+      "BACS/ACH/SEPA bank file generation for salary disbursement",
+      "Statutory return generation (PF returns, ESI returns, Form 24Q, P11D, 941)",
+      "Year-end processing (Form 16, W-2, P60, IR8A generation)",
+      "Minimum wage compliance checks per jurisdiction"
+     ]
+    },
+    {
+     "n": "Payroll Accounting",
+     "t": "Standard",
+     "b": [
+      "Auto-generated journal entries per pay run (salary, provisions, employer costs)",
+      "GL mapping per salary component (configurable chart of accounts mapping)",
+      "Cost center and department-wise payroll cost allocation",
+      "Accrual entries for bonus, leave encashment, and gratuity provisions",
+      "Integration with accounting systems (QuickBooks, Xero, SAP, Oracle, Tally)",
+      "Reconciliation reports (payroll register vs bank statement vs GL)"
+     ]
+    },
+    {
+     "n": "Loans & Advances Administration",
+     "t": "Standard",
+     "b": [
+      "Configure loan types (salary advance, festival advance, emergency loan, education loan)",
+      "Interest calculation rules per loan type (interest-free, subsidized, market rate)",
+      "EMI schedule generation with auto-deduction from payroll",
+      "Loan balance tracking and early closure processing",
+      "Policy configuration (max loan amount, eligibility criteria, concurrent loan rules)"
+     ]
+    },
+    {
+     "n": "Payroll Reports",
+     "t": "Standard",
+     "b": [
+      "Payroll register (complete employee-wise breakdown per pay run)",
+      "Bank transfer file with validation (account number checks, IBAN validation)",
+      "Statutory reports per jurisdiction (PF, ESI, PT, TDS, WPS)",
+      "Payroll variance report (period-over-period changes with reasons)",
+      "Cost-to-company report by department, entity, location",
+      "Headcount and payroll cost trend report",
+      "Employer contribution summary",
+      "Reconciliation reports (payroll vs attendance, payroll vs leave, payroll vs bank)"
+     ]
+    },
+    {
+     "n": "Full & Final Settlement",
+     "t": "Standard",
+     "b": [
+      "Auto-triggered on last working day from offboarding module",
+      "Comprehensive F&F calculation: pending salary, leave encashment, bonus proration, gratuity, notice period recovery",
+      "Loan/advance recovery from settlement amount",
+      "Asset recovery deduction linkage (from offboarding checklist)",
+      "F&F statement generation with breakdown",
+      "Multi-level approval workflow for F&F",
+      "Tax computation on termination payments (gratuity exemption, leave encashment limits)"
+     ]
+    },
+    {
+     "n": "Pre-Run Audit AI",
+     "t": "AI",
+     "b": [
+      "Scans payroll inputs before processing and flags anomalies across entire org",
+      "Detects: duplicate entries, missing inputs, unusual variances, out-of-policy items",
+      "'Found 12 employees with zero attendance records — likely import gap, not absence'",
+      "Confidence scoring per flag (critical, warning, informational)"
+     ]
+    },
+    {
+     "n": "Smart Reconciliation",
+     "t": "AI",
+     "b": [
+      "Auto-reconciles payroll output against attendance, leave, OT, and timesheet data",
+      "Highlights mismatches with root cause analysis",
+      "One-click correction for common reconciliation gaps"
+     ]
+    },
+    {
+     "n": "Compliance Monitor",
+     "t": "AI",
+     "b": [
+      "Tracks regulatory changes (tax slab updates, PF rate changes, minimum wage revisions)",
+      "Alerts admin when statutory rates change with impact analysis",
+      "Auto-suggests configuration updates when labor law amendments are detected"
+     ]
+    },
+    {
+     "n": "Cost Forecasting Engine",
+     "t": "AI",
+     "b": [
+      "Forecasts payroll cost for next 3/6/12 months based on headcount plan, increments, and hiring pipeline",
+      "Scenario modeling: 'What if we give 10% average increment vs 8%?'",
+      "Budget vs actual payroll cost with projected year-end variance",
+      "Attrition-adjusted forecasting (factors in expected exits)"
+     ]
+    }
+   ]
+  },
+  "Expense Management": {
+   "Employee": [
+    {
+     "n": "Quick Expense Capture",
+     "t": "Standard",
+     "b": [
+      "Snap receipt photo from mobile → auto-extracts merchant, amount, date, category via OCR",
+      "Manual entry with category, amount, currency, date, merchant, description",
+      "Multi-currency support with auto-conversion at policy or real-time rate",
+      "Mileage tracker with GPS route logging and per-km rate calculation",
+      "Per diem auto-calculation based on travel destination and company policy",
+      "Recurring expense templates (monthly internet, phone reimbursement)"
+     ]
+    },
+    {
+     "n": "Expense Reports",
+     "t": "Standard",
+     "b": [
+      "Group expenses into reports by trip, project, or period",
+      "Drag-and-drop expense grouping into reports",
+      "Auto-attach receipts to matching credit card transactions",
+      "Policy compliance checker before submission (flags violations with explanation)",
+      "Submit for approval with trip summary and total",
+      "Draft reports for ongoing trips (add expenses incrementally)"
+     ]
+    },
+    {
+     "n": "Corporate Card Integration",
+     "t": "Standard",
+     "b": [
+      "Auto-import corporate card transactions (real-time or daily sync)",
+      "Match transactions to submitted receipts",
+      "Flag unreconciled card transactions requiring receipts",
+      "Personal expense flagging on corporate card"
+     ]
+    },
+    {
+     "n": "Travel Requests",
+     "t": "Standard",
+     "b": [
+      "Pre-trip approval request with itinerary, estimated costs, and justification",
+      "Budget estimation based on destination, duration, and policy allowances",
+      "Link approved travel request to subsequent expense report",
+      "Hotel and flight booking integration (optional)"
+     ]
+    },
+    {
+     "n": "Reimbursement Tracking",
+     "t": "Standard",
+     "b": [
+      "Real-time status tracking (submitted → approved → processing → paid)",
+      "Payment date visibility and bank deposit confirmation",
+      "Historical reimbursement log with payment references",
+      "Year-to-date expense summary by category"
+     ]
+    },
+    {
+     "n": "Smart Receipt Scanner",
+     "t": "AI",
+     "b": [
+      "OCR extracts merchant, amount, date, tax, category from receipt photo with 95%+ accuracy",
+      "Auto-categorizes expense based on merchant name and historical patterns",
+      "Detects duplicate receipts (same merchant, amount, date)"
+     ]
+    },
+    {
+     "n": "Policy Copilot",
+     "t": "AI",
+     "b": [
+      "Real-time guidance while creating expenses: 'Hotel exceeds $200/night policy for this city'",
+      "Suggests corrections before submission to reduce rejections",
+      "Natural language policy queries: 'What's the meal allowance for London trips?'"
+     ]
+    },
+    {
+     "n": "Spend Insights",
+     "t": "AI",
+     "b": [
+      "Personal spending patterns by category with trend analysis",
+      "Budget utilization against annual allowances (travel, meals, learning)",
+      "Savings suggestions: 'You could save $120/month by using the corporate hotel program'"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Approval Dashboard",
+     "t": "Standard",
+     "b": [
+      "Pending expense reports with line-item detail and receipt images",
+      "Policy compliance indicators per line item (within policy, exception needed, violation)",
+      "Approve/reject individual line items or entire report",
+      "Add comments per line item",
+      "Bulk approve for routine reports"
+     ]
+    },
+    {
+     "n": "Team Spend Overview",
+     "t": "Standard",
+     "b": [
+      "Team expense summary by category, person, and period",
+      "Budget vs actual tracking for team travel and expense budget",
+      "Top spenders and category breakdown",
+      "Month-over-month trend analysis"
+     ]
+    },
+    {
+     "n": "Travel Pre-Approval",
+     "t": "Standard",
+     "b": [
+      "Review and approve travel requests with budget impact preview",
+      "Calendar overlay showing team travel schedule",
+      "Budget remaining for the quarter/year before approving"
+     ]
+    },
+    {
+     "n": "Exception Management",
+     "t": "Standard",
+     "b": [
+      "Handle out-of-policy exceptions with justification workflow",
+      "Delegate approval authority during absence",
+      "Escalation alerts for overdue approvals"
+     ]
+    },
+    {
+     "n": "Fraud Detection",
+     "t": "AI",
+     "b": [
+      "Flags suspicious patterns: duplicate claims, altered receipts, weekend business meals",
+      "Cross-references receipts against known databases for authenticity",
+      "Risk scoring per expense report (low, medium, high)"
+     ]
+    },
+    {
+     "n": "Budget Forecast",
+     "t": "AI",
+     "b": [
+      "Predicts team expense run-rate for rest of quarter/year",
+      "'At current rate, team will exceed travel budget by $12K in Q4'",
+      "Suggests cost-saving measures based on spending patterns"
+     ]
+    },
+    {
+     "n": "Auto-Approve Engine",
+     "t": "AI",
+     "b": [
+      "AI pre-approves routine, fully-compliant expense reports under configurable thresholds",
+      "Routes only flagged or borderline reports for human review",
+      "Adapts thresholds based on employee trust score (history of compliant submissions)"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Expense Policy Configuration",
+     "t": "Standard",
+     "b": [
+      "Category-wise spending limits (meals, transport, accommodation, entertainment)",
+      "Per diem rates by city/country with effective dates",
+      "Mileage rates per vehicle type",
+      "Receipt requirements per amount threshold (no receipt <$25, receipt mandatory >$25)",
+      "Multi-entity policies (different rules for different geographies)",
+      "Policy versioning with effective dates and grandfathering rules"
+     ]
+    },
+    {
+     "n": "Approval Workflow Setup",
+     "t": "Standard",
+     "b": [
+      "Configurable approval chains by amount, category, or department",
+      "Multi-level approval for high-value expenses",
+      "Auto-routing rules (travel over $5K → VP approval)",
+      "SLA configuration per approval level"
+     ]
+    },
+    {
+     "n": "Corporate Card Administration",
+     "t": "Standard",
+     "b": [
+      "Card program management (issue, revoke, set limits)",
+      "Transaction feed integration (Visa, Mastercard, Amex commercial APIs)",
+      "Unreconciled transaction tracking and follow-up automation",
+      "Card spending limits by employee, category, and period"
+     ]
+    },
+    {
+     "n": "Payment Processing",
+     "t": "Standard",
+     "b": [
+      "Batch reimbursement processing through payroll or direct payment",
+      "Integration with payroll module for salary-bundled reimbursement",
+      "Direct bank transfer for standalone reimbursement runs",
+      "Multi-currency settlement with exchange rate configuration"
+     ]
+    },
+    {
+     "n": "Expense Analytics",
+     "t": "Standard",
+     "b": [
+      "Organization-wide spend analytics by category, department, entity, vendor",
+      "Policy violation trends and top violators",
+      "Travel spend analysis (top destinations, average cost per trip, vendor consolidation opportunities)",
+      "Budget utilization dashboard with drill-down",
+      "Vendor spend consolidation report (negotiate better rates with top vendors)"
+     ]
+    },
+    {
+     "n": "Tax & Compliance",
+     "t": "Standard",
+     "b": [
+      "GST/VAT input credit extraction from expense receipts",
+      "Tax-deductible expense categorization",
+      "Audit-ready expense documentation with full trail",
+      "Per diem compliance with tax authority limits (IRS, HMRC, local tax rules)"
+     ]
+    },
+    {
+     "n": "Org-Wide Anomaly Detection",
+     "t": "AI",
+     "b": [
+      "Detects systematic policy abuse patterns across the organization",
+      "Identifies ghost vendors, round-tripping, and collusion patterns",
+      "Monthly anomaly digest with investigation recommendations"
+     ]
+    },
+    {
+     "n": "Smart Policy Optimizer",
+     "t": "AI",
+     "b": [
+      "Analyzes expense patterns and recommends policy adjustments",
+      "'Hotel policy for New York is 40% below market — causing 68% exception rate. Recommend increasing to $280/night'",
+      "Models impact of policy changes on total spend and compliance rate"
+     ]
+    },
+    {
+     "n": "Vendor Intelligence",
+     "t": "AI",
+     "b": [
+      "Identifies opportunities for vendor consolidation and corporate rate negotiation",
+      "'Employees use 14 different hotels in Mumbai — consolidating to 3 preferred hotels could save 22%'",
+      "Auto-suggests preferred vendors during expense creation"
+     ]
+    }
+   ]
+  },
+  "Compliance & Audit": {
+   "Employee": [
+    {
+     "n": "Policy Acknowledgment",
+     "t": "Standard",
+     "b": [
+      "View all company policies applicable to your role, location, and entity",
+      "Digital acknowledgment with timestamp and version tracking",
+      "Re-acknowledgment triggered when policies are updated",
+      "Policy change notifications with summary of what changed"
+     ]
+    },
+    {
+     "n": "Mandatory Training Tracker",
+     "t": "Standard",
+     "b": [
+      "View assigned compliance trainings (harassment prevention, data privacy, safety, anti-bribery)",
+      "Completion status with deadlines and overdue alerts",
+      "Certificate of completion auto-generated and stored",
+      "Renewal tracking for recurring compliance training"
+     ]
+    },
+    {
+     "n": "Whistleblower & Ethics Portal",
+     "t": "Standard",
+     "b": [
+      "Submit anonymous ethics complaints or concerns",
+      "Track complaint status without revealing identity",
+      "Access ethics hotline information and reporting guidelines",
+      "View investigation outcome (anonymized, where applicable)"
+     ]
+    },
+    {
+     "n": "Data Privacy Controls",
+     "t": "Standard",
+     "b": [
+      "View what personal data the system holds about you",
+      "Download personal data export (GDPR/DPDP right of access)",
+      "Submit data correction requests",
+      "Consent management (opt-in/opt-out for non-essential data processing)",
+      "Data deletion request (right to be forgotten — triggers HR workflow)"
+     ]
+    },
+    {
+     "n": "Compliance Reminder Bot",
+     "t": "AI",
+     "b": [
+      "Proactive reminders for upcoming training deadlines, policy acknowledgments, and document renewals",
+      "Natural language queries: 'Am I compliant with all my trainings?'",
+      "Context-aware: 'Your anti-harassment training expires in 10 days — complete it now?'"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Compliance Dashboard",
+     "t": "Standard",
+     "b": [
+      "Compliance status per team member (training, policy acknowledgments, document validity)",
+      "Red/amber/green indicators per compliance area",
+      "Overdue compliance items with days overdue",
+      "Send reminders to non-compliant team members with one click"
+     ]
+    },
+    {
+     "n": "Policy Violation Tracking",
+     "t": "Standard",
+     "b": [
+      "View team policy violations flagged by system (attendance, expense, conduct)",
+      "Progressive discipline tracker (verbal warning → written → PIP → termination)",
+      "Document corrective actions with evidence",
+      "Historical violation record per team member"
+     ]
+    },
+    {
+     "n": "Audit Support",
+     "t": "Standard",
+     "b": [
+      "Generate compliance reports for team on demand (for internal/external audits)",
+      "Certification that team has completed mandatory requirements",
+      "Evidence collection dashboard (gather documents for audit requests)"
+     ]
+    },
+    {
+     "n": "Labor Law Compliance",
+     "t": "Standard",
+     "b": [
+      "Working hours compliance monitor (max hours, mandatory rest periods, overtime limits)",
+      "Leave compliance tracker (minimum statutory leave, mandatory time-off rules)",
+      "Health and safety checklist completion for team",
+      "Contractor vs employee classification compliance"
+     ]
+    },
+    {
+     "n": "Compliance Risk Scorer",
+     "t": "AI",
+     "b": [
+      "Per-person compliance risk score based on overdue items, violation history, and expiring documents",
+      "Prioritized action list: 'Focus on these 3 people — highest compliance risk'",
+      "Trend analysis showing improving or deteriorating compliance posture"
+     ]
+    },
+    {
+     "n": "Proactive Violation Detector",
+     "t": "AI",
+     "b": [
+      "Detects patterns that may lead to violations before they occur",
+      "'Ravi has worked 55+ hours for 4 consecutive weeks — approaching statutory limit'",
+      "Suggests preventive actions (enforce time-off, redistribute workload)"
+     ]
+    },
+    {
+     "n": "Audit Prep Copilot",
+     "t": "AI",
+     "b": [
+      "Auto-assembles audit-ready documentation packages when audit is announced",
+      "Identifies gaps in documentation that need to be addressed before audit",
+      "Generates compliance summary reports in auditor-friendly formats"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Policy Management",
+     "t": "Standard",
+     "b": [
+      "Policy creation with version control, effective dates, and approval workflow",
+      "Policy applicability rules (by entity, location, department, grade, employment type)",
+      "Mandatory acknowledgment configuration with reminder cadence",
+      "Policy comparison (diff view between versions showing all changes)",
+      "Policy library with templates per jurisdiction (ready-to-customize)",
+      "Multi-language policy publishing"
+     ]
+    },
+    {
+     "n": "Audit Trail & Logging",
+     "t": "Standard",
+     "b": [
+      "Comprehensive audit trail on every data change across all modules",
+      "Who changed what, when, from what value to what value",
+      "Immutable logs (cannot be modified or deleted by any user including admins)",
+      "Log retention policy configuration per data type (7 years for payroll, 3 years for attendance)",
+      "Search and filter audit logs by module, user, date range, action type",
+      "Export audit logs for external compliance reporting"
+     ]
+    },
+    {
+     "n": "Data Privacy & GDPR/DPDP",
+     "t": "Standard",
+     "b": [
+      "Data classification framework (PII, sensitive PII, confidential, public)",
+      "Data retention policies per category with auto-archival and auto-deletion",
+      "Consent management dashboard (who consented to what, when)",
+      "Data processing activity register (ROPA — Record of Processing Activities)",
+      "Data Subject Access Request (DSAR) workflow with SLA tracking",
+      "Right to erasure processing with dependency checks",
+      "Data breach notification workflow with regulatory timeline tracking",
+      "Cross-border data transfer compliance (adequacy decisions, SCCs, BCRs)"
+     ]
+    },
+    {
+     "n": "Regulatory Compliance Engine",
+     "t": "Standard",
+     "b": [
+      "Jurisdiction-specific compliance checklists (labor law, tax, data privacy, safety)",
+      "Statutory filing calendar with deadline tracking and responsible person assignment",
+      "Compliance certificate generation (PF, ESI, LWF, PT compliance certificates)",
+      "Labor inspection readiness dashboard",
+      "Statutory register maintenance (register of wages, leave register, overtime register)",
+      "EEO-1/diversity reporting for US entities"
+     ]
+    },
+    {
+     "n": "Document Retention & Archival",
+     "t": "Standard",
+     "b": [
+      "Configurable retention schedules per document type and jurisdiction",
+      "Automated archival when retention period expires",
+      "Legal hold capability (freeze deletion for litigation/investigation)",
+      "Archive access with approval workflow",
+      "Destruction certificates for expired documents"
+     ]
+    },
+    {
+     "n": "Ethics & Whistleblower Administration",
+     "t": "Standard",
+     "b": [
+      "Anonymous complaint management with investigation workflow",
+      "Assign investigators with role-based access to case details",
+      "Investigation tracking (received, in-progress, findings, resolution, closed)",
+      "Outcome documentation with confidentiality controls",
+      "Ethics case analytics (type distribution, resolution time, repeat patterns)"
+     ]
+    },
+    {
+     "n": "Compliance Reporting",
+     "t": "Standard",
+     "b": [
+      "Organization-wide compliance dashboard (training completion, policy acknowledgment, document validity)",
+      "Regulatory filing status tracker",
+      "Compliance gap analysis report",
+      "Board-ready compliance summary",
+      "External auditor portal (read-only access to compliance artifacts)"
+     ]
+    },
+    {
+     "n": "Regulatory Change Monitor",
+     "t": "AI",
+     "b": [
+      "Tracks labor law, tax regulation, and data privacy regulation changes across all operating jurisdictions",
+      "Alerts when new regulations impact existing policies or configurations",
+      "'UAE labor law amendment effective Jan 2026 requires updated end-of-service benefit calculation — action needed'",
+      "Impact assessment per regulatory change (which policies, which employees, what configuration changes)"
+     ]
+    },
+    {
+     "n": "Compliance Risk Heatmap",
+     "t": "AI",
+     "b": [
+      "AI-generated risk heatmap across entities, departments, and compliance domains",
+      "Predicts areas most likely to fail an audit based on current compliance posture",
+      "Prioritized remediation plan with effort and impact estimates"
+     ]
+    },
+    {
+     "n": "Smart Audit Assistant",
+     "t": "AI",
+     "b": [
+      "Pre-populates audit checklists based on regulatory requirements and available evidence",
+      "Identifies documentation gaps proactively ('Missing employment contracts for 8 employees in Dubai entity')",
+      "Generates audit-ready reports with evidence links in one click"
+     ]
+    },
+    {
+     "n": "Policy Gap Analyzer",
+     "t": "AI",
+     "b": [
+      "Compares company policies against statutory requirements and flags gaps",
+      "'Your UAE sick leave policy provides 10 days — labor law mandates 90 days. Update required.'",
+      "Benchmarks policies against industry best practices"
+     ]
+    }
+   ]
+  },
+  "Workforce Planning": {
+   "Employee": [
+    {
+     "n": "Career Marketplace",
+     "t": "Standard",
+     "b": [
+      "Browse internal opportunities (full-time, project-based, gig, rotation, stretch assignments)",
+      "Express interest in future roles or projects without formal application",
+      "Skill-based matching against open opportunities",
+      "Internal gig board for cross-functional short-term projects"
+     ]
+    },
+    {
+     "n": "Skills Passport",
+     "t": "Standard",
+     "b": [
+      "Comprehensive skills profile (technical, soft, certifications, languages, tools)",
+      "Self-assessment with evidence linking (projects, certifications, endorsements)",
+      "Skills verified by manager or peers",
+      "Exportable skills passport for career transitions"
+     ]
+    },
+    {
+     "n": "Opportunity Matcher",
+     "t": "AI",
+     "b": [
+      "AI proactively surfaces internal gigs, rotations, and roles matching your skills and aspirations",
+      "'A 3-month data analytics project in Marketing matches your Python and SQL skills — interested?'",
+      "Gap analysis: 'Learn Tableau to qualify for 4 more opportunities'"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Headcount Planning",
+     "t": "Standard",
+     "b": [
+      "Annual headcount plan creation by role, level, and location",
+      "Approved vs filled vs in-pipeline view per planned position",
+      "Timeline-based hiring plan (when each role needs to be filled)",
+      "Budget impact per planned hire (salary + benefits + equipment + onboarding cost)"
+     ]
+    },
+    {
+     "n": "Org Design Tools",
+     "t": "Standard",
+     "b": [
+      "Propose team restructuring with before/after org chart comparison",
+      "Span of control analysis (current vs optimal)",
+      "Role creation/modification proposals with approval workflow",
+      "What-if scenario builder for team structure changes"
+     ]
+    },
+    {
+     "n": "Skill Gap Analysis",
+     "t": "Standard",
+     "b": [
+      "Team capability matrix (required skills vs available skills per team member)",
+      "Single-point-of-failure identification (skills held by only one person)",
+      "Hiring vs training decision framework per skill gap",
+      "Cross-training recommendations to build redundancy"
+     ]
+    },
+    {
+     "n": "Succession Planning",
+     "t": "Standard",
+     "b": [
+      "Identify critical roles and potential successors",
+      "Readiness assessment per successor (ready now, 6 months, 12 months, not ready)",
+      "Development plans for succession candidates",
+      "Flight risk overlay on succession plan"
+     ]
+    },
+    {
+     "n": "Contractor & Contingent Workforce",
+     "t": "Standard",
+     "b": [
+      "Manage blended workforce (FTE + contractors + freelancers)",
+      "Contractor utilization and cost tracking",
+      "Convert-to-FTE pipeline and approval",
+      "Contingent workforce compliance monitoring"
+     ]
+    },
+    {
+     "n": "Demand Forecasting",
+     "t": "AI",
+     "b": [
+      "Predicts future headcount needs based on business growth, project pipeline, and seasonal patterns",
+      "'Based on product roadmap, you'll need 3 additional frontend engineers by Q3'",
+      "Factors in historical hiring velocity and market availability"
+     ]
+    },
+    {
+     "n": "Build vs Buy Recommender",
+     "t": "AI",
+     "b": [
+      "For each skill gap, recommends: hire, train existing employee, contract out, or automate",
+      "Cost-benefit analysis per option with timeline estimates",
+      "'Training Sarah in cloud architecture (3 months, $5K) is 60% cheaper than hiring externally'"
+     ]
+    },
+    {
+     "n": "Attrition-Adjusted Planning",
+     "t": "AI",
+     "b": [
+      "Factors predicted attrition into headcount plans",
+      "'Plan for 2 replacement hires — your team has 25% predicted attrition in next 12 months'",
+      "Adjusts hiring timeline based on notice period and ramp-up time"
+     ]
+    },
+    {
+     "n": "Scenario Modeler",
+     "t": "AI",
+     "b": [
+      "Model multiple workforce scenarios (aggressive growth, steady state, downsizing)",
+      "Cost impact per scenario with quarterly breakdown",
+      "Compare scenarios side-by-side with trade-off analysis"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Strategic Workforce Plan",
+     "t": "Standard",
+     "b": [
+      "Organization-wide headcount plan with multi-year horizon (1, 3, 5 years)",
+      "Plan by entity, department, function, location, and grade",
+      "Budget allocation per plan with approval workflow",
+      "Plan vs actual tracking with variance analysis",
+      "Integration with finance for budget alignment"
+     ]
+    },
+    {
+     "n": "Job Architecture",
+     "t": "Standard",
+     "b": [
+      "Job family and job function taxonomy creation",
+      "Role-level competency frameworks",
+      "Career ladder definition with progression criteria",
+      "Job leveling across departments for internal equity",
+      "Job description library with version control"
+     ]
+    },
+    {
+     "n": "Workforce Analytics Dashboard",
+     "t": "Standard",
+     "b": [
+      "Headcount trends by every dimension (entity, department, location, grade, gender, tenure)",
+      "Hiring velocity (time-to-fill, time-to-productivity, cost-per-hire)",
+      "Attrition analysis (voluntary, involuntary, regrettable, by tenure band)",
+      "Workforce composition (FTE, contractor, part-time, intern)",
+      "Span of control distribution and organizational depth analysis"
+     ]
+    },
+    {
+     "n": "Position Management",
+     "t": "Standard",
+     "b": [
+      "Position-based tracking (position exists independent of person filling it)",
+      "Funded vs unfunded position tracking",
+      "Position history (who held it, when, at what compensation)",
+      "Vacancy aging report",
+      "Position budgeting integration with finance"
+     ]
+    },
+    {
+     "n": "Internal Talent Marketplace",
+     "t": "Standard",
+     "b": [
+      "Configure gig, rotation, and stretch assignment programs",
+      "Matching rules (skills, availability, manager approval requirements)",
+      "Impact tracking (retention, engagement, skill development of participants)",
+      "Program analytics (participation rates, completion rates, satisfaction)"
+     ]
+    },
+    {
+     "n": "Workforce Simulation Engine",
+     "t": "AI",
+     "b": [
+      "Monte Carlo simulation of workforce scenarios with probability-weighted outcomes",
+      "'If attrition rises to 20% and hiring slows by 30%, engineering will be 15 people short by Q4 (78% probability)'",
+      "Sensitivity analysis: which assumptions have the biggest impact on outcomes"
+     ]
+    },
+    {
+     "n": "Skills Intelligence",
+     "t": "AI",
+     "b": [
+      "Org-wide skill inventory auto-built from profiles, projects, learning data, and tool usage",
+      "Emerging skill trend detection from market data and industry benchmarks",
+      "Future skill gap prediction: 'The org will need 40% more AI/ML skills in 18 months based on strategic goals'"
+     ]
+    },
+    {
+     "n": "Optimal Org Design AI",
+     "t": "AI",
+     "b": [
+      "Suggests optimal team structures based on workload, skills, and communication patterns",
+      "Identifies over-layered hierarchies and recommends flattening",
+      "Models restructuring impact on cost, productivity, and employee experience"
+     ]
+    },
+    {
+     "n": "Diversity & Inclusion Planner",
+     "t": "AI",
+     "b": [
+      "Models diversity impact of different hiring plans",
+      "Identifies pipeline stages where diverse candidates disproportionately drop off",
+      "Suggests targeted interventions to improve representation at each level"
+     ]
+    }
+   ]
+  },
+  "Integrations & API Platform": {
+   "Employee": [
+    {
+     "n": "Connected App Dashboard",
+     "t": "Standard",
+     "b": [
+      "View all connected personal integrations (Google Calendar, Outlook, Slack)",
+      "Toggle sync on/off per integration",
+      "Last sync status and error visibility",
+      "Revoke third-party app access at any time"
+     ]
+    },
+    {
+     "n": "Calendar Sync",
+     "t": "Standard",
+     "b": [
+      "Bi-directional sync with Google Calendar and Outlook",
+      "Leave, holidays, and shift schedules auto-published to personal calendar",
+      "Meeting data used for timesheet auto-fill (with consent)"
+     ]
+    },
+    {
+     "n": "Communication Integrations",
+     "t": "Standard",
+     "b": [
+      "Slack/Teams notifications for approvals, reminders, and announcements",
+      "Quick actions from Slack/Teams (approve leave, punch in, log time via slash commands)",
+      "Bot interface for common queries within messaging platform"
+     ]
+    },
+    {
+     "n": "Cross-Platform Activity Intelligence",
+     "t": "AI",
+     "b": [
+      "AI correlates activity across connected tools to auto-fill timesheets and generate insights",
+      "Privacy-safe: only metadata used, content never read without explicit consent",
+      "Data source transparency: shows exactly which tools contributed to each insight"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Project Tool Integration",
+     "t": "Standard",
+     "b": [
+      "Jira/Asana/Monday.com ↔ HRMS project mapping",
+      "Sprint data feeds into utilization and work logging",
+      "GitHub/GitLab activity summary for engineering team oversight",
+      "Salesforce/HubSpot integration for sales team activity tracking"
+     ]
+    },
+    {
+     "n": "Communication Channel Management",
+     "t": "Standard",
+     "b": [
+      "Team announcements pushed to Slack/Teams channels",
+      "Manager bot for team queries in messaging platforms",
+      "Approval actions directly from Slack/Teams/email without opening HRMS"
+     ]
+    },
+    {
+     "n": "Integration Health Monitor",
+     "t": "AI",
+     "b": [
+      "Alerts when data sync between HRMS and connected tools fails or has discrepancies",
+      "'Jira sync missed 3 team members' activity yesterday — investigation recommended'",
+      "Auto-retry with intelligent error handling"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "REST API Platform",
+     "t": "Standard",
+     "b": [
+      "Comprehensive REST API covering all HRMS modules (employees, leave, attendance, payroll, performance)",
+      "API versioning with backward compatibility guarantees",
+      "Rate limiting with configurable quotas per API key",
+      "Interactive API documentation (Swagger/OpenAPI)",
+      "Sandbox environment for API testing with sample data",
+      "SDKs for popular languages (Python, JavaScript/Node.js, Java, Ruby)"
+     ]
+    },
+    {
+     "n": "Webhooks & Events",
+     "t": "Standard",
+     "b": [
+      "Event-driven webhooks for real-time notifications (employee created, leave approved, payroll processed)",
+      "Webhook management UI (create, test, monitor, retry failed deliveries)",
+      "Event catalog with payload schemas and examples",
+      "Retry policy with exponential backoff and dead letter queue",
+      "Webhook signature verification for security"
+     ]
+    },
+    {
+     "n": "Pre-Built Connectors",
+     "t": "Standard",
+     "b": [
+      "Accounting: QuickBooks, Xero, SAP, Oracle, Tally, Zoho Books",
+      "Communication: Slack, Microsoft Teams, Google Chat, Zoom",
+      "Productivity: Google Workspace, Microsoft 365, Notion, Confluence",
+      "Project Management: Jira, Asana, Monday.com, Trello, ClickUp",
+      "ATS/Recruitment: LinkedIn Recruiter, Indeed, Greenhouse, Lever",
+      "Identity: Okta, Azure AD, Google Workspace, OneLogin (SCIM provisioning)",
+      "Benefits: insurance provider portals, benefits marketplaces",
+      "Biometric: integration with major biometric device manufacturers"
+     ]
+    },
+    {
+     "n": "iPaaS Support",
+     "t": "Standard",
+     "b": [
+      "Native connectors for Zapier, Make (Integromat), Workato, Tray.io",
+      "Pre-built Zapier templates for common workflows",
+      "Custom trigger and action definitions for iPaaS platforms"
+     ]
+    },
+    {
+     "n": "SCIM & Directory Sync",
+     "t": "Standard",
+     "b": [
+      "SCIM 2.0 server for identity provider sync (auto-provision/deprovision users)",
+      "Directory sync with Azure AD, Google Workspace, Okta",
+      "Attribute mapping configuration (which fields sync, which direction)",
+      "Sync conflict resolution rules"
+     ]
+    },
+    {
+     "n": "Data Import/Export",
+     "t": "Standard",
+     "b": [
+      "Bulk data import via CSV/Excel with validation and error handling",
+      "Scheduled data exports (nightly, weekly) to SFTP, cloud storage, or email",
+      "Custom export templates with field selection and formatting",
+      "Full data export for compliance (GDPR data portability)"
+     ]
+    },
+    {
+     "n": "Integration Monitoring",
+     "t": "Standard",
+     "b": [
+      "Integration health dashboard (uptime, latency, error rates per connector)",
+      "Sync log with detailed records per transaction",
+      "Alert configuration for sync failures and anomalies",
+      "Data flow visualization (what goes where, when)"
+     ]
+    },
+    {
+     "n": "Developer Portal",
+     "t": "Standard",
+     "b": [
+      "API key management (create, rotate, revoke with scope-based permissions)",
+      "Usage analytics (API calls by endpoint, response times, error rates)",
+      "Developer documentation with guides, tutorials, and code samples",
+      "Community forum and changelog for API updates"
+     ]
+    },
+    {
+     "n": "Smart Data Mapper",
+     "t": "AI",
+     "b": [
+      "AI-assisted field mapping when connecting new systems (suggests mappings based on field names and sample data)",
+      "Learns from corrections and improves mapping suggestions over time",
+      "Handles data transformation (format conversion, value mapping, concatenation)"
+     ]
+    },
+    {
+     "n": "Sync Conflict Resolver",
+     "t": "AI",
+     "b": [
+      "Automatically resolves common sync conflicts based on configured rules and learned patterns",
+      "Escalates complex conflicts with context for human decision",
+      "Conflict pattern analysis: identifies systemic issues causing recurring conflicts"
+     ]
+    },
+    {
+     "n": "Integration Recommender",
+     "t": "AI",
+     "b": [
+      "Suggests integrations based on company's tech stack and usage patterns",
+      "'You use Jira and haven't connected it — enabling sync would auto-fill 60% of timesheets'",
+      "ROI estimate per suggested integration"
+     ]
+    }
+   ]
+  },
+  "People Analytics & BI": {
+   "Employee": [
+    {
+     "n": "Personal Analytics",
+     "t": "Standard",
+     "b": [
+      "Personal productivity dashboard (hours worked, leave taken, learning hours, recognition received)",
+      "Year-in-review summary (achievements, growth, metrics)",
+      "Comparison against your own history (not others — privacy-safe)",
+      "Export personal analytics for performance discussions"
+     ]
+    },
+    {
+     "n": "Personal Growth Insights",
+     "t": "AI",
+     "b": [
+      "AI-generated quarterly growth summary: skills developed, goals achieved, feedback themes",
+      "Suggestions for next quarter based on trajectory analysis",
+      "Career progression probability based on current growth rate and skill development"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Team Analytics Dashboard",
+     "t": "Standard",
+     "b": [
+      "Real-time team health scorecard (attendance, engagement, performance, utilization, retention)",
+      "Team demographic profile (tenure distribution, grade distribution, diversity metrics)",
+      "Key metrics with trend lines and benchmark comparisons",
+      "Custom date range selection and drill-down capability"
+     ]
+    },
+    {
+     "n": "Cross-Module Reporting",
+     "t": "Standard",
+     "b": [
+      "Drag-and-drop report builder combining data from any module",
+      "Pre-built report templates (monthly team review, quarterly business review, annual planning)",
+      "Schedule automated report delivery (email, Slack)",
+      "Export to Excel, PDF, PowerPoint"
+     ]
+    },
+    {
+     "n": "Benchmarking",
+     "t": "Standard",
+     "b": [
+      "Compare team metrics against company average and peer teams (anonymized)",
+      "External benchmarking against industry data (where available)",
+      "Trend-based benchmarking (are we improving relative to benchmark?)"
+     ]
+    },
+    {
+     "n": "Natural Language Analytics",
+     "t": "AI",
+     "b": [
+      "Ask any question in plain English: 'What's my team's attrition rate for the last 6 months?'",
+      "AI generates chart/table/number instantly without report building",
+      "Follow-up questions supported: 'Break that down by tenure band'"
+     ]
+    },
+    {
+     "n": "Predictive Team Insights",
+     "t": "AI",
+     "b": [
+      "Flight risk prediction per team member with contributing factors",
+      "Performance trajectory prediction for next cycle",
+      "Engagement trend forecast based on current signals"
+     ]
+    },
+    {
+     "n": "Anomaly & Opportunity Spotter",
+     "t": "AI",
+     "b": [
+      "Surfaces insights you didn't ask for: 'Your team's learning hours are 2x company average — correlates with 15% higher performance scores'",
+      "Detects unusual patterns: sudden attendance changes, engagement drops, productivity shifts",
+      "Weekly AI-generated insights digest in your inbox"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Executive Analytics Dashboard",
+     "t": "Standard",
+     "b": [
+      "C-suite ready dashboards with key workforce KPIs",
+      "Headcount, cost, attrition, hiring, engagement, diversity — all in one view",
+      "Drill-down from org-wide → entity → department → team → individual",
+      "Real-time data refresh with last-updated timestamp",
+      "Role-based access (CHRO sees everything, HRBP sees assigned entities)"
+     ]
+    },
+    {
+     "n": "Custom KPI Builder",
+     "t": "Standard",
+     "b": [
+      "Define custom metrics from any data in the system",
+      "Formula builder for composite KPIs (e.g., Employee Effectiveness Index = f(performance, attendance, learning))",
+      "Threshold and alert configuration per KPI",
+      "KPI scorecard with red/amber/green status"
+     ]
+    },
+    {
+     "n": "Advanced Report Builder",
+     "t": "Standard",
+     "b": [
+      "Drag-and-drop report designer with any field from any module",
+      "Pivot tables, cross-tabs, and calculated columns",
+      "Chart library (bar, line, pie, scatter, heatmap, waterfall, funnel)",
+      "Conditional formatting and data validation rules",
+      "Report scheduling and distribution lists",
+      "Report catalog with sharing and permission management"
+     ]
+    },
+    {
+     "n": "Attrition Analytics",
+     "t": "Standard",
+     "b": [
+      "Voluntary vs involuntary attrition with regrettable flag",
+      "Attrition by every dimension (tenure, grade, department, location, gender, age band, manager)",
+      "Exit reason analysis with trending themes",
+      "Cost of attrition calculator (recruitment + onboarding + productivity loss + knowledge loss)",
+      "Cohort analysis (retention curves by hire cohort)"
+     ]
+    },
+    {
+     "n": "Diversity, Equity & Inclusion",
+     "t": "Standard",
+     "b": [
+      "Representation metrics by gender, ethnicity, age, disability (per jurisdiction reporting requirements)",
+      "Pay equity analysis (gender pay gap, ethnicity pay gap with statistical controls)",
+      "Diversity across pipeline stages (hiring, promotion, attrition)",
+      "Inclusion index from engagement survey data",
+      "Goal tracking against D&I commitments"
+     ]
+    },
+    {
+     "n": "Compensation Analytics",
+     "t": "Standard",
+     "b": [
+      "Compa-ratio distribution across org",
+      "Salary band penetration analysis",
+      "Total payroll cost trending and forecasting",
+      "Market competitiveness analysis per role family",
+      "Pay equity regression analysis"
+     ]
+    },
+    {
+     "n": "Embedded BI & Data Export",
+     "t": "Standard",
+     "b": [
+      "Pre-built data models for external BI tools (Power BI, Tableau, Looker)",
+      "ODBC/JDBC connectors for direct database access (read-only, anonymizable)",
+      "Scheduled data lake export (S3, GCS, Azure Blob) for enterprise data warehousing",
+      "Data dictionary with field definitions and business glossary"
+     ]
+    },
+    {
+     "n": "Predictive Workforce Intelligence",
+     "t": "AI",
+     "b": [
+      "Org-wide attrition prediction with department and role-level granularity",
+      "Hiring demand forecasting based on growth plans, attrition predictions, and seasonal patterns",
+      "Engagement trajectory prediction with early warning system",
+      "Productivity trend forecasting"
+     ]
+    },
+    {
+     "n": "Automated Insights Engine",
+     "t": "AI",
+     "b": [
+      "AI proactively surfaces significant trends, anomalies, and correlations across all people data",
+      "'Engineering attrition spiked 40% after org restructuring in March — primarily affecting mid-level ICs'",
+      "Weekly/monthly automated insights digest for HR leadership",
+      "Root cause analysis suggestions for each surfaced insight"
+     ]
+    },
+    {
+     "n": "Natural Language BI",
+     "t": "AI",
+     "b": [
+      "Ask any people analytics question in plain English and get instant chart + data",
+      "'Show me gender pay gap by department controlling for grade and tenure'",
+      "'What's the ROI of our L&D spend correlated with retention?'",
+      "Exportable answers with methodology notes"
+     ]
+    },
+    {
+     "n": "AI Storyteller",
+     "t": "AI",
+     "b": [
+      "Generates narrative summaries of dashboards for board presentations",
+      "Converts data into plain-English insights with supporting evidence",
+      "Auto-generates quarterly people review deck with key themes, risks, and recommendations"
+     ]
+    }
+   ]
+  },
+  "Demo Company Feature": {
+   "Employee": [
+    {
+     "n": "Explore as Sample Employee",
+     "t": "Standard",
+     "b": [
+      "View fully populated demo profile with realistic personal data",
+      "Experience all self-service flows with pre-populated data (apply leave, view payslip, browse org chart)",
+      "'Demo Mode' banner clearly visible on every screen",
+      "Interact with demo team calendar, holiday list, and attendance records"
+     ]
+    },
+    {
+     "n": "Experience AI in Action",
+     "t": "AI",
+     "b": [
+      "Interact with AI assistant using demo company data",
+      "See smart suggestions, auto-fill, and insights working with sample data",
+      "AI features fully active since demo has enough historical data"
+     ]
+    }
+   ],
+   "Manager": [
+    {
+     "n": "Explore Manager Dashboards",
+     "t": "Standard",
+     "b": [
+      "View realistic team data, attendance boards, leave calendars, utilization reports",
+      "Test approval flows with demo leave, OT, and timesheet requests",
+      "Explore reports and analytics with 12 months of sample history",
+      "Experience command center with populated approval queues"
+     ]
+    },
+    {
+     "n": "See Predictions Live",
+     "t": "AI",
+     "b": [
+      "Attrition risk scores on demo employees with contributing factors",
+      "Absenteeism predictions for next week on demo team",
+      "Utilization insights and rebalancing suggestions on sample data"
+     ]
+    }
+   ],
+   "Admin": [
+    {
+     "n": "Explore Full Configuration",
+     "t": "Standard",
+     "b": [
+      "See fully configured system (policies, workflows, integrations) as reference",
+      "One-click wipe: removes ALL demo data, resets to fresh empty system",
+      "Keep config option: retain policies and workflow templates, wipe only employee data",
+      "Toggle demo company on/off at any time during initial exploration",
+      "Compare demo policies against your own to identify gaps"
+     ]
+    },
+    {
+     "n": "Preview AI Maturity",
+     "t": "AI",
+     "b": [
+      "See AI governance dashboard with sample model performance metrics",
+      "Preview how each AI feature activates as data thresholds are met",
+      "Demo company serves as a living example of what the system looks like at full AI maturity"
+     ]
+    }
+   ]
+  }
+ }
+}
