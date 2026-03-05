@@ -8,6 +8,9 @@ import { MultiTenancyModule } from './shared/multi-tenancy/multi-tenancy.module'
 import { AuthModule } from './shared/auth/auth.module';
 import { JwtAuthGuard } from './shared/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/auth/guards/roles.guard';
+import { ModuleRegistryModule } from './shared/module-registry/module-registry.module';
+import { SetupEngineModule } from './shared/setup-engine/setup-engine.module';
+import { ColdStartSetupModule } from './modules/cold-start-setup/cold-start-setup.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -18,6 +21,9 @@ import { HealthController } from './health.controller';
     QueueModule,
     AuthModule,
     MultiTenancyModule,
+    ModuleRegistryModule,
+    SetupEngineModule,
+    ColdStartSetupModule,
   ],
   controllers: [HealthController],
   providers: [
