@@ -8,6 +8,7 @@ import { MODULES } from '@hrms/shared';
 import SetupWizard from '@/components/setup-wizard';
 import FeatureModePlaceholder from '@/components/feature-mode-placeholder';
 import ColdStartFeatureMode from '@/components/modules/cold-start/cold-start-feature-mode';
+import CoreHRFeatureMode from '@/components/modules/core-hr/core-hr-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -109,6 +110,9 @@ export default function ModulePage() {
   // Module active + setup completed — show Feature Mode
   if (moduleId === 'cold-start-setup') {
     return <ColdStartFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'core-hr') {
+    return <CoreHRFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }
