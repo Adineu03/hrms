@@ -4,3 +4,4 @@ export * from './types/modules';
 export * from './types/templates';
 export * from './types/cold-start';
 export * from './types/core-hr';
+export * from './types/attendance';

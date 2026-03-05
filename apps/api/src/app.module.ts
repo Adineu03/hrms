@@ -12,6 +12,7 @@ import { ModuleRegistryModule } from './shared/module-registry/module-registry.m
 import { SetupEngineModule } from './shared/setup-engine/setup-engine.module';
 import { ColdStartSetupModule } from './modules/cold-start-setup/cold-start-setup.module';
 import { CoreHRModule } from './modules/core-hr/core-hr.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
 import { DataImportModule } from './shared/data-import/data-import.module';
@@ -29,6 +30,7 @@ import { HealthController } from './health.controller';
     SetupEngineModule,
     ColdStartSetupModule,
     CoreHRModule,
+    AttendanceModule,
     TemplateModule,
     DefaultsModule,
     DataImportModule,

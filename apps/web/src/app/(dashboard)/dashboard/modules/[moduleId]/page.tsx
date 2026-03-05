@@ -9,6 +9,7 @@ import SetupWizard from '@/components/setup-wizard';
 import FeatureModePlaceholder from '@/components/feature-mode-placeholder';
 import ColdStartFeatureMode from '@/components/modules/cold-start/cold-start-feature-mode';
 import CoreHRFeatureMode from '@/components/modules/core-hr/core-hr-feature-mode';
+import AttendanceFeatureMode from '@/components/modules/attendance/attendance-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -113,6 +114,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'core-hr') {
     return <CoreHRFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'attendance') {
+    return <AttendanceFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }
