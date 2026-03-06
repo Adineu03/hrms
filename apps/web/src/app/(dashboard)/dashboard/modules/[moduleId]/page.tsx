@@ -11,6 +11,7 @@ import ColdStartFeatureMode from '@/components/modules/cold-start/cold-start-fea
 import CoreHRFeatureMode from '@/components/modules/core-hr/core-hr-feature-mode';
 import AttendanceFeatureMode from '@/components/modules/attendance/attendance-feature-mode';
 import LeaveFeatureMode from '@/components/modules/leave-management/leave-feature-mode';
+import DailyWorkLoggingFeatureMode from '@/components/modules/daily-work-logging/daily-work-logging-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -121,6 +122,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'leave-management') {
     return <LeaveFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'daily-work-logging') {
+    return <DailyWorkLoggingFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }
