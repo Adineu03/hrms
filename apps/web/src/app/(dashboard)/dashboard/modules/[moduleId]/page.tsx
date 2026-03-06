@@ -15,6 +15,7 @@ import DailyWorkLoggingFeatureMode from '@/components/modules/daily-work-logging
 import TalentAcquisitionFeatureMode from '@/components/modules/talent-acquisition/talent-acquisition-feature-mode';
 import OnboardingOffboardingFeatureMode from '@/components/modules/onboarding-offboarding/onboarding-offboarding-feature-mode';
 import PerformanceGrowthFeatureMode from '@/components/modules/performance-growth/performance-growth-feature-mode';
+import LearningDevelopmentFeatureMode from '@/components/modules/learning-development/learning-development-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -137,6 +138,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'performance-growth') {
     return <PerformanceGrowthFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'learning-development') {
+    return <LearningDevelopmentFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }
