@@ -12,6 +12,7 @@ import CoreHRFeatureMode from '@/components/modules/core-hr/core-hr-feature-mode
 import AttendanceFeatureMode from '@/components/modules/attendance/attendance-feature-mode';
 import LeaveFeatureMode from '@/components/modules/leave-management/leave-feature-mode';
 import DailyWorkLoggingFeatureMode from '@/components/modules/daily-work-logging/daily-work-logging-feature-mode';
+import TalentAcquisitionFeatureMode from '@/components/modules/talent-acquisition/talent-acquisition-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -125,6 +126,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'daily-work-logging') {
     return <DailyWorkLoggingFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'talent-acquisition') {
+    return <TalentAcquisitionFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }

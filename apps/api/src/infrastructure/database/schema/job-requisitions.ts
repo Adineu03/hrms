@@ -1,0 +1,36 @@
+import { pgTable, uuid, varchar, integer, numeric, boolean, date, text, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import { orgs } from './orgs';
+import { users } from './users';
+
+export const jobRequisitions = pgTable('job_requisitions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  orgId: uuid('org_id').notNull().references(() => orgs.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  departmentId: uuid('department_id'),
+  designationId: uuid('designation_id'),
+  locationId: uuid('location_id'),
+  gradeId: uuid('grade_id'),
+  headcount: integer('headcount').notNull().default(1),
+  employmentType: varchar('employment_type', { length: 30 }).notNull().default('full_time'),
+  salaryRangeMin: numeric('salary_range_min', { precision: 12, scale: 2 }),
+  salaryRangeMax: numeric('salary_range_max', { precision: 12, scale: 2 }),
+  currency: varchar('currency', { length: 10 }).default('INR'),
+  budgetAmount: numeric('budget_amount', { precision: 12, scale: 2 }),
+  description: text('description'),
+  requirements: text('requirements'),
+  skills: jsonb('skills').default([]),
+  experience: jsonb('experience').default({}),
+  approvalChain: jsonb('approval_chain').default([]),
+  currentApproverLevel: integer('current_approver_level').default(1),
+  approvedBy: uuid('approved_by').references(() => users.id),
+  approvedAt: timestamp('approved_at', { withTimezone: true }),
+  status: varchar('status', { length: 30 }).notNull().default('draft'),
+  priority: varchar('priority', { length: 20 }).default('medium'),
+  targetHireDate: date('target_hire_date'),
+  filledCount: integer('filled_count').default(0),
+  createdBy: uuid('created_by').notNull().references(() => users.id),
+  metadata: jsonb('metadata').default({}),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});

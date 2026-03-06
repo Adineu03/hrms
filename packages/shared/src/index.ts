@@ -7,3 +7,4 @@ export * from './types/core-hr';
 export * from './types/attendance';
 export * from './types/leave';
 export * from './types/daily-work-logging';
+export * from './types/talent-acquisition';

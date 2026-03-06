@@ -1,0 +1,33 @@
+import { pgTable, uuid, varchar, integer, numeric, boolean, text, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import { orgs } from './orgs';
+
+export const candidates = pgTable('candidates', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  orgId: uuid('org_id').notNull().references(() => orgs.id, { onDelete: 'cascade' }),
+  firstName: varchar('first_name', { length: 100 }).notNull(),
+  lastName: varchar('last_name', { length: 100 }),
+  email: varchar('email', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 30 }),
+  currentTitle: varchar('current_title', { length: 255 }),
+  currentCompany: varchar('current_company', { length: 255 }),
+  experienceYears: numeric('experience_years', { precision: 4, scale: 1 }),
+  skills: jsonb('skills').default([]),
+  education: jsonb('education').default([]),
+  resumeUrl: varchar('resume_url', { length: 500 }),
+  resumeText: text('resume_text'),
+  linkedinUrl: varchar('linkedin_url', { length: 500 }),
+  portfolioUrl: varchar('portfolio_url', { length: 500 }),
+  source: varchar('source', { length: 50 }).default('direct'),
+  salaryExpectation: numeric('salary_expectation', { precision: 12, scale: 2 }),
+  currency: varchar('currency', { length: 10 }).default('INR'),
+  noticePeriodDays: integer('notice_period_days'),
+  currentLocation: varchar('current_location', { length: 255 }),
+  preferredLocations: jsonb('preferred_locations').default([]),
+  tags: jsonb('tags').default([]),
+  notes: text('notes'),
+  status: varchar('status', { length: 30 }).notNull().default('active'),
+  metadata: jsonb('metadata').default({}),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
