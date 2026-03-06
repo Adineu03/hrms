@@ -17,6 +17,7 @@ import OnboardingOffboardingFeatureMode from '@/components/modules/onboarding-of
 import PerformanceGrowthFeatureMode from '@/components/modules/performance-growth/performance-growth-feature-mode';
 import LearningDevelopmentFeatureMode from '@/components/modules/learning-development/learning-development-feature-mode';
 import CompensationRewardsFeatureMode from '@/components/modules/compensation-rewards/compensation-rewards-feature-mode';
+import EngagementCultureFeatureMode from '@/components/modules/engagement-culture/engagement-culture-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -145,6 +146,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'compensation-rewards') {
     return <CompensationRewardsFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'engagement-culture') {
+    return <EngagementCultureFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }
