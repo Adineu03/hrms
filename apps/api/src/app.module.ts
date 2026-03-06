@@ -17,6 +17,7 @@ import { LeaveManagementModule } from './modules/leave-management/leave-manageme
 import { DailyWorkLoggingModule } from './modules/daily-work-logging/daily-work-logging.module';
 import { TalentAcquisitionModule } from './modules/talent-acquisition/talent-acquisition.module';
 import { OnboardingOffboardingModule } from './modules/onboarding-offboarding/onboarding-offboarding.module';
+import { PerformanceGrowthModule } from './modules/performance-growth/performance-growth.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
 import { DataImportModule } from './shared/data-import/data-import.module';
@@ -39,6 +40,7 @@ import { HealthController } from './health.controller';
     DailyWorkLoggingModule,
     TalentAcquisitionModule,
     OnboardingOffboardingModule,
+    PerformanceGrowthModule,
     TemplateModule,
     DefaultsModule,
     DataImportModule,
