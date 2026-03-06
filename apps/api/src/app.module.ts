@@ -19,6 +19,7 @@ import { TalentAcquisitionModule } from './modules/talent-acquisition/talent-acq
 import { OnboardingOffboardingModule } from './modules/onboarding-offboarding/onboarding-offboarding.module';
 import { PerformanceGrowthModule } from './modules/performance-growth/performance-growth.module';
 import { LearningDevelopmentModule } from './modules/learning-development/learning-development.module';
+import { CompensationRewardsModule } from './modules/compensation-rewards/compensation-rewards.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
 import { DataImportModule } from './shared/data-import/data-import.module';
@@ -43,6 +44,7 @@ import { HealthController } from './health.controller';
     OnboardingOffboardingModule,
     PerformanceGrowthModule,
     LearningDevelopmentModule,
+    CompensationRewardsModule,
     TemplateModule,
     DefaultsModule,
     DataImportModule,

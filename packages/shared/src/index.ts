@@ -10,3 +10,4 @@ export * from './types/daily-work-logging';
 export * from './types/talent-acquisition';
 export * from './types/performance-growth';
 export * from './types/learning-development';
+export * from './types/compensation-rewards';
