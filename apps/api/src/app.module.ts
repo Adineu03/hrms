@@ -21,6 +21,7 @@ import { PerformanceGrowthModule } from './modules/performance-growth/performanc
 import { LearningDevelopmentModule } from './modules/learning-development/learning-development.module';
 import { CompensationRewardsModule } from './modules/compensation-rewards/compensation-rewards.module';
 import { EngagementCultureModule } from './modules/engagement-culture/engagement-culture.module';
+import { PlatformExperienceModule } from './modules/platform-experience/platform-experience.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
 import { DataImportModule } from './shared/data-import/data-import.module';
@@ -47,6 +48,7 @@ import { HealthController } from './health.controller';
     LearningDevelopmentModule,
     CompensationRewardsModule,
     EngagementCultureModule,
+    PlatformExperienceModule,
     TemplateModule,
     DefaultsModule,
     DataImportModule,

@@ -1,0 +1,21 @@
+'use client';
+
+import { useAuthStore } from '@/lib/auth-store';
+import AdminDashboard from './admin-dashboard';
+import ManagerDashboard from './manager-dashboard';
+import EmployeeDashboard from './employee-dashboard';
+
+interface Props {
+  moduleId: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function PlatformExperienceFeatureMode({ moduleId }: Props) {
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+  const isManager = user?.role === 'manager';
+
+  if (isAdmin) return <AdminDashboard />;
+  if (isManager) return <ManagerDashboard />;
+  return <EmployeeDashboard />;
+}

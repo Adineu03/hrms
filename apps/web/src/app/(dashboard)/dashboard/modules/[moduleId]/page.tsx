@@ -18,6 +18,7 @@ import PerformanceGrowthFeatureMode from '@/components/modules/performance-growt
 import LearningDevelopmentFeatureMode from '@/components/modules/learning-development/learning-development-feature-mode';
 import CompensationRewardsFeatureMode from '@/components/modules/compensation-rewards/compensation-rewards-feature-mode';
 import EngagementCultureFeatureMode from '@/components/modules/engagement-culture/engagement-culture-feature-mode';
+import PlatformExperienceFeatureMode from '@/components/modules/platform-experience/platform-experience-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -149,6 +150,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'engagement-culture') {
     return <EngagementCultureFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'platform-experience') {
+    return <PlatformExperienceFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }
