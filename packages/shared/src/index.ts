@@ -13,3 +13,4 @@ export * from './types/learning-development';
 export * from './types/compensation-rewards';
 export * from './types/engagement-culture';
 export * from './types/platform-experience';
+export * from './types/payroll-processing';

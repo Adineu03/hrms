@@ -79,3 +79,4 @@ export * from './investment-declarations';
 export * from './reimbursement-claims';
 export * from './engagement-culture';
 export * from './platform-experience';
+export * from './payroll-processing';

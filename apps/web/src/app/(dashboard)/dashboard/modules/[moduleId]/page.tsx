@@ -19,6 +19,7 @@ import LearningDevelopmentFeatureMode from '@/components/modules/learning-develo
 import CompensationRewardsFeatureMode from '@/components/modules/compensation-rewards/compensation-rewards-feature-mode';
 import EngagementCultureFeatureMode from '@/components/modules/engagement-culture/engagement-culture-feature-mode';
 import PlatformExperienceFeatureMode from '@/components/modules/platform-experience/platform-experience-feature-mode';
+import PayrollProcessingFeatureMode from '@/components/modules/payroll-processing/payroll-processing-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -153,6 +154,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'platform-experience') {
     return <PlatformExperienceFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'payroll-processing') {
+    return <PayrollProcessingFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }
