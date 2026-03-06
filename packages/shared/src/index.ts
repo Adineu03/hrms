@@ -14,3 +14,4 @@ export * from './types/compensation-rewards';
 export * from './types/engagement-culture';
 export * from './types/platform-experience';
 export * from './types/payroll-processing';
+export * from './types/expense-management';
