@@ -21,6 +21,7 @@ import EngagementCultureFeatureMode from '@/components/modules/engagement-cultur
 import PlatformExperienceFeatureMode from '@/components/modules/platform-experience/platform-experience-feature-mode';
 import PayrollProcessingFeatureMode from '@/components/modules/payroll-processing/payroll-processing-feature-mode';
 import ExpenseManagementFeatureMode from '@/components/modules/expense-management/expense-management-feature-mode';
+import ComplianceAuditFeatureMode from '@/components/modules/compliance-audit/compliance-audit-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -161,6 +162,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'expense-management') {
     return <ExpenseManagementFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'compliance-audit') {
+    return <ComplianceAuditFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }

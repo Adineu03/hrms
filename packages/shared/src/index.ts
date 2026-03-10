@@ -15,3 +15,4 @@ export * from './types/engagement-culture';
 export * from './types/platform-experience';
 export * from './types/payroll-processing';
 export * from './types/expense-management';
+export * from './types/compliance-audit';

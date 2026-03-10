@@ -24,6 +24,7 @@ import { EngagementCultureModule } from './modules/engagement-culture/engagement
 import { PlatformExperienceModule } from './modules/platform-experience/platform-experience.module';
 import { PayrollProcessingModule } from './modules/payroll-processing/payroll-processing.module';
 import { ExpenseManagementModule } from './modules/expense-management/expense-management.module';
+import { ComplianceAuditModule } from './modules/compliance-audit/compliance-audit.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
 import { DataImportModule } from './shared/data-import/data-import.module';
@@ -53,6 +54,7 @@ import { HealthController } from './health.controller';
     PlatformExperienceModule,
     PayrollProcessingModule,
     ExpenseManagementModule,
+    ComplianceAuditModule,
     TemplateModule,
     DefaultsModule,
     DataImportModule,
