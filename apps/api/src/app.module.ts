@@ -25,6 +25,7 @@ import { PlatformExperienceModule } from './modules/platform-experience/platform
 import { PayrollProcessingModule } from './modules/payroll-processing/payroll-processing.module';
 import { ExpenseManagementModule } from './modules/expense-management/expense-management.module';
 import { ComplianceAuditModule } from './modules/compliance-audit/compliance-audit.module';
+import { WorkforcePlanningModule } from './modules/workforce-planning/workforce-planning.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
 import { DataImportModule } from './shared/data-import/data-import.module';
@@ -55,6 +56,7 @@ import { HealthController } from './health.controller';
     PayrollProcessingModule,
     ExpenseManagementModule,
     ComplianceAuditModule,
+    WorkforcePlanningModule,
     TemplateModule,
     DefaultsModule,
     DataImportModule,
