@@ -9,7 +9,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
-  Inbox,
+  Wallet,
   Eye,
   Play,
   CheckCheck,
@@ -17,6 +17,7 @@ import {
   Clock,
   ArrowLeft,
 } from 'lucide-react';
+import { TableSkeleton } from '@/components/ui/skeleton';
 
 interface PayrollRun {
   id: string;
@@ -167,11 +168,7 @@ export default function PayrollRunTab() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-      </div>
-    );
+    return <TableSkeleton rows={4} cols={6} />;
   }
 
   // Detail view for entries
@@ -204,13 +201,14 @@ export default function PayrollRunTab() {
         )}
 
         {loadingEntries ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-          </div>
+          <TableSkeleton rows={4} cols={6} />
         ) : entries.length === 0 ? (
           <div className="text-center py-12">
-            <Inbox className="h-10 w-10 text-text-muted mx-auto mb-3" />
-            <p className="text-text-muted text-sm">No payroll entries found for this run.</p>
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+              <Wallet className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-sm font-medium text-text">No payroll entries found</p>
+            <p className="text-xs text-text-muted mt-1">No entries have been generated for this payroll run yet.</p>
           </div>
         ) : (
           <div className="border border-border rounded-xl overflow-hidden">
@@ -282,8 +280,11 @@ export default function PayrollRunTab() {
       {/* Payroll Runs Table */}
       {runs.length === 0 ? (
         <div className="text-center py-12">
-          <Inbox className="h-10 w-10 text-text-muted mx-auto mb-3" />
-          <p className="text-text-muted text-sm">No payroll runs created yet.</p>
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+            <Wallet className="h-6 w-6 text-primary" />
+          </div>
+          <p className="text-sm font-medium text-text">No payroll runs yet</p>
+          <p className="text-xs text-text-muted mt-1">Create your first payroll run to begin processing salaries.</p>
         </div>
       ) : (
         <div className="border border-border rounded-xl overflow-hidden">

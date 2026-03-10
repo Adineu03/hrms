@@ -11,6 +11,8 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react';
+import { TableSkeleton } from '@/components/ui/skeleton';
+import { TableEmptyState } from '@/components/ui/empty-state';
 
 const inputClassName =
   'w-full px-3 py-2 border border-border rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary';
@@ -344,12 +346,7 @@ export default function ShiftManagementTab() {
   );
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-        <span className="ml-2 text-sm text-text-muted">Loading shifts...</span>
-      </div>
-    );
+    return <TableSkeleton rows={4} cols={4} />;
   }
 
   return (
@@ -552,14 +549,13 @@ export default function ShiftManagementTab() {
 
             {/* Empty State */}
             {shifts.length === 0 && !showAddForm && (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="px-4 py-8 text-center text-sm text-text-muted"
-                >
-                  No shifts configured yet. Click &quot;Add Shift&quot; to get started.
-                </td>
-              </tr>
+              <TableEmptyState
+                icon={Clock}
+                title="No shifts configured"
+                description="Add your first shift to define working hours."
+                colSpan={9}
+                action={{ label: 'Add Shift', onClick: () => { setShowAddForm(true); setFormData(emptyForm); cancelEdit(); } }}
+              />
             )}
           </tbody>
         </table>

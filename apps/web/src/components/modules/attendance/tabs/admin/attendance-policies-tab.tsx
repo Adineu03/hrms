@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Save,
 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const inputClassName =
   'w-full px-3 py-2 border border-border rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary';
@@ -171,9 +172,20 @@ export default function AttendancePoliciesTab() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-        <span className="ml-2 text-sm text-text-muted">Loading attendance policy...</span>
+      <div className="space-y-5">
+        <div className="space-y-1">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-card border border-border rounded-lg p-4 space-y-3">
+            <Skeleton className="h-5 w-40" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

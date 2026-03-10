@@ -221,8 +221,8 @@ export default function EmployeeDashboard() {
       )}
 
       {/* Section Tabs */}
-      <div className="border-b border-border mb-6">
-        <div className="flex gap-1">
+      <div className="border-b border-border mb-6 overflow-x-auto">
+        <div className="flex gap-1 min-w-max">
           {sections.map((section) => {
             const Icon = section.icon;
             const isActive = activeSection === section.id;

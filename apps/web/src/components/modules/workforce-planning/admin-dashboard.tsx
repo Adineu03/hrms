@@ -31,8 +31,8 @@ export default function AdminDashboard() {
         <p className="text-sm text-gray-500 mt-1">Manage headcount, budgets, org design, succession, and workforce analytics</p>
       </div>
 
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-1 overflow-x-auto">
+      <div className="border-b border-border mb-6 overflow-x-auto">
+        <nav className="flex gap-1 min-w-max">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -42,8 +42,8 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   isActive
-                    ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text hover:border-border'
                 }`}
               >
                 <Icon className="w-4 h-4" />

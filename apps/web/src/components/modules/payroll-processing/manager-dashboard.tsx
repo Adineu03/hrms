@@ -23,7 +23,7 @@ export default function ManagerDashboard() {
     <div>
       <h1 className="text-2xl font-bold text-text mb-6">Payroll Processing — Team View</h1>
       <div className="border-b border-border mb-6 overflow-x-auto">
-        <div className="flex gap-1">
+        <div className="flex gap-1 min-w-max">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

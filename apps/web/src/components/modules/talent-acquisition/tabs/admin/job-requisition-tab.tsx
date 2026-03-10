@@ -13,8 +13,10 @@ import {
   X,
   Send,
   ShieldCheck,
-  Inbox,
+  UserPlus,
 } from 'lucide-react';
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
+import { TableEmptyState } from '@/components/ui/empty-state';
 
 const inputClassName =
   'w-full px-3 py-2 border border-border rounded-lg bg-white text-text text-sm focus:ring-2 focus:ring-primary focus:border-primary';
@@ -239,9 +241,12 @@ export default function JobRequisitionTab() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-        <span className="ml-2 text-sm text-text-muted">Loading requisitions...</span>
+      <div className="space-y-5">
+        <div className="space-y-1.5">
+          <Skeleton className="h-6 w-56" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        <TableSkeleton rows={4} cols={5} />
       </div>
     );
   }
@@ -357,12 +362,13 @@ export default function JobRequisitionTab() {
               </tr>
             ))}
             {requisitions.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center">
-                  <Inbox className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm text-text-muted">No requisitions yet. Create your first job requisition.</p>
-                </td>
-              </tr>
+              <TableEmptyState
+                icon={UserPlus}
+                title="No job requisitions yet"
+                description="Create your first job requisition to start the hiring process."
+                colSpan={7}
+                action={{ label: 'New Requisition', onClick: openCreate }}
+              />
             )}
           </tbody>
         </table>

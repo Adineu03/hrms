@@ -20,13 +20,15 @@ export default function EmployeeDashboard() {
         <p className="text-gray-500 mt-1">Your personal HR stats and department benchmarks</p>
       </div>
 
-      <div className="flex gap-1 mb-6 bg-white border border-gray-200 rounded-xl p-1 shadow-sm w-fit">
+      <div className="overflow-x-auto mb-6">
+        <div className="flex gap-1 bg-white border border-border rounded-xl p-1 shadow-sm w-fit min-w-max">
         {TABS.map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600 hover:text-gray-800'}`}>
             {tab.label}
           </button>
         ))}
+        </div>
       </div>
 
       <div>

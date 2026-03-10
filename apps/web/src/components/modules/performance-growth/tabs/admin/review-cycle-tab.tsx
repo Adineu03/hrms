@@ -11,9 +11,10 @@ import {
   Pencil,
   Trash2,
   X,
-  Inbox,
+  TrendingUp,
   Play,
 } from 'lucide-react';
+import { TableSkeleton } from '@/components/ui/skeleton';
 
 const inputClassName =
   'w-full px-3 py-2 border border-border rounded-lg bg-white text-text text-sm focus:ring-2 focus:ring-primary focus:border-primary';
@@ -197,12 +198,7 @@ export default function ReviewCycleTab() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-        <span className="ml-2 text-sm text-text-muted">Loading review cycles...</span>
-      </div>
-    );
+    return <TableSkeleton rows={4} cols={6} />;
   }
 
   return (
@@ -290,9 +286,16 @@ export default function ReviewCycleTab() {
             ))}
             {cycles.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center">
-                  <Inbox className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm text-text-muted">No review cycles yet. Create your first cycle.</p>
+                <td colSpan={6} className="px-4 py-12 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <TrendingUp className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-text">No review cycles yet</p>
+                      <p className="text-xs text-text-muted mt-1">Create your first review cycle to start tracking performance.</p>
+                    </div>
+                  </div>
                 </td>
               </tr>
             )}

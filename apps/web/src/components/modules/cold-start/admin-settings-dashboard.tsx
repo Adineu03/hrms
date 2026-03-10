@@ -47,7 +47,7 @@ export default function AdminSettingsDashboard() {
 
       {/* Tab Navigation */}
       <div className="border-b border-border mb-6 overflow-x-auto">
-        <div className="flex gap-1">
+        <div className="flex gap-1 min-w-max">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

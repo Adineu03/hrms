@@ -20,7 +20,8 @@ export default function EmployeeDashboard() {
         <p className="text-gray-500 mt-1">Explore the HRMS platform with guided tours and feature highlights</p>
       </div>
 
-      <div className="flex gap-1 mb-6 bg-white border border-gray-200 rounded-xl p-1 shadow-sm w-fit">
+      <div className="overflow-x-auto mb-6">
+        <div className="flex gap-1 bg-white border border-border rounded-xl p-1 shadow-sm w-fit min-w-max">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -34,6 +35,7 @@ export default function EmployeeDashboard() {
             {tab.label}
           </button>
         ))}
+        </div>
       </div>
 
       <div>

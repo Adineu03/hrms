@@ -7,6 +7,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { MODULES } from '@hrms/shared';
 import SetupWizard from '@/components/setup-wizard';
 import FeatureModePlaceholder from '@/components/feature-mode-placeholder';
+import ErrorBoundary from '@/components/error-boundary';
 import ColdStartFeatureMode from '@/components/modules/cold-start/cold-start-feature-mode';
 import CoreHRFeatureMode from '@/components/modules/core-hr/core-hr-feature-mode';
 import AttendanceFeatureMode from '@/components/modules/attendance/attendance-feature-mode';
@@ -124,63 +125,29 @@ export default function ModulePage() {
     );
   }
 
-  // Module active + setup completed — show Feature Mode
-  if (moduleId === 'cold-start-setup') {
-    return <ColdStartFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'core-hr') {
-    return <CoreHRFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'attendance') {
-    return <AttendanceFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'leave-management') {
-    return <LeaveFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'daily-work-logging') {
-    return <DailyWorkLoggingFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'talent-acquisition') {
-    return <TalentAcquisitionFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'onboarding-offboarding') {
-    return <OnboardingOffboardingFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'performance-growth') {
-    return <PerformanceGrowthFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'learning-development') {
-    return <LearningDevelopmentFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'compensation-rewards') {
-    return <CompensationRewardsFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'engagement-culture') {
-    return <EngagementCultureFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'platform-experience') {
-    return <PlatformExperienceFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'payroll-processing') {
-    return <PayrollProcessingFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'expense-management') {
-    return <ExpenseManagementFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'compliance-audit') {
-    return <ComplianceAuditFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'workforce-planning') {
-    return <WorkforcePlanningFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'integrations-api') {
-    return <IntegrationsApiFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'people-analytics') {
-    return <PeopleAnalyticsFeatureMode moduleId={moduleId} />;
-  }
-  if (moduleId === 'demo-company') {
-    return <DemoCompanyFeatureMode moduleId={moduleId} />;
-  }
-  return <FeatureModePlaceholder moduleId={moduleId} />;
+  // Module active + setup completed — show Feature Mode (wrapped in error boundary)
+  const featureMode = (() => {
+    if (moduleId === 'cold-start-setup') return <ColdStartFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'core-hr') return <CoreHRFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'attendance') return <AttendanceFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'leave-management') return <LeaveFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'daily-work-logging') return <DailyWorkLoggingFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'talent-acquisition') return <TalentAcquisitionFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'onboarding-offboarding') return <OnboardingOffboardingFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'performance-growth') return <PerformanceGrowthFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'learning-development') return <LearningDevelopmentFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'compensation-rewards') return <CompensationRewardsFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'engagement-culture') return <EngagementCultureFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'platform-experience') return <PlatformExperienceFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'payroll-processing') return <PayrollProcessingFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'expense-management') return <ExpenseManagementFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'compliance-audit') return <ComplianceAuditFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'workforce-planning') return <WorkforcePlanningFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'integrations-api') return <IntegrationsApiFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'people-analytics') return <PeopleAnalyticsFeatureMode moduleId={moduleId} />;
+    if (moduleId === 'demo-company') return <DemoCompanyFeatureMode moduleId={moduleId} />;
+    return <FeatureModePlaceholder moduleId={moduleId} />;
+  })();
+
+  return <ErrorBoundary>{featureMode}</ErrorBoundary>;
 }

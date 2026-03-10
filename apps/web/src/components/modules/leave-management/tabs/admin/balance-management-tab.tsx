@@ -14,7 +14,10 @@ import {
   Pencil,
   RefreshCw,
   X,
+  CalendarOff,
 } from 'lucide-react';
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
+import { TableEmptyState } from '@/components/ui/empty-state';
 
 const inputClassName =
   'w-full px-3 py-2 border border-border rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary';
@@ -210,9 +213,20 @@ export default function BalanceManagementTab() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-        <span className="ml-2 text-sm text-text-muted">Loading balance data...</span>
+      <div className="space-y-5">
+        <div className="space-y-1.5">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-lg p-4 space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-8 w-16" />
+            </div>
+          ))}
+        </div>
+        <TableSkeleton rows={5} cols={5} />
       </div>
     );
   }
@@ -400,16 +414,12 @@ export default function BalanceManagementTab() {
             ))}
 
             {filteredBalances.length === 0 && (
-              <tr>
-                <td
-                  colSpan={7}
-                  className="px-4 py-8 text-center text-sm text-text-muted"
-                >
-                  {balances.length === 0
-                    ? 'No balance records found for this year.'
-                    : 'No records match the current filters.'}
-                </td>
-              </tr>
+              <TableEmptyState
+                icon={CalendarOff}
+                title="No leave balances yet"
+                description="Leave balances are created when you configure leave types and assign employees."
+                colSpan={7}
+              />
             )}
           </tbody>
         </table>

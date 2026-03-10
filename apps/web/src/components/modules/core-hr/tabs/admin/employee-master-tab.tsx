@@ -14,6 +14,8 @@ import {
   CheckSquare,
   Square,
 } from 'lucide-react';
+import { TableSkeleton } from '@/components/ui/skeleton';
+import { TableEmptyState } from '@/components/ui/empty-state';
 
 const inputClassName =
   'w-full px-3 py-2 border border-border rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary';
@@ -171,12 +173,7 @@ export default function EmployeeMasterTab() {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-        <span className="ml-2 text-sm text-text-muted">Loading employees...</span>
-      </div>
-    );
+    return <TableSkeleton rows={5} cols={6} />;
   }
 
   return (
@@ -354,7 +351,7 @@ export default function EmployeeMasterTab() {
 
       {/* Search & Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <input
             type="text"
@@ -480,17 +477,22 @@ export default function EmployeeMasterTab() {
             ))}
 
             {/* Empty State */}
-            {filteredEmployees.length === 0 && (
-              <tr>
-                <td
-                  colSpan={7}
-                  className="px-4 py-8 text-center text-sm text-text-muted"
-                >
-                  {employees.length === 0
-                    ? 'No employees found. Click "Add Employee" to get started.'
-                    : 'No employees match the current filters.'}
-                </td>
-              </tr>
+            {filteredEmployees.length === 0 && employees.length === 0 && (
+              <TableEmptyState
+                icon={Users}
+                title="No employees yet"
+                description="Add your first employee to get started."
+                colSpan={7}
+                action={{ label: 'Add Employee', onClick: () => setShowAddForm(true) }}
+              />
+            )}
+            {filteredEmployees.length === 0 && employees.length > 0 && (
+              <TableEmptyState
+                icon={Users}
+                title="No matching employees"
+                description="Try adjusting your search or filter criteria."
+                colSpan={7}
+              />
             )}
           </tbody>
         </table>

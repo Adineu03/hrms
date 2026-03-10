@@ -26,7 +26,8 @@ export default function AdminDashboard() {
         <p className="text-gray-500 mt-1">Manage sandbox environments, seed data, demo personas, and guided tours for prospects</p>
       </div>
 
-      <div className="flex gap-1 mb-6 bg-white border border-gray-200 rounded-xl p-1 shadow-sm w-fit flex-wrap">
+      <div className="overflow-x-auto mb-6">
+        <div className="flex gap-1 bg-white border border-border rounded-xl p-1 shadow-sm w-fit min-w-max">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -40,6 +41,7 @@ export default function AdminDashboard() {
             {tab.label}
           </button>
         ))}
+        </div>
       </div>
 
       <div>

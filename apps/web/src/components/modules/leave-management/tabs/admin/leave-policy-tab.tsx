@@ -9,6 +9,7 @@ import {
   Shield,
   Save,
 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const inputClassName =
   'w-full px-3 py-2 border border-border rounded-lg bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary';
@@ -145,9 +146,24 @@ export default function LeavePolicyTab() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-        <span className="ml-2 text-sm text-text-muted">Loading leave policy...</span>
+      <div className="space-y-5">
+        {/* Header skeleton */}
+        <div className="space-y-1.5">
+          <Skeleton className="h-6 w-56" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        {/* Card skeletons matching form structure */}
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="bg-card border border-border rounded-lg p-4 space-y-3">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-72" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+          </div>
+        ))}
+        <Skeleton className="h-10 w-28" />
       </div>
     );
   }
