@@ -19,3 +19,4 @@ export * from './types/compliance-audit';
 export * from './types/workforce-planning';
 export * from './types/integrations-api';
 export * from './types/people-analytics';
+export * from './types/demo-company';

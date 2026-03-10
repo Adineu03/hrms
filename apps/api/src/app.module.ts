@@ -28,6 +28,7 @@ import { ComplianceAuditModule } from './modules/compliance-audit/compliance-aud
 import { WorkforcePlanningModule } from './modules/workforce-planning/workforce-planning.module';
 import { IntegrationsApiModule } from './modules/integrations-api/integrations-api.module';
 import { PeopleAnalyticsModule } from './modules/people-analytics/people-analytics.module';
+import { DemoCompanyModule } from './modules/demo-company/demo-company.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
 import { DataImportModule } from './shared/data-import/data-import.module';
@@ -61,6 +62,7 @@ import { HealthController } from './health.controller';
     WorkforcePlanningModule,
     IntegrationsApiModule,
     PeopleAnalyticsModule,
+    DemoCompanyModule,
     TemplateModule,
     DefaultsModule,
     DataImportModule,

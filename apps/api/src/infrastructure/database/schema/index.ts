@@ -85,3 +85,4 @@ export * from './compliance-audit';
 export * from './workforce-planning';
 export * from './integrations-api';
 export * from './people-analytics';
+export * from './demo-company';

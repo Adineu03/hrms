@@ -25,6 +25,7 @@ import ComplianceAuditFeatureMode from '@/components/modules/compliance-audit/co
 import WorkforcePlanningFeatureMode from '@/components/modules/workforce-planning/workforce-planning-feature-mode';
 import IntegrationsApiFeatureMode from '@/components/modules/integrations-api/integrations-api-feature-mode';
 import PeopleAnalyticsFeatureMode from '@/components/modules/people-analytics/people-analytics-feature-mode';
+import DemoCompanyFeatureMode from '@/components/modules/demo-company/demo-company-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -177,6 +178,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'people-analytics') {
     return <PeopleAnalyticsFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'demo-company') {
+    return <DemoCompanyFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }
