@@ -8,6 +8,7 @@ import {
   BarChart3,
   TrendingDown,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import OnboardingWorkflowTab from './tabs/admin/onboarding-workflow-tab';
 import OffboardingWorkflowTab from './tabs/admin/offboarding-workflow-tab';
@@ -15,6 +16,7 @@ import DocumentTemplateTab from './tabs/admin/document-template-tab';
 import OnboardingAnalyticsTab from './tabs/admin/onboarding-analytics-tab';
 import OffboardingAnalyticsTab from './tabs/admin/offboarding-analytics-tab';
 import CompliancePolicyTab from './tabs/admin/compliance-policy-tab';
+import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'onboarding-workflows', label: 'Onboarding Workflows', icon: ListChecks },
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'onboarding-analytics', label: 'Onboarding Analytics', icon: BarChart3 },
   { id: 'offboarding-analytics', label: 'Offboarding Analytics', icon: TrendingDown },
   { id: 'compliance-policy', label: 'Compliance & Policy', icon: ShieldCheck },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -64,6 +67,7 @@ export default function AdminDashboard() {
         {activeTab === 'onboarding-analytics' && <OnboardingAnalyticsTab />}
         {activeTab === 'offboarding-analytics' && <OffboardingAnalyticsTab />}
         {activeTab === 'compliance-policy' && <CompliancePolicyTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

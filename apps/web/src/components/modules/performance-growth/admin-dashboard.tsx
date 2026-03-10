@@ -8,6 +8,7 @@ import {
   BarChart3,
   Scale,
   AlertTriangle,
+  Sparkles,
 } from 'lucide-react';
 import ReviewCycleTab from './tabs/admin/review-cycle-tab';
 import GoalFrameworkTab from './tabs/admin/goal-framework-tab';
@@ -15,6 +16,7 @@ import CompetencyLibraryTab from './tabs/admin/competency-library-tab';
 import PerformanceAnalyticsTab from './tabs/admin/performance-analytics-tab';
 import CalibrationTab from './tabs/admin/calibration-tab';
 import PipTab from './tabs/admin/pip-tab';
+import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'review-cycles', label: 'Review Cycles', icon: RotateCcw },
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'performance-analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'calibration', label: 'Calibration', icon: Scale },
   { id: 'pip', label: 'PIP Management', icon: AlertTriangle },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -64,6 +67,7 @@ export default function AdminDashboard() {
         {activeTab === 'performance-analytics' && <PerformanceAnalyticsTab />}
         {activeTab === 'calibration' && <CalibrationTab />}
         {activeTab === 'pip' && <PipTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

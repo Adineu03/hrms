@@ -5,6 +5,7 @@ import HrDashboards from './admin/hr-dashboards';
 import WorkforceAnalytics from './admin/workforce-analytics';
 import ComplianceAnalytics from './admin/compliance-analytics';
 import CustomMetrics from './admin/custom-metrics';
+import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'hr-dashboards', label: 'HR Dashboards' },
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'compliance', label: 'Compliance Analytics' },
   { id: 'custom-metrics', label: 'Custom Metrics & KPIs' },
   { id: 'report-builder', label: 'Report Builder' },
+  { id: 'ai-insights', label: 'AI Insights' },
 ];
 
 export default function AdminDashboard() {
@@ -46,6 +48,7 @@ export default function AdminDashboard() {
         {activeTab === 'compliance' && <ComplianceAnalytics />}
         {activeTab === 'custom-metrics' && <CustomMetrics />}
         {activeTab === 'report-builder' && <ReportBuilder />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

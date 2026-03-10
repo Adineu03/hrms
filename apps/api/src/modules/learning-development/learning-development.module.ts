@@ -21,6 +21,10 @@ import { LearningAssignmentsService } from './features/manager/learning-assignme
 import { DevelopmentPlanningController } from './features/manager/development-planning.controller';
 import { DevelopmentPlanningService } from './features/manager/development-planning.service';
 
+// AI features
+import { LearningDevelopmentAiController } from './features/ai/ai.controller';
+import { LearningDevelopmentAiService } from './features/ai/ai.service';
+
 // Employee features
 import { CourseCatalogController } from './features/employee/course-catalog.controller';
 import { CourseCatalogService } from './features/employee/course-catalog.service';
@@ -43,6 +47,8 @@ import { LearningBudgetService } from './features/employee/learning-budget.servi
     TeamLearningDashboardController,
     LearningAssignmentsController,
     DevelopmentPlanningController,
+    // AI features
+    LearningDevelopmentAiController,
     // Employee
     CourseCatalogController,
     MyLearningPathController,
@@ -59,6 +65,8 @@ import { LearningBudgetService } from './features/employee/learning-budget.servi
     TeamLearningDashboardService,
     LearningAssignmentsService,
     DevelopmentPlanningService,
+    // AI features
+    LearningDevelopmentAiService,
     // Employee
     CourseCatalogService,
     MyLearningPathService,

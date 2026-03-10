@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { Users, DollarSign, Building2, Layers, Star, ArrowLeftRight, BarChart3 } from 'lucide-react';
+import { Users, DollarSign, Building2, Layers, Star, ArrowLeftRight, BarChart3, Sparkles } from 'lucide-react';
+import AiInsightsTab from './tabs/admin/ai-insights-tab';
 import HeadcountPlanningTab from './tabs/admin/headcount-planning-tab';
 import BudgetManagementTab from './tabs/admin/budget-management-tab';
 import OrgDesignStudioTab from './tabs/admin/org-design-studio-tab';
@@ -17,6 +18,7 @@ const tabs = [
   { id: 'succession', label: 'Succession Planning', icon: Star },
   { id: 'mobility', label: 'Internal Mobility & Transfers', icon: ArrowLeftRight },
   { id: 'analytics', label: 'Workforce Analytics', icon: BarChart3 },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ];
 
 export default function AdminDashboard() {
@@ -60,6 +62,7 @@ export default function AdminDashboard() {
         {activeTab === 'succession' && <SuccessionPlanningTab />}
         {activeTab === 'mobility' && <InternalMobilityTransfersTab />}
         {activeTab === 'analytics' && <WorkforceAnalyticsDashboardTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

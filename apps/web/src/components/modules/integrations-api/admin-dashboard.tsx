@@ -6,6 +6,7 @@ import WebhookConfiguration from './admin/webhook-configuration';
 import OAuthAppRegistry from './admin/oauth-app-registry';
 import DataSync from './admin/data-sync';
 import ApiUsageAnalytics from './admin/api-usage-analytics';
+import AiInsights from './admin/ai-insights';
 
 const TABS = [
   { id: 'marketplace', label: 'Integration Marketplace' },
@@ -14,6 +15,7 @@ const TABS = [
   { id: 'oauth-apps', label: 'OAuth Apps' },
   { id: 'data-sync', label: 'Data Sync' },
   { id: 'analytics', label: 'API Analytics' },
+  { id: 'ai-insights', label: 'AI Insights' },
 ];
 
 export default function AdminDashboard() {
@@ -49,6 +51,7 @@ export default function AdminDashboard() {
         {activeTab === 'oauth-apps' && <OAuthAppRegistry />}
         {activeTab === 'data-sync' && <DataSync />}
         {activeTab === 'analytics' && <ApiUsageAnalytics />}
+        {activeTab === 'ai-insights' && <AiInsights />}
       </div>
     </div>
   );

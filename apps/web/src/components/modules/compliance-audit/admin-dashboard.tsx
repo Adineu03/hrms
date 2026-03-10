@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { ShieldCheck, ClipboardList, Lock, Scale, Archive, Eye, BarChart3 } from 'lucide-react';
+import { ShieldCheck, ClipboardList, Lock, Scale, Archive, Eye, BarChart3, Sparkles } from 'lucide-react';
+import AiInsightsTab from './tabs/admin/ai-insights-tab';
 import PolicyManagementTab from './tabs/admin/policy-management-tab';
 import AuditTrailLoggingTab from './tabs/admin/audit-trail-logging-tab';
 import DataPrivacyGdprTab from './tabs/admin/data-privacy-gdpr-tab';
@@ -17,6 +18,7 @@ const tabs = [
   { id: 'doc-retention', label: 'Document Retention', icon: Archive },
   { id: 'ethics', label: 'Ethics & Whistleblower', icon: Eye },
   { id: 'reporting', label: 'Compliance Reporting', icon: BarChart3 },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ];
 
 export default function AdminDashboard() {
@@ -60,6 +62,7 @@ export default function AdminDashboard() {
         {activeTab === 'doc-retention' && <DocumentRetentionTab />}
         {activeTab === 'ethics' && <EthicsWhistleblowerAdminTab />}
         {activeTab === 'reporting' && <ComplianceReportingTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

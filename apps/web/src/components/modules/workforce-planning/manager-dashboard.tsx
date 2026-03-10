@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { Users, Star, ArrowLeftRight, PieChart } from 'lucide-react';
+import { Users, Star, ArrowLeftRight, PieChart, Sparkles } from 'lucide-react';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 import TeamHeadcountViewTab from './tabs/manager/team-headcount-view-tab';
 import TeamSuccessionDashboardTab from './tabs/manager/team-succession-dashboard-tab';
 import TransferMobilityRequestsTab from './tabs/manager/transfer-mobility-requests-tab';
@@ -11,6 +12,7 @@ const tabs = [
   { id: 'team-succession', label: 'Succession Dashboard', icon: Star },
   { id: 'transfers', label: 'Transfer & Mobility Requests', icon: ArrowLeftRight },
   { id: 'composition', label: 'Team Composition', icon: PieChart },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ];
 
 export default function ManagerDashboard() {
@@ -51,6 +53,7 @@ export default function ManagerDashboard() {
         {activeTab === 'team-succession' && <TeamSuccessionDashboardTab />}
         {activeTab === 'transfers' && <TransferMobilityRequestsTab />}
         {activeTab === 'composition' && <TeamCompositionAnalyticsTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

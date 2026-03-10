@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import ConnectedApps from './employee/connected-apps';
 import MyDataExport from './employee/my-data-export';
+import AiInsights from './employee/ai-insights';
 
 const TABS = [
   { id: 'connected-apps', label: 'Connected Apps' },
   { id: 'data-export', label: 'My Data Export' },
+  { id: 'ai-insights', label: 'AI Insights' },
 ];
 
 export default function EmployeeDashboard() {
@@ -37,6 +39,7 @@ export default function EmployeeDashboard() {
       <div>
         {activeTab === 'connected-apps' && <ConnectedApps />}
         {activeTab === 'data-export' && <MyDataExport />}
+        {activeTab === 'ai-insights' && <AiInsights />}
       </div>
     </div>
   );

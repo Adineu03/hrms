@@ -6,17 +6,20 @@ import {
   Route,
   Award,
   Wallet,
+  Sparkles,
 } from 'lucide-react';
 import CourseCatalogTab from './tabs/employee/course-catalog-tab';
 import MyLearningPathTab from './tabs/employee/my-learning-path-tab';
 import CertificationTrackerTab from './tabs/employee/certification-tracker-tab';
 import LearningBudgetTab from './tabs/employee/learning-budget-tab';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'course-catalog', label: 'Course Catalog', icon: BookOpen },
   { id: 'my-learning-path', label: 'My Learning Path', icon: Route },
   { id: 'certification-tracker', label: 'Certification Tracker', icon: Award },
   { id: 'learning-budget', label: 'Learning Budget', icon: Wallet },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -56,6 +59,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'my-learning-path' && <MyLearningPathTab />}
         {activeTab === 'certification-tracker' && <CertificationTrackerTab />}
         {activeTab === 'learning-budget' && <LearningBudgetTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

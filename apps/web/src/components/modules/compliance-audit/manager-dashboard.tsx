@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { Users, AlertTriangle, FileCheck, BookOpen } from 'lucide-react';
+import { Users, AlertTriangle, FileCheck, BookOpen, Sparkles } from 'lucide-react';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 import TeamComplianceDashboardTab from './tabs/manager/team-compliance-dashboard-tab';
 import PolicyViolationTrackingTab from './tabs/manager/policy-violation-tracking-tab';
 import AuditSupportTab from './tabs/manager/audit-support-tab';
@@ -11,6 +12,7 @@ const tabs = [
   { id: 'violations', label: 'Policy Violation Tracking', icon: AlertTriangle },
   { id: 'audit-support', label: 'Audit Support', icon: FileCheck },
   { id: 'labor-law', label: 'Labor Law Compliance', icon: BookOpen },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ];
 
 export default function ManagerDashboard() {
@@ -51,6 +53,7 @@ export default function ManagerDashboard() {
         {activeTab === 'violations' && <PolicyViolationTrackingTab />}
         {activeTab === 'audit-support' && <AuditSupportTab />}
         {activeTab === 'labor-law' && <LaborLawComplianceTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

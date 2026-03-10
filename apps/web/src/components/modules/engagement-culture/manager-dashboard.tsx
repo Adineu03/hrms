@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Heart, MessageSquare } from 'lucide-react';
+import { Users, Heart, MessageSquare, Sparkles } from 'lucide-react';
 import TeamEngagementTab from './tabs/manager/team-engagement-tab';
 import TeamWellnessTab from './tabs/manager/team-wellness-tab';
 import FeedbackSuggestionsTab from './tabs/manager/feedback-suggestions-tab';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'team-engagement', label: 'Team Engagement', icon: Users },
   { id: 'team-wellness', label: 'Team Wellness', icon: Heart },
   { id: 'feedback-suggestions', label: 'Feedback & Suggestions', icon: MessageSquare },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -46,6 +48,7 @@ export default function ManagerDashboard() {
         {activeTab === 'team-engagement' && <TeamEngagementTab />}
         {activeTab === 'team-wellness' && <TeamWellnessTab />}
         {activeTab === 'feedback-suggestions' && <FeedbackSuggestionsTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

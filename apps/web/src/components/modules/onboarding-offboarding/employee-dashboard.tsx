@@ -8,6 +8,7 @@ import {
   DoorOpen,
   ArrowLeftRight,
   HeartHandshake,
+  Sparkles,
 } from 'lucide-react';
 import MyOnboardingTab from './tabs/employee/my-onboarding-tab';
 import DocumentSubmissionTab from './tabs/employee/document-submission-tab';
@@ -15,6 +16,7 @@ import OrientationTrainingTab from './tabs/employee/orientation-training-tab';
 import MyExitProcessTab from './tabs/employee/my-exit-process-tab';
 import HandoverMgmtTab from './tabs/employee/handover-mgmt-tab';
 import PostJoiningTab from './tabs/employee/post-joining-tab';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'my-onboarding', label: 'My Onboarding', icon: Rocket },
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'exit-process', label: 'My Exit Process', icon: DoorOpen },
   { id: 'handover', label: 'Handover Management', icon: ArrowLeftRight },
   { id: 'post-joining', label: 'Post-Joining Support', icon: HeartHandshake },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -64,6 +67,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'exit-process' && <MyExitProcessTab />}
         {activeTab === 'handover' && <HandoverMgmtTab />}
         {activeTab === 'post-joining' && <PostJoiningTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import {
   FileCheck,
   BarChart3,
   CalendarDays,
+  Sparkles,
 } from 'lucide-react';
 import TeamDashboardTab from './tabs/manager/team-dashboard-tab';
 import ShiftPlanningTab from './tabs/manager/shift-planning-tab';
@@ -15,6 +16,7 @@ import OvertimeApprovalTab from './tabs/manager/overtime-approval-tab';
 import TeamRegularizationTab from './tabs/manager/team-regularization-tab';
 import TeamReportsTab from './tabs/manager/team-reports-tab';
 import LeaveCorrelationTab from './tabs/manager/leave-correlation-tab';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'dashboard', label: 'Team Dashboard', icon: Users },
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'regularization', label: 'Regularization', icon: FileCheck },
   { id: 'reports', label: 'Team Reports', icon: BarChart3 },
   { id: 'leave-correlation', label: 'Leave & Attendance', icon: CalendarDays },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -64,6 +67,7 @@ export default function ManagerDashboard() {
         {activeTab === 'regularization' && <TeamRegularizationTab />}
         {activeTab === 'reports' && <TeamReportsTab />}
         {activeTab === 'leave-correlation' && <LeaveCorrelationTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

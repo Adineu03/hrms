@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, FileText, BarChart3 } from 'lucide-react';
+import { Settings, FileText, BarChart3, Sparkles } from 'lucide-react';
 import ExpensePolicyConfigurationTab from './tabs/admin/expense-policy-configuration-tab';
 import ExpenseReportManagementTab from './tabs/admin/expense-report-management-tab';
 import ExpenseAnalyticsTab from './tabs/admin/expense-analytics-tab';
+import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'policy-config', label: 'Expense Policy Configuration', icon: Settings },
   { id: 'report-management', label: 'Expense Report Management', icon: FileText },
   { id: 'analytics', label: 'Reports & Analytics', icon: BarChart3 },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -46,6 +48,7 @@ export default function AdminDashboard() {
         {activeTab === 'policy-config' && <ExpensePolicyConfigurationTab />}
         {activeTab === 'report-management' && <ExpenseReportManagementTab />}
         {activeTab === 'analytics' && <ExpenseAnalyticsTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import {
   Target,
   BarChart3,
   UserCog,
+  Sparkles,
 } from 'lucide-react';
 import TeamCalendarTab from './tabs/manager/team-calendar-tab';
 import ApprovalQueueTab from './tabs/manager/approval-queue-tab';
@@ -15,6 +16,7 @@ import TeamBalanceTab from './tabs/manager/team-balance-tab';
 import LeavePlanningTab from './tabs/manager/leave-planning-tab';
 import LeaveReportsTab from './tabs/manager/leave-reports-tab';
 import DelegationTab from './tabs/manager/delegation-tab';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'calendar', label: 'Team Leave Calendar', icon: CalendarDays },
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'planning', label: 'Leave Planning', icon: Target },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
   { id: 'delegation', label: 'Delegation', icon: UserCog },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -64,6 +67,7 @@ export default function ManagerDashboard() {
         {activeTab === 'planning' && <LeavePlanningTab />}
         {activeTab === 'reports' && <LeaveReportsTab />}
         {activeTab === 'delegation' && <DelegationTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

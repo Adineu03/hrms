@@ -25,6 +25,10 @@ import { TeamEngagementDashboardService } from './features/manager/team-engageme
 import { TeamWellnessViewService } from './features/manager/team-wellness-view.service';
 import { FeedbackSuggestionsService } from './features/manager/feedback-suggestions.service';
 
+// AI features
+import { EngagementCultureAiController } from './features/ai/ai.controller';
+import { EngagementCultureAiService } from './features/ai/ai.service';
+
 // Employee controllers
 import { SurveyParticipationController } from './features/employee/survey-participation.controller';
 import { SocialCommunityController } from './features/employee/social-community.controller';
@@ -49,6 +53,8 @@ import { MyEngagementScoreService } from './features/employee/my-engagement-scor
     TeamEngagementDashboardController,
     TeamWellnessViewController,
     FeedbackSuggestionsController,
+    // AI features
+    EngagementCultureAiController,
     // Employee
     SurveyParticipationController,
     SocialCommunityController,
@@ -65,6 +71,8 @@ import { MyEngagementScoreService } from './features/employee/my-engagement-scor
     TeamEngagementDashboardService,
     TeamWellnessViewService,
     FeedbackSuggestionsService,
+    // AI features
+    EngagementCultureAiService,
     // Employee
     SurveyParticipationService,
     SocialCommunityService,

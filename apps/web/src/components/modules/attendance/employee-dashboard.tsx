@@ -8,6 +8,7 @@ import {
   Timer,
   FileCheck,
   TrendingUp,
+  Sparkles,
 } from 'lucide-react';
 import ClockTab from './tabs/employee/clock-tab';
 import MyAttendanceTab from './tabs/employee/my-attendance-tab';
@@ -15,6 +16,7 @@ import ShiftViewTab from './tabs/employee/shift-view-tab';
 import OvertimeTrackerTab from './tabs/employee/overtime-tracker-tab';
 import RegularizationTab from './tabs/employee/regularization-tab';
 import AttendanceInsightsTab from './tabs/employee/attendance-insights-tab';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'clock', label: 'Clock In/Out', icon: Clock },
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'overtime', label: 'Overtime', icon: Timer },
   { id: 'regularization', label: 'Regularization', icon: FileCheck },
   { id: 'insights', label: 'Insights', icon: TrendingUp },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -64,6 +67,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'overtime' && <OvertimeTrackerTab />}
         {activeTab === 'regularization' && <RegularizationTab />}
         {activeTab === 'insights' && <AttendanceInsightsTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

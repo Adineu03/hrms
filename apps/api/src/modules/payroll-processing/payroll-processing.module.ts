@@ -37,6 +37,10 @@ import { TaxManagementService } from './features/employee/tax-management.service
 import { SalaryStructureService } from './features/employee/salary-structure.service';
 import { ReimbursementsClaimsService } from './features/employee/reimbursements-claims.service';
 
+// AI
+import { PayrollAiInsightsController } from './features/ai/ai-insights.controller';
+import { PayrollAiInsightsService } from './features/ai/ai-insights.service';
+
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -54,6 +58,8 @@ import { ReimbursementsClaimsService } from './features/employee/reimbursements-
     TaxManagementController,
     SalaryStructureController,
     ReimbursementsClaimsController,
+    // AI
+    PayrollAiInsightsController,
   ],
   providers: [
     // Admin
@@ -70,6 +76,8 @@ import { ReimbursementsClaimsService } from './features/employee/reimbursements-
     TaxManagementService,
     SalaryStructureService,
     ReimbursementsClaimsService,
+    // AI
+    PayrollAiInsightsService,
   ],
 })
 export class PayrollProcessingModule implements OnModuleInit {

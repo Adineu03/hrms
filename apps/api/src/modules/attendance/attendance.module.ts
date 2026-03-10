@@ -45,6 +45,10 @@ import { RegularizationService } from './features/employee/regularization.servic
 import { AttendanceInsightsController } from './features/employee/attendance-insights.controller';
 import { AttendanceInsightsService } from './features/employee/attendance-insights.service';
 
+// AI features
+import { AttendanceAiController } from './features/ai/ai.controller';
+import { AttendanceAiService } from './features/ai/ai.service';
+
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -69,6 +73,8 @@ import { AttendanceInsightsService } from './features/employee/attendance-insigh
     OvertimeTrackerController,
     RegularizationController,
     AttendanceInsightsController,
+    // AI
+    AttendanceAiController,
   ],
   providers: [
     // Admin
@@ -92,6 +98,8 @@ import { AttendanceInsightsService } from './features/employee/attendance-insigh
     OvertimeTrackerService,
     RegularizationService,
     AttendanceInsightsService,
+    // AI
+    AttendanceAiService,
   ],
 })
 export class AttendanceModule implements OnModuleInit {

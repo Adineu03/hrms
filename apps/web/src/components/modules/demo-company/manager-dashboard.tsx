@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import DemoWalkthrough from './manager/demo-walkthrough';
 import SampleReports from './manager/sample-reports';
+import AiInsights from './manager/ai-insights';
 
 const TABS = [
   { id: 'demo-walkthrough', label: 'Demo Walkthrough' },
   { id: 'sample-reports', label: 'Sample Reports' },
+  { id: 'ai-insights', label: 'AI Insights' },
 ];
 
 export default function ManagerDashboard() {
@@ -37,6 +39,7 @@ export default function ManagerDashboard() {
       <div>
         {activeTab === 'demo-walkthrough' && <DemoWalkthrough />}
         {activeTab === 'sample-reports' && <SampleReports />}
+        {activeTab === 'ai-insights' && <AiInsights />}
       </div>
     </div>
   );

@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { DollarSign, FileText, Award, Shield } from 'lucide-react';
+import { DollarSign, FileText, Award, Shield, Sparkles } from 'lucide-react';
 import MyCompensationTab from './tabs/employee/my-compensation-tab';
 import PaySlipsTaxTab from './tabs/employee/pay-slips-tax-tab';
 import RecognitionAwardsTab from './tabs/employee/recognition-awards-tab';
 import BenefitsEnrollmentTab from './tabs/employee/benefits-enrollment-tab';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'my-compensation', label: 'My Compensation', icon: DollarSign },
   { id: 'pay-slips-tax', label: 'Pay Slips & Tax', icon: FileText },
   { id: 'recognition-awards', label: 'Recognition & Awards', icon: Award },
   { id: 'benefits-enrollment', label: 'Benefits Enrollment', icon: Shield },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -49,6 +51,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'pay-slips-tax' && <PaySlipsTaxTab />}
         {activeTab === 'recognition-awards' && <RecognitionAwardsTab />}
         {activeTab === 'benefits-enrollment' && <BenefitsEnrollmentTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

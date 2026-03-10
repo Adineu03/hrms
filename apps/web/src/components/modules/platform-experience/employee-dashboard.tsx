@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, FileText, Search, Settings } from 'lucide-react';
+import { Bell, FileText, Search, Settings, Sparkles } from 'lucide-react';
 import NotificationCenterTab from './tabs/employee/notification-center-tab';
 import SelfServicePortalTab from './tabs/employee/self-service-portal-tab';
 import SearchNavigationTab from './tabs/employee/search-navigation-tab';
 import MobileAccessibilityTab from './tabs/employee/mobile-accessibility-tab';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'self-service', label: 'Self-Service', icon: FileText },
   { id: 'search', label: 'Search & Navigation', icon: Search },
   { id: 'preferences', label: 'Preferences', icon: Settings },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -49,6 +51,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'self-service' && <SelfServicePortalTab />}
         {activeTab === 'search' && <SearchNavigationTab />}
         {activeTab === 'preferences' && <MobileAccessibilityTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

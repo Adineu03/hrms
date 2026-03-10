@@ -8,6 +8,7 @@ import {
   Receipt,
   Heart,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import MyProfileTab from './tabs/employee/my-profile-tab';
 import DocumentVaultTab from './tabs/employee/document-vault-tab';
@@ -15,6 +16,7 @@ import OrgChartTab from './tabs/employee/org-chart-tab';
 import PayslipTab from './tabs/employee/payslip-tab';
 import BenefitsTab from './tabs/employee/benefits-tab';
 import SelfServiceTab from './tabs/employee/self-service-tab';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'profile', label: 'My Profile', icon: User },
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'payslip', label: 'Payslip & Tax', icon: Receipt },
   { id: 'benefits', label: 'Benefits', icon: Heart },
   { id: 'requests', label: 'Self-Service', icon: FileText },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -64,6 +67,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'payslip' && <PayslipTab />}
         {activeTab === 'benefits' && <BenefitsTab />}
         {activeTab === 'requests' && <SelfServiceTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

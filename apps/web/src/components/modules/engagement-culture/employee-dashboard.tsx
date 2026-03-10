@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { ClipboardList, Users, Flower2, TrendingUp } from 'lucide-react';
+import { ClipboardList, Users, Flower2, TrendingUp, Sparkles } from 'lucide-react';
 import SurveyParticipationTab from './tabs/employee/survey-participation-tab';
 import SocialCommunityTab from './tabs/employee/social-community-tab';
 import WellnessPortalTab from './tabs/employee/wellness-portal-tab';
 import MyEngagementScoreTab from './tabs/employee/my-engagement-score-tab';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'surveys', label: 'Surveys', icon: ClipboardList },
   { id: 'social-community', label: 'Social & Community', icon: Users },
   { id: 'wellness-portal', label: 'Wellness Portal', icon: Flower2 },
   { id: 'my-engagement', label: 'My Engagement', icon: TrendingUp },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -49,6 +51,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'social-community' && <SocialCommunityTab />}
         {activeTab === 'wellness-portal' && <WellnessPortalTab />}
         {activeTab === 'my-engagement' && <MyEngagementScoreTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

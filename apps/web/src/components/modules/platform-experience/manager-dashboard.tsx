@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, LayoutDashboard, Zap } from 'lucide-react';
+import { Bell, LayoutDashboard, Zap, Sparkles } from 'lucide-react';
 import TeamNotificationsTab from './tabs/manager/team-notifications-tab';
 import CustomDashboardsTab from './tabs/manager/custom-dashboards-tab';
 import QuickActionsTab from './tabs/manager/quick-actions-tab';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'team-notifications', label: 'Team Notifications', icon: Bell },
   { id: 'dashboards', label: 'Custom Dashboards', icon: LayoutDashboard },
   { id: 'quick-actions', label: 'Quick Actions', icon: Zap },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -46,6 +48,7 @@ export default function ManagerDashboard() {
         {activeTab === 'team-notifications' && <TeamNotificationsTab />}
         {activeTab === 'dashboards' && <CustomDashboardsTab />}
         {activeTab === 'quick-actions' && <QuickActionsTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

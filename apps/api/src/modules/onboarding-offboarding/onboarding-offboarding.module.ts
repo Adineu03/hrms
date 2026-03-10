@@ -31,6 +31,10 @@ import { KnowledgeTransferService } from './features/manager/knowledge-transfer.
 import { ExitInterviewMgmtController } from './features/manager/exit-interview-mgmt.controller';
 import { ExitInterviewMgmtService } from './features/manager/exit-interview-mgmt.service';
 
+// AI features
+import { OnboardingOffboardingAiController } from './features/ai/ai.controller';
+import { OnboardingOffboardingAiService } from './features/ai/ai.service';
+
 // Employee features
 import { MyOnboardingController } from './features/employee/my-onboarding.controller';
 import { MyOnboardingService } from './features/employee/my-onboarding.service';
@@ -62,6 +66,8 @@ import { PostJoiningSupportService } from './features/employee/post-joining-supp
     ProbationMgmtController,
     KnowledgeTransferController,
     ExitInterviewMgmtController,
+    // AI features
+    OnboardingOffboardingAiController,
     // Employee
     MyOnboardingController,
     DocumentSubmissionController,
@@ -85,6 +91,8 @@ import { PostJoiningSupportService } from './features/employee/post-joining-supp
     ProbationMgmtService,
     KnowledgeTransferService,
     ExitInterviewMgmtService,
+    // AI features
+    OnboardingOffboardingAiService,
     // Employee
     MyOnboardingService,
     DocumentSubmissionService,

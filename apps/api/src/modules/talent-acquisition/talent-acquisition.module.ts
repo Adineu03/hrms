@@ -31,6 +31,10 @@ import { ReferralMgmtService } from './features/manager/referral-mgmt.service';
 import { OfferApprovalController } from './features/manager/offer-approval.controller';
 import { OfferApprovalService } from './features/manager/offer-approval.service';
 
+// AI features
+import { TalentAcquisitionAiController } from './features/ai/ai.controller';
+import { TalentAcquisitionAiService } from './features/ai/ai.service';
+
 // Employee features
 import { InternalJobBoardController } from './features/employee/internal-job-board.controller';
 import { InternalJobBoardService } from './features/employee/internal-job-board.service';
@@ -62,6 +66,8 @@ import { OfferJoiningService } from './features/employee/offer-joining.service';
     TeamHiringReportsController,
     ReferralMgmtController,
     OfferApprovalController,
+    // AI features
+    TalentAcquisitionAiController,
     // Employee (6 features)
     InternalJobBoardController,
     EmployeeReferralController,
@@ -85,6 +91,8 @@ import { OfferJoiningService } from './features/employee/offer-joining.service';
     TeamHiringReportsService,
     ReferralMgmtService,
     OfferApprovalService,
+    // AI features
+    TalentAcquisitionAiService,
     // Employee (6 features)
     InternalJobBoardService,
     EmployeeReferralService,

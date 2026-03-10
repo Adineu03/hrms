@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Users,
   ClipboardCheck,
+  Sparkles,
 } from 'lucide-react';
 import TeamDashboardTab from './tabs/manager/team-dashboard-tab';
 import ApprovalQueueTab from './tabs/manager/approval-queue-tab';
@@ -15,6 +16,7 @@ import ProjectTrackingTab from './tabs/manager/project-tracking-tab';
 import TeamProductivityTab from './tabs/manager/team-productivity-tab';
 import ResourceAllocationTab from './tabs/manager/resource-allocation-tab';
 import TimesheetComplianceTab from './tabs/manager/timesheet-compliance-tab';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'dashboard', label: 'Team Dashboard', icon: LayoutDashboard },
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'productivity', label: 'Productivity', icon: TrendingUp },
   { id: 'resources', label: 'Resource Allocation', icon: Users },
   { id: 'compliance', label: 'Compliance', icon: ClipboardCheck },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -64,6 +67,7 @@ export default function ManagerDashboard() {
         {activeTab === 'productivity' && <TeamProductivityTab />}
         {activeTab === 'resources' && <ResourceAllocationTab />}
         {activeTab === 'compliance' && <TimesheetComplianceTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

@@ -6,17 +6,20 @@ import {
   DollarSign,
   Calendar,
   BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import LmsConfigTab from './tabs/admin/lms-config-tab';
 import BudgetManagementTab from './tabs/admin/budget-management-tab';
 import TrainingCalendarTab from './tabs/admin/training-calendar-tab';
 import ReportingAnalyticsTab from './tabs/admin/reporting-analytics-tab';
+import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'lms-config', label: 'LMS Configuration', icon: Settings },
   { id: 'budget-management', label: 'Budget Management', icon: DollarSign },
   { id: 'training-calendar', label: 'Training Calendar', icon: Calendar },
   { id: 'reporting-analytics', label: 'Reporting & Analytics', icon: BarChart3 },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -56,6 +59,7 @@ export default function AdminDashboard() {
         {activeTab === 'budget-management' && <BudgetManagementTab />}
         {activeTab === 'training-calendar' && <TrainingCalendarTab />}
         {activeTab === 'reporting-analytics' && <ReportingAnalyticsTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import {
   BarChart3,
   Share2,
   FileCheck,
+  Sparkles,
 } from 'lucide-react';
 import MyRequisitionsTab from './tabs/manager/my-requisitions-tab';
 import InterviewMgmtTab from './tabs/manager/interview-mgmt-tab';
@@ -15,6 +16,7 @@ import CandidateReviewTab from './tabs/manager/candidate-review-tab';
 import TeamHiringReportsTab from './tabs/manager/team-hiring-reports-tab';
 import ReferralMgmtTab from './tabs/manager/referral-mgmt-tab';
 import OfferApprovalTab from './tabs/manager/offer-approval-tab';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'requisitions', label: 'My Requisitions', icon: LayoutDashboard },
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'reports', label: 'Hiring Reports', icon: BarChart3 },
   { id: 'referrals', label: 'Referrals', icon: Share2 },
   { id: 'offers', label: 'Offer Approval', icon: FileCheck },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -64,6 +67,7 @@ export default function ManagerDashboard() {
         {activeTab === 'reports' && <TeamHiringReportsTab />}
         {activeTab === 'referrals' && <ReferralMgmtTab />}
         {activeTab === 'offers' && <OfferApprovalTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

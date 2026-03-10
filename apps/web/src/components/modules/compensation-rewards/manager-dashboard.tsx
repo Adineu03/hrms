@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Award, TrendingUp } from 'lucide-react';
+import { Users, Award, TrendingUp, Sparkles } from 'lucide-react';
 import TeamCompensationTab from './tabs/manager/team-compensation-tab';
 import RecognitionManagementTab from './tabs/manager/recognition-management-tab';
 import IncrementPlanningTab from './tabs/manager/increment-planning-tab';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'team-compensation', label: 'Team Compensation', icon: Users },
   { id: 'recognition-management', label: 'Recognition Management', icon: Award },
   { id: 'increment-planning', label: 'Increment Planning', icon: TrendingUp },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -46,6 +48,7 @@ export default function ManagerDashboard() {
         {activeTab === 'team-compensation' && <TeamCompensationTab />}
         {activeTab === 'recognition-management' && <RecognitionManagementTab />}
         {activeTab === 'increment-planning' && <IncrementPlanningTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

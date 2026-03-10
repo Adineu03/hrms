@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import MyAnalytics from './employee/my-analytics';
 import PeerBenchmarks from './employee/peer-benchmarks';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'my-analytics', label: 'My Analytics' },
   { id: 'peer-benchmarks', label: 'Peer Benchmarks' },
+  { id: 'ai-insights', label: 'AI Insights' },
 ];
 
 export default function EmployeeDashboard() {
@@ -30,6 +32,7 @@ export default function EmployeeDashboard() {
       <div>
         {activeTab === 'my-analytics' && <MyAnalytics />}
         {activeTab === 'peer-benchmarks' && <PeerBenchmarks />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

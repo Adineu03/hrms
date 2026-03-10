@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Receipt, Search, BookOpen } from 'lucide-react';
+import { Receipt, Search, BookOpen, Sparkles } from 'lucide-react';
 import MyExpensesTab from './tabs/employee/my-expenses-tab';
 import ExpenseTrackingTab from './tabs/employee/expense-tracking-tab';
 import ExpensePoliciesViewTab from './tabs/employee/expense-policies-view-tab';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'my-expenses', label: 'My Expenses', icon: Receipt },
   { id: 'tracking', label: 'Expense Tracking', icon: Search },
   { id: 'policies', label: 'Expense Policies', icon: BookOpen },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -46,6 +48,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'my-expenses' && <MyExpensesTab />}
         {activeTab === 'tracking' && <ExpenseTrackingTab />}
         {activeTab === 'policies' && <ExpensePoliciesViewTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

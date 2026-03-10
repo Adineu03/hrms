@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { GitBranch, Briefcase, ArrowLeftRight } from 'lucide-react';
+import { GitBranch, Briefcase, ArrowLeftRight, Sparkles } from 'lucide-react';
+import AiInsightsTab from './tabs/employee/ai-insights-tab';
 import CareerPathExplorerTab from './tabs/employee/career-path-explorer-tab';
 import InternalJobBoardTab from './tabs/employee/internal-job-board-tab';
 import MyTransferRequestTab from './tabs/employee/my-transfer-request-tab';
@@ -9,6 +10,7 @@ const tabs = [
   { id: 'career', label: 'Career Path Explorer', icon: GitBranch },
   { id: 'job-board', label: 'Internal Job Board', icon: Briefcase },
   { id: 'transfer', label: 'My Transfer Request', icon: ArrowLeftRight },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ];
 
 export default function EmployeeDashboard() {
@@ -48,6 +50,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'career' && <CareerPathExplorerTab />}
         {activeTab === 'job-board' && <InternalJobBoardTab />}
         {activeTab === 'transfer' && <MyTransferRequestTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

@@ -5,15 +5,18 @@ import {
   Users,
   ClipboardList,
   TrendingUp,
+  Sparkles,
 } from 'lucide-react';
 import TeamLearningTab from './tabs/manager/team-learning-tab';
 import LearningAssignmentsTab from './tabs/manager/learning-assignments-tab';
 import DevelopmentPlanningTab from './tabs/manager/development-planning-tab';
+import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'team-learning', label: 'Team Learning', icon: Users },
   { id: 'learning-assignments', label: 'Learning Assignments', icon: ClipboardList },
   { id: 'development-planning', label: 'Development Planning', icon: TrendingUp },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -52,6 +55,7 @@ export default function ManagerDashboard() {
         {activeTab === 'team-learning' && <TeamLearningTab />}
         {activeTab === 'learning-assignments' && <LearningAssignmentsTab />}
         {activeTab === 'development-planning' && <DevelopmentPlanningTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

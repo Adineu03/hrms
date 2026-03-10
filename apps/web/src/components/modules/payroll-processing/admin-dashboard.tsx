@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, PlayCircle, Shield, BarChart3 } from 'lucide-react';
+import { Settings, PlayCircle, Shield, BarChart3, Sparkles } from 'lucide-react';
 import PayrollConfigurationTab from './tabs/admin/payroll-configuration-tab';
 import PayrollRunTab from './tabs/admin/payroll-run-tab';
 import StatutoryComplianceTab from './tabs/admin/statutory-compliance-tab';
 import PayrollReportsTab from './tabs/admin/payroll-reports-tab';
+import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'configuration', label: 'Payroll Configuration', icon: Settings },
   { id: 'runs', label: 'Payroll Processing', icon: PlayCircle },
   { id: 'statutory', label: 'Statutory Compliance', icon: Shield },
   { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
+  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -49,6 +51,7 @@ export default function AdminDashboard() {
         {activeTab === 'runs' && <PayrollRunTab />}
         {activeTab === 'statutory' && <StatutoryComplianceTab />}
         {activeTab === 'reports' && <PayrollReportsTab />}
+        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

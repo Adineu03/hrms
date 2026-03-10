@@ -45,6 +45,10 @@ import { MandatoryTrainingTrackerService } from './features/employee/mandatory-t
 import { WhistleblowerEthicsPortalService } from './features/employee/whistleblower-ethics-portal.service';
 import { DataPrivacyControlsService } from './features/employee/data-privacy-controls.service';
 
+// AI
+import { ComplianceAiInsightsController } from './features/ai/ai-insights.controller';
+import { ComplianceAiInsightsService } from './features/ai/ai-insights.service';
+
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -66,6 +70,8 @@ import { DataPrivacyControlsService } from './features/employee/data-privacy-con
     MandatoryTrainingTrackerController,
     WhistleblowerEthicsPortalController,
     DataPrivacyControlsController,
+    // AI
+    ComplianceAiInsightsController,
   ],
   providers: [
     // Admin
@@ -86,6 +92,8 @@ import { DataPrivacyControlsService } from './features/employee/data-privacy-con
     MandatoryTrainingTrackerService,
     WhistleblowerEthicsPortalService,
     DataPrivacyControlsService,
+    // AI
+    ComplianceAiInsightsService,
   ],
 })
 export class ComplianceAuditModule implements OnModuleInit {
