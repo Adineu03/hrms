@@ -10,6 +10,7 @@
     "db:generate": "turbo db:generate --filter=@hrms/api",
     "db:migrate": "turbo db:migrate --filter=@hrms/api",
     "db:push": "turbo db:push --filter=@hrms/api",
+    "seed": "pnpm --filter @hrms/api seed",
     "seed:demo": "turbo seed:demo --filter=@hrms/api"
   },
   "devDependencies": {

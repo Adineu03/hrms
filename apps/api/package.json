@@ -16,6 +16,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "seed": "ts-node src/infrastructure/database/seed.ts",
     "seed:demo": "ts-node src/infrastructure/database/seeds/demo.seed.ts"
   },
   "dependencies": {
@@ -44,6 +45,7 @@
     "zod": "^3"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.3.0",
     "@nestjs/cli": "^11",
     "@nestjs/schematics": "^11",
     "@nestjs/testing": "^11",
@@ -56,6 +58,7 @@
     "@types/passport-jwt": "^4",
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
+    "dotenv": "^17.3.1",
     "drizzle-kit": "^0.30",
     "eslint": "^9",
     "jest": "^29",
