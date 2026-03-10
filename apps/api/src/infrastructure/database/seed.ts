@@ -285,7 +285,7 @@ async function seed(): Promise<void> {
         employmentType,
         workModel,
         gender: faker.helpers.arrayElement(['male', 'female']),
-        phone: faker.phone.number(),
+        phone: `+91${faker.string.numeric(10)}`,
         onboardingStatus: 'completed',
       };
     });
