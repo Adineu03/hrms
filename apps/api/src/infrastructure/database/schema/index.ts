@@ -83,3 +83,4 @@ export * from './payroll-processing';
 export * from './expense-management';
 export * from './compliance-audit';
 export * from './workforce-planning';
+export * from './integrations-api';

@@ -17,3 +17,4 @@ export * from './types/payroll-processing';
 export * from './types/expense-management';
 export * from './types/compliance-audit';
 export * from './types/workforce-planning';
+export * from './types/integrations-api';

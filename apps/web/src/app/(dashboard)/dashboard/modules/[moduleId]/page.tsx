@@ -23,6 +23,7 @@ import PayrollProcessingFeatureMode from '@/components/modules/payroll-processin
 import ExpenseManagementFeatureMode from '@/components/modules/expense-management/expense-management-feature-mode';
 import ComplianceAuditFeatureMode from '@/components/modules/compliance-audit/compliance-audit-feature-mode';
 import WorkforcePlanningFeatureMode from '@/components/modules/workforce-planning/workforce-planning-feature-mode';
+import IntegrationsApiFeatureMode from '@/components/modules/integrations-api/integrations-api-feature-mode';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import { Power, Lock, Loader2 } from 'lucide-react';
 
@@ -169,6 +170,9 @@ export default function ModulePage() {
   }
   if (moduleId === 'workforce-planning') {
     return <WorkforcePlanningFeatureMode moduleId={moduleId} />;
+  }
+  if (moduleId === 'integrations-api') {
+    return <IntegrationsApiFeatureMode moduleId={moduleId} />;
   }
   return <FeatureModePlaceholder moduleId={moduleId} />;
 }
