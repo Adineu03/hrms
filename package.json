@@ -11,7 +11,8 @@
     "db:migrate": "turbo db:migrate --filter=@hrms/api",
     "db:push": "turbo db:push --filter=@hrms/api",
     "seed": "pnpm --filter @hrms/api seed",
-    "seed:demo": "turbo seed:demo --filter=@hrms/api"
+    "seed:demo": "turbo seed:demo --filter=@hrms/api",
+    "test:e2e": "pnpm --filter @hrms/api test:e2e:run"
   },
   "devDependencies": {
     "turbo": "^2"
