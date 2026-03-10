@@ -1,15 +1,26 @@
 import {
+  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { eq, and, or, ilike, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import * as bcrypt from 'bcrypt';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
 import { users } from '../../../../infrastructure/database/schema/users';
 import { employeeProfiles } from '../../../../infrastructure/database/schema/employee-profiles';
 import { customFieldValues } from '../../../../infrastructure/database/schema/custom-fields';
+
+export interface EmployeeCreateDto {
+  firstName: string;
+  lastName?: string;
+  email: string;
+  department?: string;
+  designation?: string;
+  employmentType?: string;
+}
 
 interface ListFilters {
   page: number;
@@ -194,6 +205,40 @@ export class EmployeeMasterService {
     });
 
     return { updated: results.length, employeeIds: results };
+  }
+
+  async create(orgId: string, dto: EmployeeCreateDto) {
+    // Check email uniqueness within org
+    const [existing] = await this.db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.orgId, orgId), eq(users.email, dto.email.toLowerCase().trim())))
+      .limit(1);
+
+    if (existing) throw new ConflictException('An employee with this email already exists');
+
+    const tempPassword = await bcrypt.hash('Welcome@123', 10);
+
+    const [newUser] = await this.db
+      .insert(users)
+      .values({
+        orgId,
+        email: dto.email.toLowerCase().trim(),
+        passwordHash: tempPassword,
+        role: 'employee',
+        firstName: dto.firstName.trim(),
+        lastName: dto.lastName?.trim() ?? null,
+        isActive: true,
+      })
+      .returning();
+
+    await this.db.insert(employeeProfiles).values({
+      orgId,
+      userId: newUser.id,
+      employmentType: dto.employmentType ?? 'full_time',
+    });
+
+    return this.getById(orgId, newUser.id);
   }
 
   async findDuplicates(orgId: string) {

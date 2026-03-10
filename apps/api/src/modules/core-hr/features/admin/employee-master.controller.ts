@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { Roles } from '../../../../shared/auth/decorators/roles.decorator';
 import { TenantService } from '../../../../shared/multi-tenancy/tenant.service';
-import { EmployeeMasterService } from './employee-master.service';
+import { EmployeeMasterService, EmployeeCreateDto } from './employee-master.service';
 
 @Controller('core-hr/admin/employees')
 export class EmployeeMasterController {
@@ -23,6 +23,22 @@ export class EmployeeMasterController {
     const orgId = this.tenantService.getOrgId();
     if (!orgId) throw new UnauthorizedException('Missing organization context');
     return orgId;
+  }
+
+  @Post()
+  @Roles('super_admin', 'admin')
+  async create(@Body() body: EmployeeCreateDto) {
+    const orgId = this.getOrgIdOrThrow();
+    return this.employeeMasterService.create(orgId, body);
+  }
+
+  @Patch('bulk-update')
+  @Roles('super_admin', 'admin')
+  async bulkUpdate(
+    @Body() body: { ids: string[]; updates: Record<string, any> },
+  ) {
+    const orgId = this.getOrgIdOrThrow();
+    return this.employeeMasterService.massUpdate(orgId, body.ids, body.updates);
   }
 
   @Get()
