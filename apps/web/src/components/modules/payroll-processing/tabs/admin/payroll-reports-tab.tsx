@@ -53,15 +53,28 @@ export default function PayrollReportsTab() {
     try {
       setLoading(true);
       setError('');
+      const month = new Date().getMonth() + 1;
+      const year = new Date().getFullYear();
       const [summaryRes, deptRes, varianceRes] = await Promise.all([
-        api.get('/payroll-processing/admin/reports/summary'),
-        api.get('/payroll-processing/admin/reports/department-breakdown'),
-        api.get('/payroll-processing/admin/reports/variance'),
+        api.get(`/payroll-processing/admin/reports/summary?month=${month}&year=${year}`).catch(() => ({ data: null })),
+        api.get(`/payroll-processing/admin/reports/department-breakdown?month=${month}&year=${year}`).catch(() => ({ data: [] })),
+        api.get(`/payroll-processing/admin/reports/variance?month=${month}&year=${year}`).catch(() => ({ data: [] })),
       ]);
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};
       const deptData = Array.isArray(deptRes.data) ? deptRes.data : deptRes.data?.data || [];
-      const varianceData = Array.isArray(varianceRes.data) ? varianceRes.data : varianceRes.data?.data || [];
+      let varianceData = Array.isArray(varianceRes.data) ? varianceRes.data : varianceRes.data?.data || [];
+      if (!Array.isArray(varianceData) && varianceData?.variance) {
+        const v = varianceData.variance;
+        varianceData = Object.entries(v).map(([metric, vals]: [string, any]) => ({
+          id: metric,
+          metric,
+          currentMonth: vals?.current ?? 0,
+          previousMonth: vals?.previous ?? 0,
+          variance: (vals?.current ?? 0) - (vals?.previous ?? 0),
+          variancePercent: vals?.percentChange ?? 0,
+        }));
+      }
 
       setSummary({
         totalGross: summaryData.totalGross || 0,

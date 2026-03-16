@@ -105,8 +105,8 @@ export default function GoalFrameworkTab() {
     try {
       setIsLoading(true);
       const [tRes, gRes] = await Promise.all([
-        api.get('/performance-growth/admin/goal-templates'),
-        api.get('/performance-growth/admin/org-goals'),
+        api.get('/performance-growth/admin/goal-framework/templates').catch(() => ({ data: [] })),
+        api.get('/performance-growth/admin/goal-framework/org-goals').catch(() => ({ data: [] })),
       ]);
       setTemplates(Array.isArray(tRes.data) ? tRes.data : tRes.data?.data || []);
       setOrgGoals(Array.isArray(gRes.data) ? gRes.data : gRes.data?.data || []);
@@ -131,10 +131,10 @@ export default function GoalFrameworkTab() {
     setIsSaving(true);
     try {
       if (editingTemplate) {
-        await api.patch(`/performance-growth/admin/goal-templates/${editingTemplate.id}`, templateForm);
+        await api.patch(`/performance-growth/admin/goal-framework/templates/${editingTemplate.id}`, templateForm);
         setSuccess('Goal template updated.');
       } else {
-        await api.post('/performance-growth/admin/goal-templates', templateForm);
+        await api.post('/performance-growth/admin/goal-framework/templates', templateForm);
         setSuccess('Goal template created.');
       }
       setShowTemplateModal(false);
@@ -152,7 +152,7 @@ export default function GoalFrameworkTab() {
   const handleDeleteTemplate = async (id: string) => {
     if (!confirm('Delete this goal template?')) return;
     try {
-      await api.delete(`/performance-growth/admin/goal-templates/${id}`);
+      await api.delete(`/performance-growth/admin/goal-framework/templates/${id}`);
       setTemplates((prev) => prev.filter((t) => t.id !== id));
       setSuccess('Template deleted.');
       setTimeout(() => setSuccess(null), 3000);
@@ -171,10 +171,10 @@ export default function GoalFrameworkTab() {
     setIsSaving(true);
     try {
       if (editingOrgGoal) {
-        await api.patch(`/performance-growth/admin/org-goals/${editingOrgGoal.id}`, orgGoalForm);
+        await api.patch(`/performance-growth/admin/goal-framework/org-goals/${editingOrgGoal.id}`, orgGoalForm);
         setSuccess('Organization goal updated.');
       } else {
-        await api.post('/performance-growth/admin/org-goals', orgGoalForm);
+        await api.post('/performance-growth/admin/goal-framework/org-goals', orgGoalForm);
         setSuccess('Organization goal created.');
       }
       setShowOrgGoalModal(false);
@@ -192,7 +192,7 @@ export default function GoalFrameworkTab() {
   const handleDeleteOrgGoal = async (id: string) => {
     if (!confirm('Delete this organization goal?')) return;
     try {
-      await api.delete(`/performance-growth/admin/org-goals/${id}`);
+      await api.delete(`/performance-growth/admin/goal-framework/org-goals/${id}`);
       setOrgGoals((prev) => prev.filter((g) => g.id !== id));
       setSuccess('Goal deleted.');
       setTimeout(() => setSuccess(null), 3000);

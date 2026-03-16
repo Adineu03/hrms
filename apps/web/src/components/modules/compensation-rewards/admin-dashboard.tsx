@@ -1,19 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, TrendingUp, Award, BarChart3, Sparkles } from 'lucide-react';
+import { Settings, TrendingUp, Award, BarChart3 } from 'lucide-react';
 import SalaryStructureTab from './tabs/admin/salary-structure-tab';
 import CompensationPlanningTab from './tabs/admin/compensation-planning-tab';
 import RewardsRecognitionTab from './tabs/admin/rewards-recognition-tab';
 import CompensationAnalyticsTab from './tabs/admin/compensation-analytics-tab';
-import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'salary-structure', label: 'Salary Structure', icon: Settings },
   { id: 'compensation-planning', label: 'Compensation Planning', icon: TrendingUp },
   { id: 'rewards-recognition', label: 'Rewards & Recognition', icon: Award },
   { id: 'compensation-analytics', label: 'Compensation Analytics', icon: BarChart3 },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -51,7 +49,6 @@ export default function AdminDashboard() {
         {activeTab === 'compensation-planning' && <CompensationPlanningTab />}
         {activeTab === 'rewards-recognition' && <RewardsRecognitionTab />}
         {activeTab === 'compensation-analytics' && <CompensationAnalyticsTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

@@ -92,8 +92,8 @@ export default function PipTab() {
     try {
       setIsLoading(true);
       const [pipRes, empRes] = await Promise.all([
-        api.get('/performance-growth/admin/pips'),
-        api.get('/performance-growth/admin/employees'),
+        api.get('/performance-growth/admin/pip').catch(() => ({ data: [] })),
+        api.get('/core-hr/admin/employees').catch(() => ({ data: [] })),
       ]);
       setPips(Array.isArray(pipRes.data) ? pipRes.data : pipRes.data?.data || []);
       setEmployees(Array.isArray(empRes.data) ? empRes.data : empRes.data?.data || []);
@@ -120,7 +120,7 @@ export default function PipTab() {
     }
     setIsSaving(true);
     try {
-      await api.post('/performance-growth/admin/pips', formData);
+      await api.post('/performance-growth/admin/pip', formData);
       setSuccess('PIP created successfully.');
       setShowModal(false);
       setFormData(defaultFormData);
@@ -136,7 +136,7 @@ export default function PipTab() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this PIP?')) return;
     try {
-      await api.delete(`/performance-growth/admin/pips/${id}`);
+      await api.delete(`/performance-growth/admin/pip/${id}`);
       setPips((prev) => prev.filter((p) => p.id !== id));
       setSuccess('PIP deleted.');
       setTimeout(() => setSuccess(null), 3000);

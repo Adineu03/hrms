@@ -55,14 +55,32 @@ export default function SeedDataControl() {
 
   const fetchStatus = () => {
     api.get('/demo-company/admin/seed-data-control')
-      .then((r) => setStatuses(r.data.data ?? []))
+      .then((r) => {
+        const raw = r.data.data ?? r.data;
+        if (Array.isArray(raw)) {
+          setStatuses(raw);
+        } else if (raw?.seededModules) {
+          setStatuses(
+            MODULES.map((m) => ({
+              module: m.id,
+              status: (raw.seededModules as string[]).includes(m.id) ? 'done' as const : 'idle' as const,
+              lastRunAt: raw.lastRunAt || null,
+            }))
+          );
+        } else {
+          setStatuses([]);
+        }
+      })
       .catch(() => setError('Failed to load seed status.'))
       .finally(() => setLoading(false));
   };
 
   const fetchLogs = () => {
     api.get('/demo-company/admin/seed-data-control/log')
-      .then((r) => setLogs(r.data.data ?? []))
+      .then((r) => {
+        const raw = r.data.data ?? r.data;
+        setLogs(Array.isArray(raw) ? raw : raw?.logs ?? []);
+      })
       .catch(() => {})
       .finally(() => setLogsLoading(false));
   };

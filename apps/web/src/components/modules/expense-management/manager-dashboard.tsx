@@ -1,17 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, CheckSquare, PieChart, Sparkles } from 'lucide-react';
+import { Users, CheckSquare, PieChart } from 'lucide-react';
 import TeamExpenseOverviewTab from './tabs/manager/team-expense-overview-tab';
 import ExpenseApprovalsTab from './tabs/manager/expense-approvals-tab';
 import TeamExpenseReportsTab from './tabs/manager/team-expense-reports-tab';
-import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'team-overview', label: 'Team Expense Overview', icon: Users },
   { id: 'approvals', label: 'Expense Approvals', icon: CheckSquare },
   { id: 'team-reports', label: 'Team Expense Reports', icon: PieChart },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -48,7 +46,6 @@ export default function ManagerDashboard() {
         {activeTab === 'team-overview' && <TeamExpenseOverviewTab />}
         {activeTab === 'approvals' && <ExpenseApprovalsTab />}
         {activeTab === 'team-reports' && <TeamExpenseReportsTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

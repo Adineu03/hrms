@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Database,
   Settings2,
-  Sparkles,
 } from 'lucide-react';
 import EmployeeMasterTab from './tabs/admin/employee-master-tab';
 import EntitiesTab from './tabs/admin/entities-tab';
@@ -18,7 +17,6 @@ import BenefitsTab from './tabs/admin/benefits-tab';
 import ComplianceTab from './tabs/admin/compliance-tab';
 import DataGovernanceTab from './tabs/admin/data-governance-tab';
 import CustomFieldsTab from './tabs/admin/custom-fields-tab';
-import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'employees', label: 'Employee Master', icon: Users },
@@ -28,7 +26,6 @@ const TABS = [
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck },
   { id: 'governance', label: 'Data Governance', icon: Database },
   { id: 'custom-fields', label: 'Custom Fields', icon: Settings2 },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -73,7 +70,6 @@ export default function AdminDashboard() {
         {activeTab === 'compliance' && <ComplianceTab />}
         {activeTab === 'governance' && <DataGovernanceTab />}
         {activeTab === 'custom-fields' && <CustomFieldsTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

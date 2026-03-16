@@ -8,7 +8,6 @@ import {
   Calendar,
   TrendingUp,
   Star,
-  Sparkles,
 } from 'lucide-react';
 import TeamPerformanceTab from './tabs/manager/team-performance-tab';
 import GoalManagementTab from './tabs/manager/goal-management-tab';
@@ -16,7 +15,6 @@ import ReviewFeedbackTab from './tabs/manager/review-feedback-tab';
 import OneOnOneTab from './tabs/manager/one-on-one-tab';
 import TeamDevelopmentTab from './tabs/manager/team-development-tab';
 import TalentAssessmentTab from './tabs/manager/talent-assessment-tab';
-import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'team-dashboard', label: 'Team Performance', icon: Users },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'one-on-ones', label: '1-on-1 Meetings', icon: Calendar },
   { id: 'development', label: 'Team Development', icon: TrendingUp },
   { id: 'talent', label: 'Talent Assessment', icon: Star },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function ManagerDashboard() {
         {activeTab === 'one-on-ones' && <OneOnOneTab />}
         {activeTab === 'development' && <TeamDevelopmentTab />}
         {activeTab === 'talent' && <TalentAssessmentTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

@@ -33,14 +33,12 @@ import { DemoCompanyModule } from './modules/demo-company/demo-company.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
 import { DataImportModule } from './shared/data-import/data-import.module';
-import { AiModule } from './shared/ai/ai.module';
 import { StatsModule } from './shared/stats/stats.module';
 import { HealthController } from './health.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['../../.env', '.env'] }),
-    AiModule,
     DatabaseModule,
     CacheModule,
     QueueModule,

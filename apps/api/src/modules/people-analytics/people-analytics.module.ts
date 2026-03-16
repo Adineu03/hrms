@@ -35,10 +35,6 @@ import { PeerBenchmarksController } from './features/employee/peer-benchmarks.co
 import { MyAnalyticsService } from './features/employee/my-analytics.service';
 import { PeerBenchmarksService } from './features/employee/peer-benchmarks.service';
 
-// AI features
-import { PeopleAnalyticsAiController } from './features/ai/ai.controller';
-import { PeopleAnalyticsAiService } from './features/ai/ai.service';
-
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -55,8 +51,6 @@ import { PeopleAnalyticsAiService } from './features/ai/ai.service';
     // Employee
     MyAnalyticsController,
     PeerBenchmarksController,
-    // AI
-    PeopleAnalyticsAiController,
   ],
   providers: [
     // Admin
@@ -72,8 +66,6 @@ import { PeopleAnalyticsAiService } from './features/ai/ai.service';
     // Employee
     MyAnalyticsService,
     PeerBenchmarksService,
-    // AI
-    PeopleAnalyticsAiService,
   ],
 })
 export class PeopleAnalyticsModule implements OnModuleInit {

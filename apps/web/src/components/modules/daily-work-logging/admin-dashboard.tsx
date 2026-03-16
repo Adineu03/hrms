@@ -8,7 +8,6 @@ import {
   BarChart3,
   Edit3,
   Download,
-  Sparkles,
 } from 'lucide-react';
 import TimesheetPolicyTab from './tabs/admin/timesheet-policy-tab';
 import ProjectConfigTab from './tabs/admin/project-config-tab';
@@ -16,7 +15,6 @@ import ApprovalWorkflowsTab from './tabs/admin/approval-workflows-tab';
 import TimesheetReportsTab from './tabs/admin/timesheet-reports-tab';
 import TimesheetCorrectionsTab from './tabs/admin/timesheet-corrections-tab';
 import IntegrationExportTab from './tabs/admin/integration-export-tab';
-import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'policy', label: 'Timesheet Policy', icon: Settings },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
   { id: 'corrections', label: 'Corrections', icon: Edit3 },
   { id: 'integrations', label: 'Integration & Export', icon: Download },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function AdminDashboard() {
         {activeTab === 'reports' && <TimesheetReportsTab />}
         {activeTab === 'corrections' && <TimesheetCorrectionsTab />}
         {activeTab === 'integrations' && <IntegrationExportTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

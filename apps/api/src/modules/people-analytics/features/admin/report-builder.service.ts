@@ -17,7 +17,7 @@ export class ReportBuilderService {
     return { data: rows, meta: { total: rows.length } };
   }
 
-  async createReport(orgId: string, body: Record<string, unknown>) {
+  async createReport(orgId: string, body: Record<string, unknown>, userId?: string) {
     const [row] = await this.db
       .insert(schema.analyticsReports)
       .values({
@@ -30,7 +30,7 @@ export class ReportBuilderService {
         filters: (body.filters ?? null) as Record<string, unknown> | null,
         schedule: (body.schedule ?? null) as Record<string, unknown> | null,
         isShared: Boolean(body.isShared ?? false),
-        createdBy: String(body.createdBy ?? ''),
+        createdBy: userId || String(body.createdBy || orgId),
       })
       .returning();
     return { data: row };

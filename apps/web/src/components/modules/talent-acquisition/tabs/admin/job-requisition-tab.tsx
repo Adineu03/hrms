@@ -123,9 +123,9 @@ export default function JobRequisitionTab() {
     try {
       const [reqRes, deptRes, desigRes, locRes] = await Promise.all([
         api.get('/talent-acquisition/admin/requisitions'),
-        api.get('/talent-acquisition/admin/departments'),
-        api.get('/talent-acquisition/admin/designations'),
-        api.get('/talent-acquisition/admin/locations'),
+        api.get('/talent-acquisition/admin/departments').catch(() => ({ data: [] })),
+        api.get('/talent-acquisition/admin/designations').catch(() => ({ data: [] })),
+        api.get('/talent-acquisition/admin/locations').catch(() => ({ data: [] })),
       ]);
       setRequisitions(Array.isArray(reqRes.data) ? reqRes.data : reqRes.data?.data || []);
       setDepartments(Array.isArray(deptRes.data) ? deptRes.data : deptRes.data?.data || []);

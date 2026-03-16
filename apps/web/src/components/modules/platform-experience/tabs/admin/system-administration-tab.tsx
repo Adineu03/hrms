@@ -64,10 +64,10 @@ export default function SystemAdministrationTab() {
       setLoading(true);
       setError('');
       const [healthRes, sessionsRes, auditRes, bulkRes] = await Promise.all([
-        api.get('/platform-experience/admin/system/health'),
-        api.get('/platform-experience/admin/system/sessions'),
-        api.get('/platform-experience/admin/system/audit-logs'),
-        api.get('/platform-experience/admin/system/bulk-operations'),
+        api.get('/platform-experience/admin/system/health').catch(() => ({ data: {} })),
+        api.get('/platform-experience/admin/system/sessions').catch(() => ({ data: [] })),
+        api.get('/platform-experience/admin/system/audit-logs').catch(() => ({ data: [] })),
+        api.get('/platform-experience/admin/system/bulk-operations').catch(() => ({ data: [] })),
       ]);
 
       const healthData = healthRes.data?.data || healthRes.data || {};
@@ -211,8 +211,8 @@ export default function SystemAdministrationTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {sessions.map((s) => (
-                  <tr key={s.id} className="hover:bg-background/50">
+                {sessions.map((s, idx) => (
+                  <tr key={s.id || idx} className="hover:bg-background/50">
                     <td className="px-4 py-3 text-sm text-text font-medium">{s.userName}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 capitalize">

@@ -2,12 +2,23 @@ import * as XLSX from 'xlsx';
 
 export class ExcelParser {
   static parse(buffer: Buffer): { headers: string[]; rows: Record<string, string>[] } {
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: '' });
-    const headers = jsonData.length > 0 ? Object.keys(jsonData[0]) : [];
-    return { headers, rows: jsonData };
+    const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '', raw: true });
+    const rows = jsonData.map((row) => {
+      const normalized: Record<string, string> = {};
+      for (const [key, value] of Object.entries(row)) {
+        if (value instanceof Date) {
+          normalized[key] = value.toISOString().split('T')[0];
+        } else {
+          normalized[key] = String(value);
+        }
+      }
+      return normalized;
+    });
+    const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
+    return { headers, rows };
   }
 
   static generateTemplate(columns: { field: string; label: string }[]): Buffer {

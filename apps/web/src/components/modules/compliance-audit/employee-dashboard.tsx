@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { CheckSquare, GraduationCap, MessageSquare, Shield, Sparkles } from 'lucide-react';
-import AiInsightsTab from './tabs/employee/ai-insights-tab';
+import { CheckSquare, GraduationCap, MessageSquare, Shield } from 'lucide-react';
 import PolicyAcknowledgmentTab from './tabs/employee/policy-acknowledgment-tab';
 import MandatoryTrainingTrackerTab from './tabs/employee/mandatory-training-tracker-tab';
 import WhistleblowerEthicsPortalTab from './tabs/employee/whistleblower-ethics-portal-tab';
@@ -12,7 +11,6 @@ const tabs = [
   { id: 'mandatory-training', label: 'Mandatory Training Tracker', icon: GraduationCap },
   { id: 'ethics-portal', label: 'Whistleblower & Ethics Portal', icon: MessageSquare },
   { id: 'data-privacy', label: 'Data Privacy Controls', icon: Shield },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ];
 
 export default function EmployeeDashboard() {
@@ -53,7 +51,6 @@ export default function EmployeeDashboard() {
         {activeTab === 'mandatory-training' && <MandatoryTrainingTrackerTab />}
         {activeTab === 'ethics-portal' && <WhistleblowerEthicsPortalTab />}
         {activeTab === 'data-privacy' && <DataPrivacyControlsTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

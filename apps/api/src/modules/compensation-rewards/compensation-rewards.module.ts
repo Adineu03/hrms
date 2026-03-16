@@ -25,10 +25,6 @@ import { TeamCompensationViewService } from './features/manager/team-compensatio
 import { RecognitionManagementService } from './features/manager/recognition-management.service';
 import { IncrementPlanningService } from './features/manager/increment-planning.service';
 
-// AI features
-import { CompensationRewardsAiController } from './features/ai/ai.controller';
-import { CompensationRewardsAiService } from './features/ai/ai.service';
-
 // Employee controllers
 import { MyCompensationController } from './features/employee/my-compensation.controller';
 import { PaySlipsTaxController } from './features/employee/pay-slips-tax.controller';
@@ -53,8 +49,6 @@ import { BenefitsEnrollmentService } from './features/employee/benefits-enrollme
     TeamCompensationViewController,
     RecognitionManagementController,
     IncrementPlanningController,
-    // AI features
-    CompensationRewardsAiController,
     // Employee
     MyCompensationController,
     PaySlipsTaxController,
@@ -71,8 +65,6 @@ import { BenefitsEnrollmentService } from './features/employee/benefits-enrollme
     TeamCompensationViewService,
     RecognitionManagementService,
     IncrementPlanningService,
-    // AI features
-    CompensationRewardsAiService,
     // Employee
     MyCompensationService,
     PaySlipsTaxService,

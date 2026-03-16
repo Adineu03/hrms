@@ -43,10 +43,6 @@ import { CareerPathExplorerService } from './features/employee/career-path-explo
 import { InternalJobBoardService } from './features/employee/internal-job-board.service';
 import { MyTransferRequestService } from './features/employee/my-transfer-request.service';
 
-// AI
-import { WorkforceAiInsightsController } from './features/ai/ai-insights.controller';
-import { WorkforceAiInsightsService } from './features/ai/ai-insights.service';
-
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -67,8 +63,6 @@ import { WorkforceAiInsightsService } from './features/ai/ai-insights.service';
     CareerPathExplorerController,
     InternalJobBoardController,
     MyTransferRequestController,
-    // AI
-    WorkforceAiInsightsController,
   ],
   providers: [
     // Admin
@@ -88,8 +82,6 @@ import { WorkforceAiInsightsService } from './features/ai/ai-insights.service';
     CareerPathExplorerService,
     InternalJobBoardService,
     MyTransferRequestService,
-    // AI
-    WorkforceAiInsightsService,
   ],
 })
 export class WorkforcePlanningModule implements OnModuleInit {

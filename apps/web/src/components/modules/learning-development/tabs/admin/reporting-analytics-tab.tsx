@@ -32,8 +32,25 @@ export default function ReportingAnalyticsTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/learning-development/admin/analytics');
-      setData(res.data?.data || res.data);
+      const [completionRes, engagementRes, popularRes, budgetRes] = await Promise.all([
+        api.get('/learning-development/admin/analytics/completion-rates').catch(() => ({ data: {} })),
+        api.get('/learning-development/admin/analytics/engagement').catch(() => ({ data: {} })),
+        api.get('/learning-development/admin/analytics/popular-content').catch(() => ({ data: [] })),
+        api.get('/learning-development/admin/analytics/budget-utilization').catch(() => ({ data: [] })),
+      ]);
+      const completion = completionRes.data?.data || completionRes.data || {};
+      const engagement = engagementRes.data?.data || engagementRes.data || {};
+      const popular = Array.isArray(popularRes.data) ? popularRes.data : popularRes.data?.data || [];
+      const budget = Array.isArray(budgetRes.data) ? budgetRes.data : budgetRes.data?.data || [];
+      setData({
+        totalCourses: engagement.totalCourses || completion.totalCourses || 0,
+        totalEnrollments: engagement.totalEnrollments || completion.totalEnrollments || 0,
+        avgCompletionRate: completion.avgCompletionRate || completion.average || 0,
+        totalHoursLogged: engagement.totalHoursLogged || 0,
+        completionByDepartment: completion.byDepartment || completion.completionByDepartment || [],
+        popularCourses: popular,
+        budgetUtilization: budget,
+      });
     } catch {
       setError('Failed to load analytics data.');
     } finally {

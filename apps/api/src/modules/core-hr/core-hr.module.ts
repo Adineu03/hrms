@@ -47,10 +47,6 @@ import { EmployeeBenefitsService } from './features/employee/benefits.service';
 import { SelfServiceController } from './features/employee/self-service.controller';
 import { SelfServiceService } from './features/employee/self-service.service';
 
-// AI features
-import { CoreHrAiController } from './features/ai/ai.controller';
-import { CoreHrAiService } from './features/ai/ai.service';
-
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -76,8 +72,6 @@ import { CoreHrAiService } from './features/ai/ai.service';
     PayslipController,
     EmployeeBenefitsController,
     SelfServiceController,
-    // AI
-    CoreHrAiController,
   ],
   providers: [
     // Admin
@@ -102,8 +96,6 @@ import { CoreHrAiService } from './features/ai/ai.service';
     PayslipService,
     EmployeeBenefitsService,
     SelfServiceService,
-    // AI
-    CoreHrAiService,
   ],
 })
 export class CoreHRModule implements OnModuleInit {

@@ -5,7 +5,6 @@ import SeedDataControl from './admin/seed-data-control';
 import DemoPersonas from './admin/demo-personas';
 import GuidedTourBuilder from './admin/guided-tour-builder';
 import DemoAnalytics from './admin/demo-analytics';
-import AiInsights from './admin/ai-insights';
 
 const TABS = [
   { id: 'demo-org', label: 'Demo Org' },
@@ -13,7 +12,6 @@ const TABS = [
   { id: 'personas', label: 'Personas' },
   { id: 'tour-builder', label: 'Tour Builder' },
   { id: 'analytics', label: 'Analytics' },
-  { id: 'ai-insights', label: 'AI Insights' },
 ];
 
 export default function AdminDashboard() {
@@ -50,7 +48,6 @@ export default function AdminDashboard() {
         {activeTab === 'personas' && <DemoPersonas />}
         {activeTab === 'tour-builder' && <GuidedTourBuilder />}
         {activeTab === 'analytics' && <DemoAnalytics />}
-        {activeTab === 'ai-insights' && <AiInsights />}
       </div>
     </div>
   );

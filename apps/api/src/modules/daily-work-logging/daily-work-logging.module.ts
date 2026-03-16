@@ -45,10 +45,6 @@ import { ProductivityDashboardService } from './features/employee/productivity-d
 import { TimerController } from './features/employee/timer.controller';
 import { TimerService } from './features/employee/timer.service';
 
-// AI features
-import { DailyWorkLoggingAiController } from './features/ai/ai.controller';
-import { DailyWorkLoggingAiService } from './features/ai/ai.service';
-
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -73,8 +69,6 @@ import { DailyWorkLoggingAiService } from './features/ai/ai.service';
     TimesheetHistoryController,
     ProductivityDashboardController,
     TimerController,
-    // AI
-    DailyWorkLoggingAiController,
   ],
   providers: [
     // Admin (6 features)
@@ -98,8 +92,6 @@ import { DailyWorkLoggingAiService } from './features/ai/ai.service';
     TimesheetHistoryService,
     ProductivityDashboardService,
     TimerService,
-    // AI
-    DailyWorkLoggingAiService,
   ],
 })
 export class DailyWorkLoggingModule implements OnModuleInit {

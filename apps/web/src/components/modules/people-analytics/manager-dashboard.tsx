@@ -3,13 +3,11 @@ import { useState } from 'react';
 import TeamAnalyticsDashboard from './manager/team-analytics-dashboard';
 import PerformanceInsights from './manager/performance-insights';
 import LeaveAttendanceTrends from './manager/leave-attendance-trends';
-import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'team-analytics', label: 'Team Analytics' },
   { id: 'performance', label: 'Performance Insights' },
   { id: 'leave-attendance', label: 'Leave & Attendance Trends' },
-  { id: 'ai-insights', label: 'AI Insights' },
 ];
 
 export default function ManagerDashboard() {
@@ -37,7 +35,6 @@ export default function ManagerDashboard() {
         {activeTab === 'team-analytics' && <TeamAnalyticsDashboard />}
         {activeTab === 'performance' && <PerformanceInsights />}
         {activeTab === 'leave-attendance' && <LeaveAttendanceTrends />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

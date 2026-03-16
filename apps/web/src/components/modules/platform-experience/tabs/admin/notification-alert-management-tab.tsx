@@ -64,8 +64,8 @@ export default function NotificationAlertManagementTab() {
       setLoading(true);
       setError('');
       const [templatesRes, analyticsRes] = await Promise.all([
-        api.get('/platform-experience/admin/notifications'),
-        api.get('/platform-experience/admin/notifications/analytics'),
+        api.get('/platform-experience/admin/notifications/templates').catch(() => ({ data: [] })),
+        api.get('/platform-experience/admin/notifications/analytics').catch(() => ({ data: {} })),
       ]);
 
       const templatesData = Array.isArray(templatesRes.data) ? templatesRes.data : templatesRes.data?.data || [];
@@ -125,10 +125,10 @@ export default function NotificationAlertManagementTab() {
         isEnabled: formIsEnabled,
       };
       if (editing) {
-        await api.patch(`/platform-experience/admin/notifications/${editing.id}`, payload);
+        await api.patch(`/platform-experience/admin/notifications/templates/${editing.id}`, payload);
         setSuccess('Notification template updated successfully.');
       } else {
-        await api.post('/platform-experience/admin/notifications', payload);
+        await api.post('/platform-experience/admin/notifications/templates', payload);
         setSuccess('Notification template created successfully.');
       }
       setShowModal(false);
@@ -144,7 +144,7 @@ export default function NotificationAlertManagementTab() {
     if (!confirm('Are you sure you want to delete this notification template?')) return;
     try {
       setError('');
-      await api.delete(`/platform-experience/admin/notifications/${id}`);
+      await api.delete(`/platform-experience/admin/notifications/templates/${id}`);
       setSuccess('Notification template deleted.');
       loadData();
     } catch {
@@ -155,7 +155,7 @@ export default function NotificationAlertManagementTab() {
   const handleToggleEnabled = async (t: NotificationTemplate) => {
     try {
       setError('');
-      await api.patch(`/platform-experience/admin/notifications/${t.id}`, { isEnabled: !t.isEnabled });
+      await api.patch(`/platform-experience/admin/notifications/templates/${t.id}/toggle`);
       setSuccess(`Template ${t.isEnabled ? 'disabled' : 'enabled'} successfully.`);
       loadData();
     } catch {

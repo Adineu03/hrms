@@ -2,12 +2,10 @@
 import { useState } from 'react';
 import TeamIntegrationStatus from './manager/team-integration-status';
 import DataExportTeam from './manager/data-export-team';
-import AiInsights from './manager/ai-insights';
 
 const TABS = [
   { id: 'integration-status', label: 'Integration Status' },
   { id: 'data-export', label: 'Team Data Export' },
-  { id: 'ai-insights', label: 'AI Insights' },
 ];
 
 export default function ManagerDashboard() {
@@ -41,7 +39,6 @@ export default function ManagerDashboard() {
       <div>
         {activeTab === 'integration-status' && <TeamIntegrationStatus />}
         {activeTab === 'data-export' && <DataExportTeam />}
-        {activeTab === 'ai-insights' && <AiInsights />}
       </div>
     </div>
   );

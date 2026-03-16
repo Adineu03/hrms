@@ -8,7 +8,6 @@ import {
   CalendarDays,
   BarChart3,
   Gift,
-  Sparkles,
 } from 'lucide-react';
 import LeavePolicyTab from './tabs/admin/leave-policy-tab';
 import ApprovalWorkflowsTab from './tabs/admin/approval-workflows-tab';
@@ -16,7 +15,6 @@ import BalanceManagementTab from './tabs/admin/balance-management-tab';
 import HolidayCalendarTab from './tabs/admin/holiday-calendar-tab';
 import LeaveReportsTab from './tabs/admin/leave-reports-tab';
 import CompoffRulesTab from './tabs/admin/compoff-rules-tab';
-import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'policy', label: 'Leave Policy Config', icon: Shield },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'holidays', label: 'Holiday Calendar', icon: CalendarDays },
   { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
   { id: 'compoff', label: 'Comp-Off Rules', icon: Gift },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function AdminDashboard() {
         {activeTab === 'holidays' && <HolidayCalendarTab />}
         {activeTab === 'reports' && <LeaveReportsTab />}
         {activeTab === 'compoff' && <CompoffRulesTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

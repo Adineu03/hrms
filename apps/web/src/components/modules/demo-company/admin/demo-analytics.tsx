@@ -31,7 +31,15 @@ export default function DemoAnalytics() {
       .finally(() => setSummaryLoading(false));
 
     api.get('/demo-company/admin/demo-analytics/funnel')
-      .then((r) => setFunnel(r.data.data ?? []))
+      .then((r) => {
+        const raw = r.data.data ?? r.data;
+        const arr = Array.isArray(raw) ? raw : raw?.funnel ?? [];
+        setFunnel(arr.map((item: any) => ({
+          label: item.label || item.stage || '',
+          count: item.count ?? 0,
+          percentage: item.percentage ?? 0,
+        })));
+      })
       .catch(() => setFunnelError('Failed to load funnel data.'))
       .finally(() => setFunnelLoading(false));
   }, []);
@@ -54,6 +62,7 @@ export default function DemoAnalytics() {
   };
 
   const formatDuration = (minutes: number) => {
+    if (!minutes || isNaN(minutes)) return '0m';
     if (minutes < 60) return `${minutes}m`;
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;

@@ -19,9 +19,6 @@ import { EmployeeSelfController } from './features/employee-self/employee-self.c
 import { EmployeeSelfService } from './features/employee-self/employee-self.service';
 import { ManagerController } from './features/manager/manager.controller';
 import { ManagerService } from './features/manager/manager.service';
-import { ColdStartAiInsightsController } from './features/ai/ai-insights.controller';
-import { ColdStartAiInsightsService } from './features/ai/ai-insights.service';
-
 @Module({
   imports: [SetupEngineModule, JwtModule.register({})],
   controllers: [
@@ -33,7 +30,6 @@ import { ColdStartAiInsightsService } from './features/ai/ai-insights.service';
     EmployeesController,
     EmployeeSelfController,
     ManagerController,
-    ColdStartAiInsightsController,
   ],
   providers: [
     ColdStartService,
@@ -44,7 +40,6 @@ import { ColdStartAiInsightsService } from './features/ai/ai-insights.service';
     EmployeesService,
     EmployeeSelfService,
     ManagerService,
-    ColdStartAiInsightsService,
   ],
   exports: [ColdStartService, InvitationsService, EmployeesService],
 })

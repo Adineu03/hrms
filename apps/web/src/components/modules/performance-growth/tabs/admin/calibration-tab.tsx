@@ -68,7 +68,7 @@ export default function CalibrationTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/performance-growth/admin/calibration');
+      const res = await api.get('/performance-growth/admin/calibration/groups').catch(() => ({ data: [] }));
       setGroups(Array.isArray(res.data) ? res.data : res.data?.data || []);
     } catch {
       setError('Failed to load calibration data.');
@@ -99,7 +99,7 @@ export default function CalibrationTab() {
     setIsSaving(true);
     setError(null);
     try {
-      await api.post(`/performance-growth/admin/calibration/${groupId}/save`, { ratings: groupEdits });
+      await api.patch('/performance-growth/admin/calibration/ratings', { updates: groupEdits.map((e) => ({ assignmentId: e.employeeId, calibratedRating: e.calibratedRating })) });
       setSuccess('Calibration saved successfully.');
       setEditedRatings({});
       loadData();
@@ -113,7 +113,7 @@ export default function CalibrationTab() {
 
   const loadAuditTrail = async () => {
     try {
-      const res = await api.get('/performance-growth/admin/calibration/audit-trail');
+      const res = await api.get('/performance-growth/admin/calibration/audit-trail').catch(() => ({ data: [] }));
       setAuditEntries(Array.isArray(res.data) ? res.data : res.data?.data || []);
       setShowAuditTrail(true);
     } catch {

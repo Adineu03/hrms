@@ -116,7 +116,7 @@ export default function LmsConfigTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/learning-development/admin/courses');
+      const res = await api.get('/learning-development/admin/lms-config/courses');
       setCourses(Array.isArray(res.data) ? res.data : res.data?.data || []);
     } catch {
       setError('Failed to load courses.');
@@ -146,10 +146,10 @@ export default function LmsConfigTab() {
         duration: Number(formData.duration) || 0,
       };
       if (editingCourse) {
-        await api.patch(`/learning-development/admin/courses/${editingCourse.id}`, payload);
+        await api.patch(`/learning-development/admin/lms-config/courses/${editingCourse.id}`, payload);
         setSuccess('Course updated successfully.');
       } else {
-        await api.post('/learning-development/admin/courses', payload);
+        await api.post('/learning-development/admin/lms-config/courses', payload);
         setSuccess('Course created successfully.');
       }
       setShowModal(false);
@@ -168,7 +168,7 @@ export default function LmsConfigTab() {
     if (!confirm('Are you sure you want to delete this course?')) return;
     setError(null);
     try {
-      await api.delete(`/learning-development/admin/courses/${id}`);
+      await api.delete(`/learning-development/admin/lms-config/courses/${id}`);
       setCourses((prev) => prev.filter((c) => c.id !== id));
       setSuccess('Course deleted.');
       setTimeout(() => setSuccess(null), 3000);

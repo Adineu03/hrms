@@ -8,7 +8,6 @@ import {
   Database,
   BarChart3,
   FileCheck,
-  Sparkles,
 } from 'lucide-react';
 import JobRequisitionTab from './tabs/admin/job-requisition-tab';
 import JobPostingTab from './tabs/admin/job-posting-tab';
@@ -16,7 +15,6 @@ import PipelineConfigTab from './tabs/admin/pipeline-config-tab';
 import CandidateDatabaseTab from './tabs/admin/candidate-database-tab';
 import RecruitmentReportsTab from './tabs/admin/recruitment-reports-tab';
 import OfferManagementTab from './tabs/admin/offer-management-tab';
-import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'requisitions', label: 'Job Requisitions', icon: FileText },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'candidates', label: 'Candidate Database', icon: Database },
   { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
   { id: 'offers', label: 'Offer Management', icon: FileCheck },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function AdminDashboard() {
         {activeTab === 'candidates' && <CandidateDatabaseTab />}
         {activeTab === 'reports' && <RecruitmentReportsTab />}
         {activeTab === 'offers' && <OfferManagementTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

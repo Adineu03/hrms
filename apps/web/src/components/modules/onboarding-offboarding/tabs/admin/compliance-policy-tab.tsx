@@ -54,8 +54,8 @@ export default function CompliancePolicyTab() {
     setError(null);
     try {
       const [policyRes, trainingRes] = await Promise.all([
-        api.get('/onboarding-offboarding/admin/compliance/policy-acknowledgements'),
-        api.get('/onboarding-offboarding/admin/compliance/training-completions'),
+        api.get('/onboarding-offboarding/admin/compliance/acknowledgements').catch(() => ({ data: [] })),
+        api.get('/onboarding-offboarding/admin/compliance/training-completion').catch(() => ({ data: [] })),
       ]);
       setPolicyAcks(Array.isArray(policyRes.data) ? policyRes.data : policyRes.data?.data || []);
       setTrainingCompletions(Array.isArray(trainingRes.data) ? trainingRes.data : trainingRes.data?.data || []);

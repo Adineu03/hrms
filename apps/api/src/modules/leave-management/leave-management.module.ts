@@ -45,10 +45,6 @@ import { CompoffMgmtService } from './features/employee/compoff-mgmt.service';
 import { LeaveInsightsController } from './features/employee/leave-insights.controller';
 import { LeaveInsightsService } from './features/employee/leave-insights.service';
 
-// AI features
-import { LeaveAiController } from './features/ai/ai.controller';
-import { LeaveAiService } from './features/ai/ai.service';
-
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -73,8 +69,6 @@ import { LeaveAiService } from './features/ai/ai.service';
     LeaveCalendarController,
     CompoffMgmtController,
     LeaveInsightsController,
-    // AI
-    LeaveAiController,
   ],
   providers: [
     // Admin
@@ -98,8 +92,6 @@ import { LeaveAiService } from './features/ai/ai.service';
     LeaveCalendarService,
     CompoffMgmtService,
     LeaveInsightsService,
-    // AI
-    LeaveAiService,
   ],
 })
 export class LeaveManagementModule implements OnModuleInit {

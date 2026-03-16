@@ -8,7 +8,6 @@ import {
   Calendar,
   UserCircle,
   FileCheck,
-  Sparkles,
 } from 'lucide-react';
 import InternalJobBoardTab from './tabs/employee/internal-job-board-tab';
 import EmployeeReferralTab from './tabs/employee/employee-referral-tab';
@@ -16,7 +15,6 @@ import MyApplicationsTab from './tabs/employee/my-applications-tab';
 import InterviewScheduleTab from './tabs/employee/interview-schedule-tab';
 import CareerProfileTab from './tabs/employee/career-profile-tab';
 import OfferJoiningTab from './tabs/employee/offer-joining-tab';
-import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'jobs', label: 'Internal Job Board', icon: Briefcase },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'interviews', label: 'Interview Schedule', icon: Calendar },
   { id: 'profile', label: 'Career Profile', icon: UserCircle },
   { id: 'offers', label: 'Offer & Joining', icon: FileCheck },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function EmployeeDashboard() {
         {activeTab === 'interviews' && <InterviewScheduleTab />}
         {activeTab === 'profile' && <CareerProfileTab />}
         {activeTab === 'offers' && <OfferJoiningTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

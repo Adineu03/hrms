@@ -8,7 +8,6 @@ import {
   Clock,
   BookOpen,
   MessageSquare,
-  Sparkles,
 } from 'lucide-react';
 import TeamOnboardingTab from './tabs/manager/team-onboarding-tab';
 import TeamOffboardingTab from './tabs/manager/team-offboarding-tab';
@@ -16,7 +15,6 @@ import BuddyAssignmentTab from './tabs/manager/buddy-assignment-tab';
 import ProbationMgmtTab from './tabs/manager/probation-mgmt-tab';
 import KnowledgeTransferTab from './tabs/manager/knowledge-transfer-tab';
 import ExitInterviewTab from './tabs/manager/exit-interview-tab';
-import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'team-onboarding', label: 'Team Onboarding', icon: UserPlus },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'probation', label: 'Probation Management', icon: Clock },
   { id: 'knowledge-transfer', label: 'Knowledge Transfer', icon: BookOpen },
   { id: 'exit-interviews', label: 'Exit Interviews', icon: MessageSquare },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function ManagerDashboard() {
         {activeTab === 'probation' && <ProbationMgmtTab />}
         {activeTab === 'knowledge-transfer' && <KnowledgeTransferTab />}
         {activeTab === 'exit-interviews' && <ExitInterviewTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

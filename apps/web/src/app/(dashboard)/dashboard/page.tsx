@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api';
 import { MODULE_LIST } from '@hrms/shared';
@@ -92,10 +93,10 @@ export default function DashboardPage() {
               ready to be configured. Start by setting up Core HR, then proceed through each module
               in order to build your complete HR platform.
             </p>
-            <div className="mt-4 flex items-center gap-2 text-sm text-primary font-medium">
+            <Link href="/dashboard/modules/cold-start-setup" className="mt-4 flex items-center gap-2 text-sm text-primary font-medium hover:underline cursor-pointer">
               <ArrowRight className="h-4 w-4" />
               Begin setup with module configuration
-            </div>
+            </Link>
           </div>
         </div>
       </div>

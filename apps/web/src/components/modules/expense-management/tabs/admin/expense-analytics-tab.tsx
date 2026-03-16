@@ -71,10 +71,10 @@ export default function ExpenseAnalyticsTab() {
       setLoading(true);
       setError('');
       const [summaryRes, deptRes, trendRes, violationRes] = await Promise.all([
-        api.get('/expense-management/admin/analytics/summary'),
-        api.get('/expense-management/admin/analytics/department-breakdown'),
-        api.get('/expense-management/admin/analytics/monthly-trends'),
-        api.get('/expense-management/admin/analytics/violations'),
+        api.get('/expense-management/admin/analytics/summary').catch(() => ({ data: null })),
+        api.get('/expense-management/admin/analytics/department-breakdown').catch(() => ({ data: [] })),
+        api.get('/expense-management/admin/analytics/trends').catch(() => ({ data: [] })),
+        api.get('/expense-management/admin/analytics/policy-violations').catch(() => ({ data: [] })),
       ]);
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};

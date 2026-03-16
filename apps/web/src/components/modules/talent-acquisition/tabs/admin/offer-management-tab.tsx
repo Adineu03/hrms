@@ -107,8 +107,8 @@ export default function OfferManagementTab() {
     try {
       const [offersRes, appsRes, analyticsRes] = await Promise.all([
         api.get('/talent-acquisition/admin/offers'),
-        api.get('/talent-acquisition/admin/offers/shortlisted-applications'),
-        api.get('/talent-acquisition/admin/offers/analytics'),
+        api.get('/talent-acquisition/admin/offers/shortlisted-applications').catch(() => ({ data: [] })),
+        api.get('/talent-acquisition/admin/offers/analytics').catch(() => ({ data: null })),
       ]);
       setOffers(Array.isArray(offersRes.data) ? offersRes.data : offersRes.data?.data || []);
       setApplications(Array.isArray(appsRes.data) ? appsRes.data : appsRes.data?.data || []);

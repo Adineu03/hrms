@@ -111,7 +111,7 @@ export default function OnboardingWorkflowTab() {
       setIsLoading(true);
       const [wfRes, deptRes] = await Promise.all([
         api.get('/onboarding-offboarding/admin/onboarding-workflows'),
-        api.get('/onboarding-offboarding/admin/departments'),
+        api.get('/onboarding-offboarding/admin/departments').catch(() => ({ data: [] })),
       ]);
       setWorkflows(Array.isArray(wfRes.data) ? wfRes.data : wfRes.data?.data || []);
       setDepartments(Array.isArray(deptRes.data) ? deptRes.data : deptRes.data?.data || []);

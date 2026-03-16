@@ -36,12 +36,13 @@ export default function CompensationAnalyticsTab() {
       setLoading(true);
       setError('');
       const [payEquityRes, budgetRes, benchmarkRes] = await Promise.all([
-        api.get('/compensation-rewards/admin/analytics/pay-equity'),
-        api.get('/compensation-rewards/admin/analytics/budget-vs-actual'),
-        api.get('/compensation-rewards/admin/analytics/benchmarking'),
+        api.get('/compensation-rewards/admin/analytics/pay-equity').catch(() => ({ data: null })),
+        api.get('/compensation-rewards/admin/analytics/budget-vs-actual').catch(() => ({ data: null })),
+        api.get('/compensation-rewards/admin/analytics/benchmarking').catch(() => ({ data: null })),
       ]);
 
-      const payEquity = Array.isArray(payEquityRes.data) ? payEquityRes.data : payEquityRes.data?.data || [];
+      const peRaw = payEquityRes.data?.data || payEquityRes.data || {};
+      const payEquity = Array.isArray(peRaw) ? peRaw : Array.isArray(peRaw?.genderAnalysis) ? peRaw.genderAnalysis : [];
       const budgetData = budgetRes.data?.data || budgetRes.data || {};
       const benchmarkData = benchmarkRes.data?.data || benchmarkRes.data || {};
 

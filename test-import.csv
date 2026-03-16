@@ -1,0 +1,16 @@
+First Name,Last Name,Email,Phone,Department,Designation,Date of Joining,Employment Type,Manager Email,Gender,Date of Birth
+Priya,Sharma,priya.sharma@acme.com,9876543210,Engineering,Senior Software Engineer,2024-01-15,full_time,manager@acme.com,Female,1995-03-22
+Rahul,Verma,rahul.verma@acme.com,9876543211,Engineering,Software Engineer,2024-03-01,full_time,manager@acme.com,Male,1997-08-14
+Ananya,Iyer,ananya.iyer@acme.com,9876543212,Engineering,Junior Developer,2024-06-10,full_time,manager@acme.com,Female,1999-11-05
+Vikram,Patel,vikram.patel@acme.com,9876543213,Sales,Sales Manager,2023-11-20,full_time,manager@acme.com,Male,1992-05-30
+Sneha,Reddy,sneha.reddy@acme.com,9876543214,Sales,Business Development Executive,2024-02-14,full_time,vikram.patel@acme.com,Female,1996-07-18
+Arjun,Nair,arjun.nair@acme.com,9876543215,Human Resources,HR Executive,2024-04-01,full_time,manager@acme.com,Male,1994-12-03
+Deepika,Gupta,deepika.gupta@acme.com,9876543216,Finance,Accounts Manager,2023-09-15,full_time,manager@acme.com,Female,1991-01-25
+Karthik,Menon,karthik.menon@acme.com,9876543217,Engineering,DevOps Engineer,2024-05-20,full_time,manager@acme.com,Male,1993-09-11
+Meera,Joshi,meera.joshi@acme.com,9876543218,Marketing,Marketing Specialist,2024-07-01,full_time,manager@acme.com,Female,1998-04-09
+Rohan,Singh,rohan.singh@acme.com,9876543219,Engineering,QA Engineer,2024-01-08,full_time,manager@acme.com,Male,1996-02-27
+Kavitha,Sundaram,kavitha.sundaram@acme.com,9876543220,Finance,Financial Analyst,2024-08-12,full_time,deepika.gupta@acme.com,Female,1997-06-15
+Aditya,Kulkarni,aditya.kulkarni@acme.com,9876543221,Engineering,Tech Lead,2023-06-01,full_time,manager@acme.com,Male,1990-10-20
+Pooja,Deshmukh,pooja.deshmukh@acme.com,9876543222,Human Resources,Recruitment Specialist,2024-09-01,contract,arjun.nair@acme.com,Female,1995-08-07
+Suresh,Pillai,suresh.pillai@acme.com,9876543223,Operations,Operations Coordinator,2024-03-15,full_time,manager@acme.com,Male,1993-03-12
+Divya,Chopra,divya.chopra@acme.com,9876543224,Marketing,Content Writer,2024-10-01,intern,meera.joshi@acme.com,Female,2001-12-30

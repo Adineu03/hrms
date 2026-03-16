@@ -8,7 +8,6 @@ import {
   BarChart3,
   PenTool,
   Plug,
-  Sparkles,
 } from 'lucide-react';
 import ShiftManagementTab from './tabs/admin/shift-management-tab';
 import AttendancePoliciesTab from './tabs/admin/attendance-policies-tab';
@@ -16,7 +15,6 @@ import OvertimeConfigTab from './tabs/admin/overtime-config-tab';
 import ReportsAnalyticsTab from './tabs/admin/reports-analytics-tab';
 import AttendanceCorrectionsTab from './tabs/admin/attendance-corrections-tab';
 import IntegrationSettingsTab from './tabs/admin/integration-settings-tab';
-import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'shifts', label: 'Shift Management', icon: Clock },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
   { id: 'corrections', label: 'Corrections', icon: PenTool },
   { id: 'integrations', label: 'Integrations', icon: Plug },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function AdminDashboard() {
         {activeTab === 'reports' && <ReportsAnalyticsTab />}
         {activeTab === 'corrections' && <AttendanceCorrectionsTab />}
         {activeTab === 'integrations' && <IntegrationSettingsTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

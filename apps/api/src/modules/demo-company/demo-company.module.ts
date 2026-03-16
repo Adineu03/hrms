@@ -33,10 +33,6 @@ import { FeatureHighlightsController } from './features/employee/feature-highlig
 import { DemoOnboardingTourService } from './features/employee/demo-onboarding-tour.service';
 import { FeatureHighlightsService } from './features/employee/feature-highlights.service';
 
-// AI
-import { DemoAiInsightsController } from './features/ai/ai-insights.controller';
-import { DemoAiInsightsService } from './features/ai/ai-insights.service';
-
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -52,8 +48,6 @@ import { DemoAiInsightsService } from './features/ai/ai-insights.service';
     // Employee
     DemoOnboardingTourController,
     FeatureHighlightsController,
-    // AI
-    DemoAiInsightsController,
   ],
   providers: [
     // Admin
@@ -68,8 +62,6 @@ import { DemoAiInsightsService } from './features/ai/ai-insights.service';
     // Employee
     DemoOnboardingTourService,
     FeatureHighlightsService,
-    // AI
-    DemoAiInsightsService,
   ],
 })
 export class DemoCompanyModule implements OnModuleInit {

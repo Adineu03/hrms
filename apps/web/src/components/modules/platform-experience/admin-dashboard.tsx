@@ -1,19 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, Palette, Search, Shield, Sparkles } from 'lucide-react';
+import { Bell, Palette, Search, Shield } from 'lucide-react';
 import NotificationAlertManagementTab from './tabs/admin/notification-alert-management-tab';
 import PlatformCustomizationTab from './tabs/admin/platform-customization-tab';
 import SearchNavigationConfigTab from './tabs/admin/search-navigation-config-tab';
 import SystemAdministrationTab from './tabs/admin/system-administration-tab';
-import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'notifications', label: 'Notification Management', icon: Bell },
   { id: 'customization', label: 'Platform Customization', icon: Palette },
   { id: 'search-nav', label: 'Search & Navigation', icon: Search },
   { id: 'system', label: 'System Administration', icon: Shield },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -51,7 +49,6 @@ export default function AdminDashboard() {
         {activeTab === 'customization' && <PlatformCustomizationTab />}
         {activeTab === 'search-nav' && <SearchNavigationConfigTab />}
         {activeTab === 'system' && <SystemAdministrationTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

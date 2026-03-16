@@ -93,7 +93,7 @@ export default function EmployeeMasterTab() {
 
   const loadEmployees = async () => {
     try {
-      const res = await api.get('/core-hr/admin/employees');
+      const res = await api.get('/core-hr/admin/employees', { params: { limit: 500 } });
       setEmployees(Array.isArray(res.data) ? res.data : res.data.data || []);
     } catch {
       setError('Failed to load employees.');

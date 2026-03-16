@@ -25,10 +25,6 @@ import { TeamNotificationsService } from './features/manager/team-notifications.
 import { CustomDashboardsService } from './features/manager/custom-dashboards.service';
 import { QuickActionsService } from './features/manager/quick-actions.service';
 
-// AI features
-import { PlatformExperienceAiController } from './features/ai/ai.controller';
-import { PlatformExperienceAiService } from './features/ai/ai.service';
-
 // Employee controllers
 import { NotificationCenterController } from './features/employee/notification-center.controller';
 import { SelfServicePortalController } from './features/employee/self-service-portal.controller';
@@ -53,8 +49,6 @@ import { MobileAccessibilityService } from './features/employee/mobile-accessibi
     TeamNotificationsController,
     CustomDashboardsController,
     QuickActionsController,
-    // AI features
-    PlatformExperienceAiController,
     // Employee
     NotificationCenterController,
     SelfServicePortalController,
@@ -71,8 +65,6 @@ import { MobileAccessibilityService } from './features/employee/mobile-accessibi
     TeamNotificationsService,
     CustomDashboardsService,
     QuickActionsService,
-    // AI features
-    PlatformExperienceAiService,
     // Employee
     NotificationCenterService,
     SelfServicePortalService,

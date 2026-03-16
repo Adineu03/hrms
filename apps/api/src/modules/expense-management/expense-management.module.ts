@@ -33,10 +33,6 @@ import { MyExpensesService } from './features/employee/my-expenses.service';
 import { ExpenseTrackingService } from './features/employee/expense-tracking.service';
 import { ExpensePoliciesViewService } from './features/employee/expense-policies-view.service';
 
-// AI
-import { ExpenseAiInsightsController } from './features/ai/ai-insights.controller';
-import { ExpenseAiInsightsService } from './features/ai/ai-insights.service';
-
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -52,8 +48,6 @@ import { ExpenseAiInsightsService } from './features/ai/ai-insights.service';
     MyExpensesController,
     ExpenseTrackingController,
     ExpensePoliciesViewController,
-    // AI
-    ExpenseAiInsightsController,
   ],
   providers: [
     // Admin
@@ -68,8 +62,6 @@ import { ExpenseAiInsightsService } from './features/ai/ai-insights.service';
     MyExpensesService,
     ExpenseTrackingService,
     ExpensePoliciesViewService,
-    // AI
-    ExpenseAiInsightsService,
   ],
 })
 export class ExpenseManagementModule implements OnModuleInit {

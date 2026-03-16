@@ -60,8 +60,8 @@ export default function OffboardingAnalyticsTab() {
     setError(null);
     try {
       const [metricsRes, trendsRes] = await Promise.all([
-        api.get('/onboarding-offboarding/admin/analytics/offboarding-metrics'),
-        api.get('/onboarding-offboarding/admin/analytics/exit-trends'),
+        api.get('/onboarding-offboarding/admin/offboarding-analytics/overview').catch(() => ({ data: null })),
+        api.get('/onboarding-offboarding/admin/offboarding-analytics/exit-trends').catch(() => ({ data: [] })),
       ]);
       setMetrics(metricsRes.data?.data || metricsRes.data);
       setExitTrends(Array.isArray(trendsRes.data) ? trendsRes.data : trendsRes.data?.data || []);

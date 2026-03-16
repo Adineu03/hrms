@@ -1,19 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { ClipboardList, Heart, Flower2, BarChart3, Sparkles } from 'lucide-react';
+import { ClipboardList, Heart, Flower2, BarChart3 } from 'lucide-react';
 import SurveyPulseManagementTab from './tabs/admin/survey-pulse-management-tab';
 import CultureValuesSetupTab from './tabs/admin/culture-values-setup-tab';
 import WellnessProgramManagementTab from './tabs/admin/wellness-program-management-tab';
 import EngagementAnalyticsTab from './tabs/admin/engagement-analytics-tab';
-import AiInsightsTab from './tabs/admin/ai-insights-tab';
 
 const TABS = [
   { id: 'survey-pulse', label: 'Survey & Pulse', icon: ClipboardList },
   { id: 'culture-values', label: 'Culture & Values', icon: Heart },
   { id: 'wellness', label: 'Wellness Programs', icon: Flower2 },
   { id: 'analytics', label: 'Engagement Analytics', icon: BarChart3 },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -51,7 +49,6 @@ export default function AdminDashboard() {
         {activeTab === 'culture-values' && <CultureValuesSetupTab />}
         {activeTab === 'wellness' && <WellnessProgramManagementTab />}
         {activeTab === 'analytics' && <EngagementAnalyticsTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

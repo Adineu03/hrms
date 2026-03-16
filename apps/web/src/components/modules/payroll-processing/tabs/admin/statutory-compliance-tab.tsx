@@ -85,9 +85,9 @@ export default function StatutoryComplianceTab() {
       setLoading(true);
       setError('');
       const [filingsRes, calendarRes, proofsRes] = await Promise.all([
-        api.get('/payroll-processing/admin/statutory/filings'),
-        api.get('/payroll-processing/admin/statutory/calendar'),
-        api.get('/payroll-processing/admin/statutory/tax-proofs'),
+        api.get('/payroll-processing/admin/statutory/filings').catch(() => ({ data: [] })),
+        api.get('/payroll-processing/admin/statutory/calendar').catch(() => ({ data: [] })),
+        api.get('/payroll-processing/admin/statutory/tax-proofs').catch(() => ({ data: [] })),
       ]);
 
       const filingsData = Array.isArray(filingsRes.data) ? filingsRes.data : filingsRes.data?.data || [];

@@ -8,7 +8,6 @@ import {
   ClipboardCheck,
   TrendingUp,
   Rocket,
-  Sparkles,
 } from 'lucide-react';
 import MyGoalsTab from './tabs/employee/my-goals-tab';
 import SelfReviewTab from './tabs/employee/self-review-tab';
@@ -16,7 +15,6 @@ import FeedbackTab from './tabs/employee/feedback-tab';
 import MyReviewsTab from './tabs/employee/my-reviews-tab';
 import DevelopmentPlanTab from './tabs/employee/development-plan-tab';
 import CareerGrowthTab from './tabs/employee/career-growth-tab';
-import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'my-goals', label: 'My Goals', icon: Target },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'my-reviews', label: 'My Reviews', icon: ClipboardCheck },
   { id: 'development', label: 'Development Plan', icon: TrendingUp },
   { id: 'career', label: 'Career Growth', icon: Rocket },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function EmployeeDashboard() {
         {activeTab === 'my-reviews' && <MyReviewsTab />}
         {activeTab === 'development' && <DevelopmentPlanTab />}
         {activeTab === 'career' && <CareerGrowthTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

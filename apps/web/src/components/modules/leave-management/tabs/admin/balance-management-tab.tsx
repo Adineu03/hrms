@@ -89,8 +89,20 @@ export default function BalanceManagementTab() {
         api.get('/leave-management/admin/balances/filters').catch(() => ({ data: null })),
       ]);
 
+      const rawBalances = Array.isArray(balancesRes.data) ? balancesRes.data : balancesRes.data?.data || [];
       setBalances(
-        Array.isArray(balancesRes.data) ? balancesRes.data : balancesRes.data?.data || [],
+        rawBalances.map((b: any) => ({
+          id: b.id,
+          employeeId: b.employeeId,
+          employeeName: b.employeeName || [b.employee?.firstName, b.employee?.lastName].filter(Boolean).join(' ') || '--',
+          department: b.department || b.employee?.department || '--',
+          leaveType: typeof b.leaveType === 'string' ? b.leaveType : b.leaveType?.name || '--',
+          allocated: b.allocated ?? b.totalAllocated ?? 0,
+          used: b.used ?? b.totalUsed ?? 0,
+          balance: b.balance ?? b.remaining ?? 0,
+          carriedForward: b.carriedForward ?? b.carryForward ?? 0,
+          year: b.year ?? filterYear,
+        })),
       );
 
       const statsData = statsRes.data?.data || statsRes.data;
@@ -106,6 +118,17 @@ export default function BalanceManagementTab() {
       if (filtersData) {
         setDepartments(Array.isArray(filtersData.departments) ? filtersData.departments : []);
         setLeaveTypes(Array.isArray(filtersData.leaveTypes) ? filtersData.leaveTypes : []);
+      } else {
+        const deptSet = new Set<string>();
+        const ltSet = new Set<string>();
+        rawBalances.forEach((b: any) => {
+          const dept = b.department || b.employee?.department;
+          const lt = typeof b.leaveType === 'string' ? b.leaveType : b.leaveType?.name;
+          if (dept) deptSet.add(dept);
+          if (lt) ltSet.add(lt);
+        });
+        setDepartments(Array.from(deptSet));
+        setLeaveTypes(Array.from(ltSet));
       }
     } catch {
       setError('Failed to load balance data.');

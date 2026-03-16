@@ -45,8 +45,29 @@ export default function PerformanceAnalyticsTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/performance-growth/admin/analytics');
-      setData(res.data?.data || res.data);
+      const [distRes, deptRes, goalRes, reviewRes, trendRes] = await Promise.all([
+        api.get('/performance-growth/admin/analytics/distribution').catch(() => ({ data: [] })),
+        api.get('/performance-growth/admin/analytics/department-comparison').catch(() => ({ data: [] })),
+        api.get('/performance-growth/admin/analytics/goal-achievement').catch(() => ({ data: {} })),
+        api.get('/performance-growth/admin/analytics/review-completion').catch(() => ({ data: {} })),
+        api.get('/performance-growth/admin/analytics/trends').catch(() => ({ data: [] })),
+      ]);
+      const dist = Array.isArray(distRes.data) ? distRes.data : distRes.data?.data || [];
+      const dept = Array.isArray(deptRes.data) ? deptRes.data : deptRes.data?.data || [];
+      const goal = goalRes.data?.data || goalRes.data || {};
+      const review = reviewRes.data?.data || reviewRes.data || {};
+      const trends = Array.isArray(trendRes.data) ? trendRes.data : trendRes.data?.data || [];
+      setData({
+        performanceDistribution: dist,
+        departmentComparison: dept,
+        goalAchievementRate: goal.goalAchievementRate ?? goal.rate ?? 0,
+        totalGoals: goal.totalGoals ?? goal.total ?? 0,
+        completedGoals: goal.completedGoals ?? goal.completed ?? 0,
+        reviewCompletionRate: review.reviewCompletionRate ?? review.rate ?? 0,
+        totalReviews: review.totalReviews ?? review.total ?? 0,
+        completedReviews: review.completedReviews ?? review.completed ?? 0,
+        yoyTrend: trends,
+      });
     } catch {
       setError('Failed to load performance analytics.');
     } finally {

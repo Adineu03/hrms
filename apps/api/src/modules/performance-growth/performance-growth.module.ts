@@ -45,10 +45,6 @@ import { DevelopmentPlanService } from './features/employee/development-plan.ser
 import { CareerGrowthController } from './features/employee/career-growth.controller';
 import { CareerGrowthService } from './features/employee/career-growth.service';
 
-// AI features
-import { PerformanceGrowthAiController } from './features/ai/ai.controller';
-import { PerformanceGrowthAiService } from './features/ai/ai.service';
-
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -73,8 +69,6 @@ import { PerformanceGrowthAiService } from './features/ai/ai.service';
     MyReviewsController,
     DevelopmentPlanController,
     CareerGrowthController,
-    // AI
-    PerformanceGrowthAiController,
   ],
   providers: [
     // Admin
@@ -98,8 +92,6 @@ import { PerformanceGrowthAiService } from './features/ai/ai.service';
     MyReviewsService,
     DevelopmentPlanService,
     CareerGrowthService,
-    // AI
-    PerformanceGrowthAiService,
   ],
 })
 export class PerformanceGrowthModule implements OnModuleInit {

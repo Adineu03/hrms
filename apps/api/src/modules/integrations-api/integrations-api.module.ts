@@ -35,10 +35,6 @@ import { MyDataExportController } from './features/employee/my-data-export.contr
 import { ConnectedAppsService } from './features/employee/connected-apps.service';
 import { MyDataExportService } from './features/employee/my-data-export.service';
 
-// AI
-import { IntegrationsAiInsightsController } from './features/ai/ai-insights.controller';
-import { IntegrationsAiInsightsService } from './features/ai/ai-insights.service';
-
 @Module({
   imports: [SetupEngineModule],
   controllers: [
@@ -55,8 +51,6 @@ import { IntegrationsAiInsightsService } from './features/ai/ai-insights.service
     // Employee
     ConnectedAppsController,
     MyDataExportController,
-    // AI
-    IntegrationsAiInsightsController,
   ],
   providers: [
     // Admin
@@ -72,8 +66,6 @@ import { IntegrationsAiInsightsService } from './features/ai/ai-insights.service
     // Employee
     ConnectedAppsService,
     MyDataExportService,
-    // AI
-    IntegrationsAiInsightsService,
   ],
 })
 export class IntegrationsApiModule implements OnModuleInit {

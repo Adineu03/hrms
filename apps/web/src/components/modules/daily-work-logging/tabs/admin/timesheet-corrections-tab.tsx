@@ -73,8 +73,8 @@ export default function TimesheetCorrectionsTab() {
   const loadData = useCallback(async () => {
     try {
       const [auditRes, disputeRes] = await Promise.all([
-        api.get('/daily-work-logging/admin/corrections/audit-trail'),
-        api.get('/daily-work-logging/admin/corrections/disputes'),
+        api.get('/daily-work-logging/admin/corrections/audit-trail').catch(() => ({ data: [] })),
+        api.get('/daily-work-logging/admin/corrections/disputes').catch(() => ({ data: [] })),
       ]);
       setAuditTrail(Array.isArray(auditRes.data) ? auditRes.data : auditRes.data?.data || []);
       setDisputes(Array.isArray(disputeRes.data) ? disputeRes.data : disputeRes.data?.data || []);

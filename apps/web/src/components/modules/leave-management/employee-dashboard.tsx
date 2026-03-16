@@ -8,7 +8,6 @@ import {
   CalendarDays,
   Gift,
   TrendingUp,
-  Sparkles,
 } from 'lucide-react';
 import ApplyLeaveTab from './tabs/employee/apply-leave-tab';
 import LeaveBalanceTab from './tabs/employee/leave-balance-tab';
@@ -16,7 +15,6 @@ import LeaveHistoryTab from './tabs/employee/leave-history-tab';
 import LeaveCalendarTab from './tabs/employee/leave-calendar-tab';
 import CompoffTab from './tabs/employee/compoff-tab';
 import LeaveInsightsTab from './tabs/employee/leave-insights-tab';
-import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'apply', label: 'Apply Leave', icon: PlusCircle },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'calendar', label: 'Leave Calendar', icon: CalendarDays },
   { id: 'compoff', label: 'Comp-Off', icon: Gift },
   { id: 'insights', label: 'Insights', icon: TrendingUp },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function EmployeeDashboard() {
         {activeTab === 'calendar' && <LeaveCalendarTab />}
         {activeTab === 'compoff' && <CompoffTab />}
         {activeTab === 'insights' && <LeaveInsightsTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

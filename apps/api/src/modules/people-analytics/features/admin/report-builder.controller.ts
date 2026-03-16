@@ -24,7 +24,8 @@ export class ReportBuilderController {
 
   @Post()
   async createReport(@Body() body: Record<string, unknown>) {
-    return this.service.createReport(this.getOrgIdOrThrow(), body);
+    const userId = this.tenantService.getUserId();
+    return this.service.createReport(this.getOrgIdOrThrow(), body, userId);
   }
 
   @Delete(':id')

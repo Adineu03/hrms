@@ -73,7 +73,7 @@ export default function OvertimeConfigTab() {
   const loadData = async () => {
     try {
       const [statsRes, requestsRes] = await Promise.all([
-        api.get('/attendance/admin/overtime/stats'),
+        api.get('/attendance/admin/overtime/summary'),
         api.get('/attendance/admin/overtime/requests'),
       ]);
       const statsData = statsRes.data?.data || statsRes.data;

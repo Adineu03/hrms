@@ -334,14 +334,14 @@ export default function IntegrationExportTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {correlationData.map((entry) => (
-                  <tr key={entry.employeeId} className="bg-card hover:bg-background/50 transition-colors">
+                {correlationData.map((entry, idx) => (
+                  <tr key={entry.employeeId || idx} className="bg-card hover:bg-background/50 transition-colors">
                     <td className="px-4 py-3 text-sm text-text font-medium">{entry.employeeName}</td>
-                    <td className="px-4 py-3 text-sm text-text-muted">{entry.timesheetHours.toFixed(1)}</td>
-                    <td className="px-4 py-3 text-sm text-text-muted">{entry.attendanceHours.toFixed(1)}</td>
+                    <td className="px-4 py-3 text-sm text-text-muted">{(entry.timesheetHours ?? 0).toFixed(1)}</td>
+                    <td className="px-4 py-3 text-sm text-text-muted">{(entry.attendanceHours ?? 0).toFixed(1)}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={entry.variance === 0 ? 'text-green-700' : 'text-yellow-700'}>
-                        {entry.variance >= 0 ? '+' : ''}{entry.variance.toFixed(1)}
+                      <span className={(entry.variance ?? 0) === 0 ? 'text-green-700' : 'text-yellow-700'}>
+                        {(entry.variance ?? 0) >= 0 ? '+' : ''}{(entry.variance ?? 0).toFixed(1)}
                       </span>
                     </td>
                     <td className="px-4 py-3">

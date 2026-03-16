@@ -1,19 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Calculator, Banknote, Receipt, Sparkles } from 'lucide-react';
+import { FileText, Calculator, Banknote, Receipt } from 'lucide-react';
 import MyPayslipsTab from './tabs/employee/my-payslips-tab';
 import TaxManagementTab from './tabs/employee/tax-management-tab';
 import SalaryStructureTab from './tabs/employee/salary-structure-tab';
 import ReimbursementsClaimsTab from './tabs/employee/reimbursements-claims-tab';
-import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'payslips', label: 'My Payslips', icon: FileText },
   { id: 'tax', label: 'Tax Management', icon: Calculator },
   { id: 'salary', label: 'Salary Structure', icon: Banknote },
   { id: 'reimbursements', label: 'Reimbursements & Claims', icon: Receipt },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -51,7 +49,6 @@ export default function EmployeeDashboard() {
         {activeTab === 'tax' && <TaxManagementTab />}
         {activeTab === 'salary' && <SalaryStructureTab />}
         {activeTab === 'reimbursements' && <ReimbursementsClaimsTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

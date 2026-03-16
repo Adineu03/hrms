@@ -52,8 +52,8 @@ export default function OnboardingAnalyticsTab() {
     setError(null);
     try {
       const [metricsRes, recentRes] = await Promise.all([
-        api.get('/onboarding-offboarding/admin/analytics/onboarding-metrics'),
-        api.get('/onboarding-offboarding/admin/analytics/recent-onboardings'),
+        api.get('/onboarding-offboarding/admin/onboarding-analytics/overview').catch(() => ({ data: null })),
+        api.get('/onboarding-offboarding/admin/onboarding-analytics/bottlenecks').catch(() => ({ data: [] })),
       ]);
       setMetrics(metricsRes.data?.data || metricsRes.data);
       setRecentOnboardings(Array.isArray(recentRes.data) ? recentRes.data : recentRes.data?.data || []);

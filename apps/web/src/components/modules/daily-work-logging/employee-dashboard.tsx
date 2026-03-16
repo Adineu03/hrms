@@ -8,7 +8,6 @@ import {
   History,
   BarChart3,
   Timer,
-  Sparkles,
 } from 'lucide-react';
 import DailyTimesheetTab from './tabs/employee/daily-timesheet-tab';
 import WeeklyTimesheetTab from './tabs/employee/weekly-timesheet-tab';
@@ -16,7 +15,6 @@ import ActivityLogTab from './tabs/employee/activity-log-tab';
 import TimesheetHistoryTab from './tabs/employee/timesheet-history-tab';
 import ProductivityDashboardTab from './tabs/employee/productivity-dashboard-tab';
 import TimerTab from './tabs/employee/timer-tab';
-import AiInsightsTab from './tabs/employee/ai-insights-tab';
 
 const TABS = [
   { id: 'timesheet', label: 'Daily Timesheet', icon: Clock },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'history', label: 'History', icon: History },
   { id: 'productivity', label: 'My Productivity', icon: BarChart3 },
   { id: 'timer', label: 'Timer', icon: Timer },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function EmployeeDashboard() {
         {activeTab === 'history' && <TimesheetHistoryTab />}
         {activeTab === 'productivity' && <ProductivityDashboardTab />}
         {activeTab === 'timer' && <TimerTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

@@ -2,12 +2,10 @@
 import { useState } from 'react';
 import DemoOnboardingTour from './employee/demo-onboarding-tour';
 import FeatureHighlights from './employee/feature-highlights';
-import AiInsights from './employee/ai-insights';
 
 const TABS = [
   { id: 'onboarding-tour', label: 'Onboarding Tour' },
   { id: 'feature-highlights', label: 'Feature Highlights' },
-  { id: 'ai-insights', label: 'AI Insights' },
 ];
 
 export default function EmployeeDashboard() {
@@ -41,7 +39,6 @@ export default function EmployeeDashboard() {
       <div>
         {activeTab === 'onboarding-tour' && <DemoOnboardingTour />}
         {activeTab === 'feature-highlights' && <FeatureHighlights />}
-        {activeTab === 'ai-insights' && <AiInsights />}
       </div>
     </div>
   );

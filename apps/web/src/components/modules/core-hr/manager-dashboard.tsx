@@ -8,7 +8,6 @@ import {
   BarChart3,
   ShieldCheck,
   FileText,
-  Sparkles,
 } from 'lucide-react';
 import TeamDirectoryTab from './tabs/manager/team-directory-tab';
 import TeamOrgTab from './tabs/manager/team-org-tab';
@@ -16,7 +15,6 @@ import CompensationTab from './tabs/manager/compensation-tab';
 import HeadcountTab from './tabs/manager/headcount-tab';
 import TeamComplianceTab from './tabs/manager/team-compliance-tab';
 import ChangeRequestsTab from './tabs/manager/change-requests-tab';
-import AiInsightsTab from './tabs/manager/ai-insights-tab';
 
 const TABS = [
   { id: 'team', label: 'Team Directory', icon: Users },
@@ -25,7 +23,6 @@ const TABS = [
   { id: 'headcount', label: 'Headcount', icon: BarChart3 },
   { id: 'compliance', label: 'Team Compliance', icon: ShieldCheck },
   { id: 'requests', label: 'Change Requests', icon: FileText },
-  { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -67,7 +64,6 @@ export default function ManagerDashboard() {
         {activeTab === 'headcount' && <HeadcountTab />}
         {activeTab === 'compliance' && <TeamComplianceTab />}
         {activeTab === 'requests' && <ChangeRequestsTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );

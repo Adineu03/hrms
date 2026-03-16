@@ -10,7 +10,6 @@ import {
   Users,
   Shield,
   Upload,
-  Sparkles,
 } from 'lucide-react';
 import OrganizationTab from './tabs/organization-tab';
 import LocationsTab from './tabs/locations-tab';
@@ -20,7 +19,6 @@ import GradesTab from './tabs/grades-tab';
 import UsersTab from './tabs/users-tab';
 import PoliciesTab from './tabs/policies-tab';
 import ImportTab from './tabs/import-tab';
-import AiInsightsTab from './tabs/ai-insights-tab';
 
 const TABS = [
   { id: 'organization', label: 'Organization', icon: Building2 },
@@ -31,7 +29,6 @@ const TABS = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'policies', label: 'Policies', icon: Shield },
   { id: 'import', label: 'Import', icon: Upload },
-  { id: 'ai-insights', label: 'AI Assistance', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -79,7 +76,6 @@ export default function AdminSettingsDashboard() {
         {activeTab === 'users' && <UsersTab />}
         {activeTab === 'policies' && <PoliciesTab />}
         {activeTab === 'import' && <ImportTab />}
-        {activeTab === 'ai-insights' && <AiInsightsTab />}
       </div>
     </div>
   );
