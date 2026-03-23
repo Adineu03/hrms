@@ -48,13 +48,13 @@ export default function WellnessPortalTab() {
       setLoading(true);
       setError('');
       const [programsRes, participationsRes, pointsRes] = await Promise.all([
-        api.get('/engagement-culture/employee/wellness/programs'),
-        api.get('/engagement-culture/employee/wellness/my-participations'),
-        api.get('/engagement-culture/employee/wellness/points'),
+        api.get('/engagement-culture/employee/wellness/programs').catch(() => ({ data: { data: [] } })),
+        api.get('/engagement-culture/employee/wellness/my-participations').catch(() => ({ data: { data: [] } })),
+        api.get('/engagement-culture/employee/wellness/points').catch(() => ({ data: { data: { points: 0 } } })),
       ]);
 
-      const programs = Array.isArray(programsRes.data) ? programsRes.data : programsRes.data?.data || [];
-      const participations = Array.isArray(participationsRes.data) ? participationsRes.data : participationsRes.data?.data || [];
+      const programs = Array.isArray(programsRes.data) ? programsRes.data : Array.isArray(programsRes.data?.data) ? programsRes.data.data : [];
+      const participations = Array.isArray(participationsRes.data) ? participationsRes.data : Array.isArray(participationsRes.data?.data) ? participationsRes.data.data : [];
       const pointsData = pointsRes.data?.data || pointsRes.data || {};
 
       setData({
@@ -76,7 +76,7 @@ export default function WellnessPortalTab() {
   const handleEnroll = async (programId: string) => {
     try {
       setError('');
-      await api.post(`/engagement-culture/employee/wellness/enroll`, { programId });
+      await api.post(`/engagement-culture/employee/wellness/programs/${programId}/enroll`);
       setSuccess('Enrolled in program successfully.');
       loadData();
     } catch {

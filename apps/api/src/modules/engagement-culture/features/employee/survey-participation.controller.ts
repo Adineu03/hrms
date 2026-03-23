@@ -30,10 +30,23 @@ export class SurveyParticipationController {
     return this.service.listActiveSurveys(orgId, userId);
   }
 
+  @Get('my-responses')
+  async getMyResponses() {
+    const orgId = this.getOrgIdOrThrow();
+    const userId = this.getUserIdOrThrow();
+    return this.service.getMyResponses(orgId, userId);
+  }
+
   @Get(':id')
   async getSurveyDetails(@Param('id') id: string) {
     const orgId = this.getOrgIdOrThrow();
     return this.service.getSurveyDetails(orgId, id);
+  }
+
+  @Get(':id/questions')
+  async getSurveyQuestions(@Param('id') id: string) {
+    const orgId = this.getOrgIdOrThrow();
+    return this.service.getSurveyQuestions(orgId, id);
   }
 
   @Post(':id/submit')
@@ -41,13 +54,6 @@ export class SurveyParticipationController {
     const orgId = this.getOrgIdOrThrow();
     const userId = this.getUserIdOrThrow();
     return this.service.submitSurveyResponse(orgId, userId, id, dto);
-  }
-
-  @Get('my-responses')
-  async getMyResponses() {
-    const orgId = this.getOrgIdOrThrow();
-    const userId = this.getUserIdOrThrow();
-    return this.service.getMyResponses(orgId, userId);
   }
 
   @Post('feedback')

@@ -53,11 +53,13 @@ export default function DocumentSubmissionTab() {
     try {
       setIsLoading(true);
       const [docRes, policyRes] = await Promise.all([
-        api.get('/onboarding-offboarding/employee/documents'),
-        api.get('/onboarding-offboarding/employee/policy-acknowledgements'),
+        api.get('/onboarding-offboarding/employee/documents').catch(() => ({ data: [] })),
+        api.get('/onboarding-offboarding/employee/documents/offer-letter').catch(() => ({ data: [] })),
       ]);
-      setDocuments(Array.isArray(docRes.data) ? docRes.data : docRes.data?.data || []);
-      setPolicies(Array.isArray(policyRes.data) ? policyRes.data : policyRes.data?.data || []);
+      const docData = docRes.data;
+      setDocuments(Array.isArray(docData) ? docData : Array.isArray(docData?.data) ? docData.data : []);
+      const polData = policyRes.data;
+      setPolicies(Array.isArray(polData) ? polData : Array.isArray(polData?.data) ? polData.data : []);
     } catch {
       setError('Failed to load documents.');
     } finally {
@@ -101,7 +103,7 @@ export default function DocumentSubmissionTab() {
   const handleAcknowledgePolicy = async (policyId: string) => {
     setError(null);
     try {
-      await api.patch(`/onboarding-offboarding/employee/policy-acknowledgements/${policyId}/acknowledge`);
+      await api.post('/onboarding-offboarding/employee/documents/policy-acknowledgement', { policyId });
       setSuccess('Policy acknowledged.');
       loadData();
       setTimeout(() => setSuccess(null), 3000);

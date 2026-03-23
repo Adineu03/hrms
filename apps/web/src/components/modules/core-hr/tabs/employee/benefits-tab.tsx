@@ -59,10 +59,14 @@ export default function BenefitsTab() {
         api.get('/core-hr/employee/benefits/plans'),
         api.get('/core-hr/employee/benefits/my-enrollments'),
       ]);
-      setPlans(plansRes.data);
-      setEnrollments(enrollmentsRes.data);
+      const rawPlans = plansRes.data;
+      setPlans(Array.isArray(rawPlans) ? rawPlans : Array.isArray(rawPlans?.data) ? rawPlans.data : []);
+      const rawEnroll = enrollmentsRes.data;
+      setEnrollments(Array.isArray(rawEnroll) ? rawEnroll : Array.isArray(rawEnroll?.data) ? rawEnroll.data : []);
     } catch {
       setError('Failed to load benefits information.');
+      setPlans([]);
+      setEnrollments([]);
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +80,8 @@ export default function BenefitsTab() {
       setSuccessMessage('Successfully enrolled in benefit plan.');
       // Refresh enrollments
       const enrollmentsRes = await api.get('/core-hr/employee/benefits/my-enrollments');
-      setEnrollments(enrollmentsRes.data);
+      const rawEnroll = enrollmentsRes.data;
+      setEnrollments(Array.isArray(rawEnroll) ? rawEnroll : Array.isArray(rawEnroll?.data) ? rawEnroll.data : []);
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch {
       setError('Failed to enroll in benefit plan.');
@@ -175,7 +180,7 @@ export default function BenefitsTab() {
                         Employer
                       </p>
                       <p className="text-sm font-semibold text-text">
-                        {plan.employerContribution.toLocaleString('en-IN', {
+                        {(plan.employerContribution ?? 0).toLocaleString('en-IN', {
                           style: 'currency',
                           currency: 'INR',
                           minimumFractionDigits: 0,
@@ -188,7 +193,7 @@ export default function BenefitsTab() {
                         Employee
                       </p>
                       <p className="text-sm font-semibold text-text">
-                        {plan.employeeContribution.toLocaleString('en-IN', {
+                        {(plan.employeeContribution ?? 0).toLocaleString('en-IN', {
                           style: 'currency',
                           currency: 'INR',
                           minimumFractionDigits: 0,

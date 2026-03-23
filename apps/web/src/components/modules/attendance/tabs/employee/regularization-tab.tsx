@@ -91,12 +91,14 @@ export default function RegularizationTab() {
     setError(null);
     try {
       const [missedRes, requestsRes, policyRes] = await Promise.all([
-        api.get('/attendance/employee/regularizations/missed-punches'),
-        api.get('/attendance/employee/regularizations'),
-        api.get('/attendance/employee/regularizations/policy'),
+        api.get('/attendance/employee/regularizations/missed-punches').catch(() => ({ data: [] })),
+        api.get('/attendance/employee/regularizations').catch(() => ({ data: [] })),
+        api.get('/attendance/employee/regularizations/deadline').catch(() => ({ data: null })),
       ]);
-      setMissedPunches(Array.isArray(missedRes.data) ? missedRes.data : missedRes.data.data || []);
-      setRequests(Array.isArray(requestsRes.data) ? requestsRes.data : requestsRes.data.data || []);
+      const missedData = missedRes.data;
+      setMissedPunches(Array.isArray(missedData) ? missedData : Array.isArray(missedData?.data) ? missedData.data : []);
+      const reqData = requestsRes.data;
+      setRequests(Array.isArray(reqData) ? reqData : Array.isArray(reqData?.data) ? reqData.data : []);
       setPolicy(policyRes.data || null);
     } catch {
       setError('Failed to load regularization data.');

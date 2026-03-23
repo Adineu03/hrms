@@ -95,13 +95,15 @@ export default function TaxManagementTab() {
       setLoading(true);
       setError('');
       const [declRes, proofsRes, compRes] = await Promise.all([
-        api.get('/payroll-processing/employee/tax/declarations'),
-        api.get('/payroll-processing/employee/tax/proofs'),
-        api.get('/payroll-processing/employee/tax/computation'),
+        api.get('/payroll-processing/employee/tax/declarations').catch(() => ({ data: [] })),
+        api.get('/payroll-processing/employee/tax/proofs').catch(() => ({ data: [] })),
+        api.get('/payroll-processing/employee/tax/computation').catch(() => ({ data: {} })),
       ]);
 
-      const declData = Array.isArray(declRes.data) ? declRes.data : declRes.data?.data || [];
-      const proofsData = Array.isArray(proofsRes.data) ? proofsRes.data : proofsRes.data?.data || [];
+      const rawDecl = declRes.data?.data ?? declRes.data;
+      const declData = Array.isArray(rawDecl) ? rawDecl : [];
+      const rawProofs = proofsRes.data?.data ?? proofsRes.data;
+      const proofsData = Array.isArray(rawProofs) ? rawProofs : [];
       const compData = compRes.data?.data || compRes.data || {};
 
       setDeclarations(declData);
@@ -142,7 +144,7 @@ export default function TaxManagementTab() {
     setEditingDeclaration(d);
     setFormFiscalYear(d.fiscalYear);
     setFormTaxRegime(d.taxRegime);
-    setFormSections(d.sections?.length > 0 ? d.sections : [{ section: '80C', amount: 0, description: '' }]);
+    setFormSections(Array.isArray(d.sections) && d.sections.length > 0 ? d.sections : [{ section: '80C', amount: 0, description: '' }]);
     setShowDeclarationModal(true);
   };
 

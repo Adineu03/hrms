@@ -85,10 +85,14 @@ export default function SelfServiceTab() {
         api.get('/core-hr/employee/requests'),
         api.get('/core-hr/employee/requests/types'),
       ]);
-      setRequests(requestsRes.data);
-      setRequestTypes(typesRes.data);
+      const rawReqs = requestsRes.data;
+      setRequests(Array.isArray(rawReqs) ? rawReqs : Array.isArray(rawReqs?.data) ? rawReqs.data : []);
+      const rawTypes = typesRes.data;
+      setRequestTypes(Array.isArray(rawTypes) ? rawTypes : Array.isArray(rawTypes?.data) ? rawTypes.data : []);
     } catch {
       setError('Failed to load requests.');
+      setRequests([]);
+      setRequestTypes([]);
     } finally {
       setIsLoading(false);
     }

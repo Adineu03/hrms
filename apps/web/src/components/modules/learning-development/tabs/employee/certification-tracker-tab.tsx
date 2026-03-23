@@ -76,11 +76,13 @@ export default function CertificationTrackerTab() {
     try {
       setIsLoading(true);
       const [certRes, alertRes] = await Promise.all([
-        api.get('/learning-development/employee/certifications'),
-        api.get('/learning-development/employee/certifications/expiry-alerts'),
+        api.get('/learning-development/employee/certifications').catch(() => ({ data: [] })),
+        api.get('/learning-development/employee/certifications/expiring').catch(() => ({ data: [] })),
       ]);
-      setCertifications(Array.isArray(certRes.data) ? certRes.data : certRes.data?.data || []);
-      setExpiryAlerts(Array.isArray(alertRes.data) ? alertRes.data : alertRes.data?.data || []);
+      const certRaw = certRes.data;
+      setCertifications(Array.isArray(certRaw) ? certRaw : Array.isArray(certRaw?.data) ? certRaw.data : []);
+      const alertRaw = alertRes.data;
+      setExpiryAlerts(Array.isArray(alertRaw) ? alertRaw : Array.isArray(alertRaw?.data) ? alertRaw.data : []);
     } catch {
       setError('Failed to load certifications.');
     } finally {

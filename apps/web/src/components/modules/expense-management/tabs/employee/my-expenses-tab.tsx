@@ -93,7 +93,7 @@ export default function MyExpensesTab() {
     try {
       setLoading(true);
       setError('');
-      const res = await api.get('/expense-management/employee/my-expenses/reports');
+      const res = await api.get('/expense-management/employee/my-expenses/reports').catch(() => ({ data: [] }));
       const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
       setReports(data);
     } catch {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -118,9 +118,10 @@ export default function LeaveHistoryTab() {
       const allRecords = Array.isArray(histData) ? histData : histData?.data || [];
       const summary: YtdSummary = { totalUsed: 0, totalPending: 0, totalCancelled: 0 };
       allRecords.forEach((r: LeaveRecord) => {
-        if (r.status === 'approved') summary.totalUsed += r.days;
-        if (r.status === 'pending') summary.totalPending += r.days;
-        if (r.status === 'cancelled') summary.totalCancelled += r.days;
+        const days = Number(r.days) || 0;
+        if (r.status === 'approved') summary.totalUsed += days;
+        if (r.status === 'pending') summary.totalPending += days;
+        if (r.status === 'cancelled') summary.totalCancelled += days;
       });
       setYtdSummary(summary);
 
@@ -301,10 +302,9 @@ export default function LeaveHistoryTab() {
               </tr>
             </thead>
             <tbody>
-              {records.map((rec) => (
-                <>
+              {records.map((rec, idx) => (
+                <React.Fragment key={rec.id || idx}>
                   <tr
-                    key={rec.id}
                     className="border-b border-border last:border-0 hover:bg-background/50 cursor-pointer"
                     onClick={() => handleExpand(rec.id)}
                   >
@@ -434,7 +434,7 @@ export default function LeaveHistoryTab() {
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>

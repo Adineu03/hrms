@@ -75,12 +75,13 @@ export default function SelfReviewTab() {
     try {
       setIsLoading(true);
       const [currentRes, prevRes] = await Promise.all([
-        api.get('/performance-growth/employee/self-review/current'),
-        api.get('/performance-growth/employee/self-review/history'),
+        api.get('/performance-growth/employee/self-review').catch(() => ({ data: null })),
+        api.get('/performance-growth/employee/self-review/previous').catch(() => ({ data: [] })),
       ]);
       const current = currentRes.data?.data || currentRes.data;
       setCurrentReview(current);
-      setPreviousReviews(Array.isArray(prevRes.data) ? prevRes.data : prevRes.data?.data || []);
+      const prevData = prevRes.data?.data ?? prevRes.data;
+      setPreviousReviews(Array.isArray(prevData) ? prevData : []);
 
       if (current) {
         setSelfRating(current.selfRating || 0);
@@ -108,7 +109,7 @@ export default function SelfReviewTab() {
     setIsSaving(true);
     setError(null);
     try {
-      await api.patch(`/performance-growth/employee/self-review/${currentReview.id}/draft`, {
+      await api.patch(`/performance-growth/employee/self-review/${currentReview.id}`, {
         selfRating,
         selfComments,
         achievements: achievements.filter((a) => a.trim()),

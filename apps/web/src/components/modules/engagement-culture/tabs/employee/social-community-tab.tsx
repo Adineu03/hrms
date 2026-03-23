@@ -54,12 +54,12 @@ export default function SocialCommunityTab() {
       setLoading(true);
       setError('');
       const [feedRes, groupsRes] = await Promise.all([
-        api.get('/engagement-culture/employee/social/feed'),
-        api.get('/engagement-culture/employee/social/groups'),
+        api.get('/engagement-culture/employee/social/feed').catch(() => ({ data: { data: [] } })),
+        api.get('/engagement-culture/employee/social/groups').catch(() => ({ data: { data: [] } })),
       ]);
 
-      const feedData = Array.isArray(feedRes.data) ? feedRes.data : feedRes.data?.data || [];
-      const groupsData = Array.isArray(groupsRes.data) ? groupsRes.data : groupsRes.data?.data || [];
+      const feedData = Array.isArray(feedRes.data) ? feedRes.data : Array.isArray(feedRes.data?.data) ? feedRes.data.data : [];
+      const groupsData = Array.isArray(groupsRes.data) ? groupsRes.data : Array.isArray(groupsRes.data?.data) ? groupsRes.data.data : [];
 
       setPosts(feedData);
       setGroups(groupsData);

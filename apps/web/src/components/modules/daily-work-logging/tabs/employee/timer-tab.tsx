@@ -113,15 +113,17 @@ export default function TimerTab() {
     setError(null);
     try {
       const [activeRes, histRes, summaryRes, projRes, catRes] = await Promise.all([
-        api.get('/daily-work-logging/employee/timer/active'),
-        api.get('/daily-work-logging/employee/timer/history'),
-        api.get('/daily-work-logging/employee/timer/daily-summary'),
-        api.get('/daily-work-logging/employee/timesheet/projects'),
-        api.get('/daily-work-logging/employee/timesheet/categories'),
+        api.get('/daily-work-logging/employee/timer/active').catch(() => null),
+        api.get('/daily-work-logging/employee/timer/history').catch(() => null),
+        api.get('/daily-work-logging/employee/timer/daily-summary').catch(() => null),
+        api.get('/daily-work-logging/employee/timesheet/projects').catch(() => null),
+        api.get('/daily-work-logging/employee/timesheet/categories').catch(() => null),
       ]);
-      setActiveTimers(Array.isArray(activeRes.data) ? activeRes.data : activeRes.data?.data || []);
-      setHistory(Array.isArray(histRes.data) ? histRes.data : histRes.data?.data || []);
-      const sumData = summaryRes.data?.data || summaryRes.data;
+      const activeData = activeRes?.data;
+      setActiveTimers(Array.isArray(activeData) ? activeData : Array.isArray(activeData?.data) ? activeData.data : []);
+      const histData = histRes?.data;
+      setHistory(Array.isArray(histData) ? histData : Array.isArray(histData?.data) ? histData.data : []);
+      const sumData = summaryRes?.data?.data || summaryRes?.data;
       if (sumData) {
         setDailySummary({
           totalTracked: sumData.totalTracked || 0,
@@ -129,8 +131,10 @@ export default function TimerTab() {
           billableTracked: sumData.billableTracked || 0,
         });
       }
-      setProjects(Array.isArray(projRes.data) ? projRes.data : projRes.data?.data || []);
-      setCategories(Array.isArray(catRes.data) ? catRes.data : catRes.data?.data || []);
+      const projData = projRes?.data;
+      setProjects(Array.isArray(projData) ? projData : Array.isArray(projData?.data) ? projData.data : []);
+      const catData = catRes?.data;
+      setCategories(Array.isArray(catData) ? catData : Array.isArray(catData?.data) ? catData.data : []);
     } catch {
       setError('Failed to load timer data.');
     } finally {
@@ -146,7 +150,7 @@ export default function TimerTab() {
     if (!timer.isRunning) return 0;
     const started = new Date(timer.startedAt).getTime();
     const elapsed = Math.floor((now.getTime() - started) / 1000);
-    return Math.max(0, elapsed - timer.pausedDuration);
+    return Math.max(0, elapsed - (timer.pausedDuration ?? 0));
   };
 
   const handleStart = async () => {
@@ -466,7 +470,7 @@ export default function TimerTab() {
                     {new Date(entry.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td className="px-4 py-3 text-sm text-text font-mono font-medium">
-                    {formatDuration(entry.duration)}
+                    {formatDuration(entry.duration ?? 0)}
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">{entry.billable ? 'Yes' : 'No'}</td>
                   <td className="px-4 py-3">

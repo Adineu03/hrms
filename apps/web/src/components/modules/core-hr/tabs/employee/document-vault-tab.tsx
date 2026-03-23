@@ -80,9 +80,11 @@ export default function DocumentVaultTab() {
     setError(null);
     try {
       const res = await api.get('/core-hr/employee/documents');
-      setDocuments(res.data);
+      const raw = res.data;
+      setDocuments(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
     } catch {
       setError('Failed to load documents.');
+      setDocuments([]);
     } finally {
       setIsLoading(false);
     }
@@ -91,9 +93,11 @@ export default function DocumentVaultTab() {
   const fetchExpiringDocuments = async () => {
     try {
       const res = await api.get('/core-hr/employee/documents/expiring');
-      setExpiringDocs(res.data);
+      const raw = res.data;
+      setExpiringDocs(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
     } catch {
       // Non-critical
+      setExpiringDocs([]);
     }
   };
 

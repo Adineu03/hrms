@@ -80,13 +80,16 @@ export default function DailyTimesheetTab() {
     setError(null);
     try {
       const [entriesRes, projectsRes, categoriesRes] = await Promise.all([
-        api.get(`/daily-work-logging/employee/timesheet?date=${selectedDate}`),
-        api.get('/daily-work-logging/employee/timesheet/projects'),
-        api.get('/daily-work-logging/employee/timesheet/categories'),
+        api.get(`/daily-work-logging/employee/timesheet?date=${selectedDate}`).catch(() => null),
+        api.get('/daily-work-logging/employee/timesheet/projects').catch(() => null),
+        api.get('/daily-work-logging/employee/timesheet/categories').catch(() => null),
       ]);
-      setEntries(Array.isArray(entriesRes.data) ? entriesRes.data : entriesRes.data?.data || []);
-      setProjects(Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.data || []);
-      setTaskCategories(Array.isArray(categoriesRes.data) ? categoriesRes.data : categoriesRes.data?.data || []);
+      const entriesData = entriesRes?.data;
+      setEntries(Array.isArray(entriesData) ? entriesData : Array.isArray(entriesData?.data) ? entriesData.data : []);
+      const projData = projectsRes?.data;
+      setProjects(Array.isArray(projData) ? projData : Array.isArray(projData?.data) ? projData.data : []);
+      const catData = categoriesRes?.data;
+      setTaskCategories(Array.isArray(catData) ? catData : Array.isArray(catData?.data) ? catData.data : []);
     } catch {
       setError('Failed to load timesheet data.');
     } finally {
@@ -210,8 +213,8 @@ export default function DailyTimesheetTab() {
     setSelectedDate(current.toISOString().split('T')[0]);
   };
 
-  const totalHours = entries.reduce((sum, e) => sum + e.hours, 0);
-  const totalBillable = entries.filter((e) => e.billable).reduce((sum, e) => sum + e.hours, 0);
+  const totalHours = entries.reduce((sum, e) => sum + (e.hours ?? 0), 0);
+  const totalBillable = entries.filter((e) => e.billable).reduce((sum, e) => sum + (e.hours ?? 0), 0);
 
   if (isLoading) {
     return (
@@ -322,7 +325,7 @@ export default function DailyTimesheetTab() {
               </div>
               <div>
                 <span className="text-xs text-text-muted">Hours</span>
-                <p className="text-sm font-medium text-primary">{entry.hours.toFixed(1)}h</p>
+                <p className="text-sm font-medium text-primary">{(entry.hours ?? 0).toFixed(1)}h</p>
               </div>
               <div>
                 <span className="text-xs text-text-muted">Billable</span>

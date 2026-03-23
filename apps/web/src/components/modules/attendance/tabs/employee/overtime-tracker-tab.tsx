@@ -87,13 +87,14 @@ export default function OvertimeTrackerTab() {
     setError(null);
     try {
       const [summaryRes, requestsRes, policyRes] = await Promise.all([
-        api.get('/attendance/employee/overtime/summary'),
-        api.get('/attendance/employee/overtime/requests'),
-        api.get('/attendance/employee/overtime/policy'),
+        api.get('/attendance/employee/overtime/summary').catch(() => ({ data: null })),
+        api.get('/attendance/employee/overtime/requests').catch(() => ({ data: [] })),
+        api.get('/attendance/employee/overtime/policy').catch(() => ({ data: null })),
       ]);
-      setSummary(summaryRes.data);
-      setRequests(Array.isArray(requestsRes.data) ? requestsRes.data : requestsRes.data.data || []);
-      setPolicy(policyRes.data);
+      setSummary(summaryRes.data || null);
+      const reqData = requestsRes.data;
+      setRequests(Array.isArray(reqData) ? reqData : Array.isArray(reqData?.data) ? reqData.data : []);
+      setPolicy(policyRes.data || null);
     } catch {
       setError('Failed to load overtime data.');
     } finally {
@@ -124,7 +125,7 @@ export default function OvertimeTrackerTab() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await api.post('/attendance/employee/overtime/requests', {
+      await api.post('/attendance/employee/overtime/request', {
         date: form.date,
         type: form.type,
         estimatedHours: hoursNum,
@@ -188,7 +189,7 @@ export default function OvertimeTrackerTab() {
               <Timer className="h-4 w-4 text-blue-500" />
               <span className="text-xs">Total OT This Month</span>
             </div>
-            <p className="text-2xl font-bold text-text">{summary.totalOtThisMonth.toFixed(1)}</p>
+            <p className="text-2xl font-bold text-text">{(summary.totalOtThisMonth ?? 0).toFixed(1)}</p>
             <p className="text-xs text-text-muted">hours</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4 text-center">
@@ -196,7 +197,7 @@ export default function OvertimeTrackerTab() {
               <CheckCircle2 className="h-4 w-4 text-green-500" />
               <span className="text-xs">Approved Hours</span>
             </div>
-            <p className="text-2xl font-bold text-text">{summary.approvedHours.toFixed(1)}</p>
+            <p className="text-2xl font-bold text-text">{(summary.approvedHours ?? 0).toFixed(1)}</p>
             <p className="text-xs text-text-muted">hours</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4 text-center">
@@ -212,7 +213,7 @@ export default function OvertimeTrackerTab() {
               <Gift className="h-4 w-4 text-purple-500" />
               <span className="text-xs">Comp-Off Balance</span>
             </div>
-            <p className="text-2xl font-bold text-text">{summary.compOffBalance.toFixed(1)}</p>
+            <p className="text-2xl font-bold text-text">{(summary.compOffBalance ?? 0).toFixed(1)}</p>
             <p className="text-xs text-text-muted">days</p>
           </div>
         </div>

@@ -83,14 +83,12 @@ export default function HandoverMgmtTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [handoverRes, colleaguesRes] = await Promise.all([
-        api.get('/onboarding-offboarding/employee/handover'),
-        api.get('/onboarding-offboarding/employee/colleagues'),
-      ]);
+      const handoverRes = await api.get('/onboarding-offboarding/employee/handover').catch(() => ({ data: null }));
       const data = handoverRes.data?.data || handoverRes.data;
-      setHandover(data);
+      setHandover(data && typeof data === 'object' && !Array.isArray(data) ? data : null);
       setCredentialsText(data?.credentials || '');
-      setColleagues(Array.isArray(colleaguesRes.data) ? colleaguesRes.data : colleaguesRes.data?.data || []);
+      // Colleagues endpoint not available; use empty list as fallback
+      setColleagues([]);
     } catch {
       setError('Failed to load handover document.');
     } finally {
@@ -102,6 +100,20 @@ export default function HandoverMgmtTab() {
     loadData();
   }, [loadData]);
 
+  const ensureHandoverId = async (): Promise<string | null> => {
+    if (handover?.id) return handover.id;
+    // Create a new handover document if none exists
+    try {
+      const res = await api.post('/onboarding-offboarding/employee/handover', {});
+      const created = res.data?.data || res.data;
+      if (created?.id) {
+        setHandover(created);
+        return created.id;
+      }
+    } catch { /* ignore */ }
+    return null;
+  };
+
   const handleAddTask = async () => {
     setError(null);
     if (!taskForm.title.trim()) {
@@ -110,7 +122,9 @@ export default function HandoverMgmtTab() {
     }
     setIsSaving(true);
     try {
-      await api.post('/onboarding-offboarding/employee/handover/tasks', taskForm);
+      const hId = await ensureHandoverId();
+      if (!hId) { setError('No handover document found.'); setIsSaving(false); return; }
+      await api.post(`/onboarding-offboarding/employee/handover/${hId}/tasks`, taskForm);
       setSuccess('Task added.');
       setShowTaskForm(false);
       setTaskForm(defaultTaskForm);
@@ -127,7 +141,9 @@ export default function HandoverMgmtTab() {
     if (!confirm('Delete this handover task?')) return;
     setError(null);
     try {
-      await api.delete(`/onboarding-offboarding/employee/handover/tasks/${taskId}`);
+      const hId = handover?.id;
+      if (!hId) { setError('No handover document found.'); return; }
+      await api.patch(`/onboarding-offboarding/employee/handover/${hId}`, { removeTaskId: taskId });
       setSuccess('Task removed.');
       loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -140,7 +156,9 @@ export default function HandoverMgmtTab() {
     setError(null);
     setIsSaving(true);
     try {
-      await api.patch('/onboarding-offboarding/employee/handover/credentials', { credentials: credentialsText });
+      const hId = await ensureHandoverId();
+      if (!hId) { setError('No handover document found.'); setIsSaving(false); return; }
+      await api.post(`/onboarding-offboarding/employee/handover/${hId}/credentials`, { credentials: credentialsText });
       setSuccess('Credentials saved.');
       setTimeout(() => setSuccess(null), 3000);
     } catch {
@@ -155,7 +173,9 @@ export default function HandoverMgmtTab() {
     setError(null);
     setIsSaving(true);
     try {
-      await api.patch('/onboarding-offboarding/employee/handover/submit');
+      const hId = handover?.id;
+      if (!hId) { setError('No handover document found.'); setIsSaving(false); return; }
+      await api.post(`/onboarding-offboarding/employee/handover/${hId}/submit`);
       setSuccess('Handover submitted for approval.');
       loadData();
       setTimeout(() => setSuccess(null), 3000);

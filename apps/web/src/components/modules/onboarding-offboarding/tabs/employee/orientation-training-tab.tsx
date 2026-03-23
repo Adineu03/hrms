@@ -62,10 +62,11 @@ export default function OrientationTrainingTab() {
     try {
       setIsLoading(true);
       const [modulesRes, progressRes] = await Promise.all([
-        api.get('/onboarding-offboarding/employee/training-modules'),
-        api.get('/onboarding-offboarding/employee/training-progress'),
+        api.get('/onboarding-offboarding/employee/orientation/modules').catch(() => ({ data: [] })),
+        api.get('/onboarding-offboarding/employee/orientation/completion-status').catch(() => ({ data: null })),
       ]);
-      setModules(Array.isArray(modulesRes.data) ? modulesRes.data : modulesRes.data?.data || []);
+      const modData = modulesRes.data;
+      setModules(Array.isArray(modData) ? modData : Array.isArray(modData?.data) ? modData.data : []);
       setProgress(progressRes.data?.data || progressRes.data);
     } catch {
       setError('Failed to load training modules.');
@@ -81,7 +82,7 @@ export default function OrientationTrainingTab() {
   const handleStartModule = async (moduleId: string) => {
     setError(null);
     try {
-      await api.patch(`/onboarding-offboarding/employee/training-modules/${moduleId}/start`);
+      await api.post(`/onboarding-offboarding/employee/orientation/modules/${moduleId}/complete`, { action: 'start' });
       setSuccess('Module started.');
       loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -94,7 +95,7 @@ export default function OrientationTrainingTab() {
     setError(null);
     setCompletingId(moduleId);
     try {
-      await api.patch(`/onboarding-offboarding/employee/training-modules/${moduleId}/complete`);
+      await api.post(`/onboarding-offboarding/employee/orientation/modules/${moduleId}/complete`);
       setSuccess('Module completed!');
       loadData();
       setTimeout(() => setSuccess(null), 3000);

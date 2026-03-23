@@ -86,8 +86,9 @@ export default function MyExitProcessTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/onboarding-offboarding/employee/exit-process');
-      setExitProcess(res.data?.data || res.data);
+      const res = await api.get('/onboarding-offboarding/employee/my-exit').catch(() => ({ data: null }));
+      const data = res.data?.data || res.data;
+      setExitProcess(data && typeof data === 'object' ? data : null);
     } catch {
       setError('Failed to load exit process.');
     } finally {
@@ -107,7 +108,7 @@ export default function MyExitProcessTab() {
     }
     setIsSaving(true);
     try {
-      await api.post('/onboarding-offboarding/employee/exit-process/resign', resignData);
+      await api.post('/onboarding-offboarding/employee/my-exit/resign', resignData);
       setSuccess('Resignation submitted successfully.');
       setShowResignForm(false);
       loadData();

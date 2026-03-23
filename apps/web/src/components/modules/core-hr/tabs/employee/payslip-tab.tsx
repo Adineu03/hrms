@@ -104,7 +104,7 @@ export default function PayslipTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {salaryStructure.components.map((comp, idx) => (
+                  {(salaryStructure.components ?? []).map((comp, idx) => (
                     <tr key={idx} className="bg-card hover:bg-background/50 transition-colors">
                       <td className="px-4 py-3 text-sm text-text font-medium">{comp.name}</td>
                       <td className="px-4 py-3 text-sm">
@@ -120,7 +120,7 @@ export default function PayslipTab() {
                       </td>
                       <td className="px-4 py-3 text-sm text-text text-right font-mono">
                         {comp.type === 'deduction' ? '-' : ''}
-                        {comp.amount.toLocaleString('en-IN', {
+                        {(comp.amount ?? 0).toLocaleString('en-IN', {
                           style: 'currency',
                           currency: 'INR',
                           minimumFractionDigits: 0,
@@ -135,7 +135,7 @@ export default function PayslipTab() {
                       Gross Salary
                     </td>
                     <td className="px-4 py-3 text-sm font-semibold text-text text-right font-mono">
-                      {salaryStructure.grossSalary.toLocaleString('en-IN', {
+                      {(salaryStructure.grossSalary ?? 0).toLocaleString('en-IN', {
                         style: 'currency',
                         currency: 'INR',
                         minimumFractionDigits: 0,
@@ -147,7 +147,7 @@ export default function PayslipTab() {
                       Net Salary
                     </td>
                     <td className="px-4 py-3 text-sm font-bold text-primary text-right font-mono">
-                      {salaryStructure.netSalary.toLocaleString('en-IN', {
+                      {(salaryStructure.netSalary ?? 0).toLocaleString('en-IN', {
                         style: 'currency',
                         currency: 'INR',
                         minimumFractionDigits: 0,

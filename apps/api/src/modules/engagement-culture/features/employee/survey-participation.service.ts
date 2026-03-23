@@ -55,6 +55,22 @@ export class SurveyParticipationService {
     return { data: surveys[0] };
   }
 
+  async getSurveyQuestions(orgId: string, surveyId: string) {
+    const surveys = await this.db
+      .select()
+      .from(schema.surveys)
+      .where(and(
+        eq(schema.surveys.id, surveyId),
+        eq(schema.surveys.orgId, orgId),
+        eq(schema.surveys.isActive, true),
+      ));
+
+    if (!surveys.length) throw new NotFoundException('Survey not found');
+
+    const questions = Array.isArray(surveys[0].questions) ? surveys[0].questions : [];
+    return { data: questions };
+  }
+
   async submitSurveyResponse(orgId: string, userId: string, surveyId: string, dto: { answers: any[] }) {
     // Check survey exists and is active
     const surveys = await this.db

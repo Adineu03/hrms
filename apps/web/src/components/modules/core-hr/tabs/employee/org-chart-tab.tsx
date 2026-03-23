@@ -104,9 +104,9 @@ function OrgTreeNode({
 
       {hasChildren && expanded && (
         <div className="border-l border-border ml-5">
-          {node.children!.map((child) => (
+          {node.children!.map((child, idx) => (
             <OrgTreeNode
-              key={child.userId}
+              key={child.userId || `child-${idx}`}
               node={child}
               onSelectNode={onSelectNode}
               selectedId={selectedId}
@@ -155,7 +155,8 @@ export default function OrgChartTab() {
     setIsSearching(true);
     try {
       const res = await api.get(`/core-hr/employee/org-chart/search?q=${encodeURIComponent(query.trim())}`);
-      setSearchResults(res.data);
+      const raw = res.data;
+      setSearchResults(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
     } catch {
       // Silently fail on search
       setSearchResults([]);
@@ -281,9 +282,9 @@ export default function OrgChartTab() {
             </div>
           ) : (
             <div className="border border-border rounded-lg p-4 bg-background overflow-auto max-h-[600px]">
-              {orgTree.map((node) => (
+              {orgTree.map((node, idx) => (
                 <OrgTreeNode
-                  key={node.userId}
+                  key={node.userId || `org-node-${idx}`}
                   node={node}
                   onSelectNode={handleSelectNode}
                   selectedId={selectedNodeId}

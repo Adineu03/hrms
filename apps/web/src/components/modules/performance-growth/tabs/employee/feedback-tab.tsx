@@ -106,15 +106,19 @@ export default function FeedbackTab() {
     try {
       setIsLoading(true);
       const [rcvRes, reqRes, kudosRes, colRes] = await Promise.all([
-        api.get('/performance-growth/employee/feedback/received'),
-        api.get('/performance-growth/employee/feedback/requests'),
-        api.get('/performance-growth/employee/feedback/kudos'),
-        api.get('/performance-growth/employee/feedback/colleagues'),
+        api.get('/performance-growth/employee/feedback').catch(() => ({ data: [] })),
+        api.get('/performance-growth/employee/feedback/requests').catch(() => ({ data: [] })),
+        api.get('/performance-growth/employee/feedback/wall').catch(() => ({ data: [] })),
+        api.get('/performance-growth/employee/feedback/given').catch(() => ({ data: [] })),
       ]);
-      setReceived(Array.isArray(rcvRes.data) ? rcvRes.data : rcvRes.data?.data || []);
-      setRequests(Array.isArray(reqRes.data) ? reqRes.data : reqRes.data?.data || []);
-      setKudos(Array.isArray(kudosRes.data) ? kudosRes.data : kudosRes.data?.data || []);
-      setColleagues(Array.isArray(colRes.data) ? colRes.data : colRes.data?.data || []);
+      const rcvData = rcvRes.data?.data ?? rcvRes.data;
+      setReceived(Array.isArray(rcvData) ? rcvData : []);
+      const reqData = reqRes.data?.data ?? reqRes.data;
+      setRequests(Array.isArray(reqData) ? reqData : []);
+      const kudosData = kudosRes.data?.data ?? kudosRes.data;
+      setKudos(Array.isArray(kudosData) ? kudosData : []);
+      const colData = colRes.data?.data ?? colRes.data;
+      setColleagues(Array.isArray(colData) ? colData : []);
     } catch {
       setError('Failed to load feedback data.');
     } finally {
@@ -134,7 +138,7 @@ export default function FeedbackTab() {
     }
     setIsSaving(true);
     try {
-      await api.post('/performance-growth/employee/feedback/give', feedbackForm);
+      await api.post('/performance-growth/employee/feedback', feedbackForm);
       setSuccess('Feedback sent successfully.');
       setFeedbackForm({ colleagueId: '', type: 'appreciation', category: 'work_quality', content: '', isAnonymous: false });
       loadData();
@@ -177,7 +181,7 @@ export default function FeedbackTab() {
     }
     setIsSaving(true);
     try {
-      await api.post(`/performance-growth/employee/feedback/requests/${requestId}/respond`, { content });
+      await api.post(`/performance-growth/employee/feedback/${requestId}/respond`, { content });
       setSuccess('Feedback request completed.');
       setRequestResponses((prev) => ({ ...prev, [requestId]: '' }));
       loadData();

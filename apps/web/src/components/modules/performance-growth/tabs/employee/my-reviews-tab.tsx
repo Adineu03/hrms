@@ -74,13 +74,15 @@ export default function MyReviewsTab() {
     try {
       setIsLoading(true);
       const [statusRes, historyRes, trendRes] = await Promise.all([
-        api.get('/performance-growth/employee/my-reviews/current'),
-        api.get('/performance-growth/employee/my-reviews/history'),
-        api.get('/performance-growth/employee/my-reviews/trend'),
+        api.get('/performance-growth/employee/my-reviews').catch(() => ({ data: null })),
+        api.get('/performance-growth/employee/my-reviews/completed').catch(() => ({ data: [] })),
+        api.get('/performance-growth/employee/my-reviews/comparison').catch(() => ({ data: [] })),
       ]);
       setCurrentStatus(statusRes.data?.data || statusRes.data);
-      setCompletedReviews(Array.isArray(historyRes.data) ? historyRes.data : historyRes.data?.data || []);
-      setYoyTrend(Array.isArray(trendRes.data) ? trendRes.data : trendRes.data?.data || []);
+      const histData = historyRes.data?.data ?? historyRes.data;
+      setCompletedReviews(Array.isArray(histData) ? histData : []);
+      const trendData = trendRes.data?.data ?? trendRes.data;
+      setYoyTrend(Array.isArray(trendData) ? trendData : []);
     } catch {
       setError('Failed to load review data.');
     } finally {
@@ -95,7 +97,7 @@ export default function MyReviewsTab() {
   const handleAcknowledge = async (reviewId: string) => {
     setIsSaving(true);
     try {
-      await api.patch(`/performance-growth/employee/my-reviews/${reviewId}/acknowledge`);
+      await api.post(`/performance-growth/employee/my-reviews/${reviewId}/acknowledge`);
       setSuccess('Review acknowledged.');
       setDetailReview(null);
       loadData();
@@ -219,7 +221,7 @@ export default function MyReviewsTab() {
                       <td className="px-4 py-3 text-sm text-text font-medium">{review.cycleName}</td>
                       <td className="px-4 py-3">
                         <span className={`text-sm font-bold ${review.finalRating >= 4 ? 'text-green-600' : review.finalRating >= 3 ? 'text-blue-600' : 'text-yellow-600'}`}>
-                          {review.finalRating.toFixed(1)}/5
+                          {(review.finalRating ?? 0).toFixed(1)}/5
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-text-muted">{new Date(review.completedAt).toLocaleDateString()}</td>
@@ -268,10 +270,10 @@ export default function MyReviewsTab() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-text font-medium">{entry.year}</span>
                     <div className="flex items-center gap-1">
-                      <span className="text-xs font-bold text-text">{entry.rating.toFixed(1)}</span>
+                      <span className="text-xs font-bold text-text">{(entry.rating ?? 0).toFixed(1)}</span>
                       {idx > 0 && (
-                        <span className={`text-[10px] font-medium ${entry.rating >= yoyTrend[idx - 1].rating ? 'text-green-600' : 'text-red-600'}`}>
-                          {entry.rating >= yoyTrend[idx - 1].rating ? '+' : ''}{(entry.rating - yoyTrend[idx - 1].rating).toFixed(1)}
+                        <span className={`text-[10px] font-medium ${(entry.rating ?? 0) >= (yoyTrend[idx - 1].rating ?? 0) ? 'text-green-600' : 'text-red-600'}`}>
+                          {(entry.rating ?? 0) >= (yoyTrend[idx - 1].rating ?? 0) ? '+' : ''}{((entry.rating ?? 0) - (yoyTrend[idx - 1].rating ?? 0)).toFixed(1)}
                         </span>
                       )}
                     </div>
@@ -301,15 +303,15 @@ export default function MyReviewsTab() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-background rounded-lg p-3 text-center">
                   <p className="text-[10px] text-text-muted uppercase font-semibold">Self Rating</p>
-                  <p className="text-lg font-bold text-text">{detailReview.selfRating.toFixed(1)}</p>
+                  <p className="text-lg font-bold text-text">{(detailReview.selfRating ?? 0).toFixed(1)}</p>
                 </div>
                 <div className="bg-background rounded-lg p-3 text-center">
                   <p className="text-[10px] text-text-muted uppercase font-semibold">Manager Rating</p>
-                  <p className="text-lg font-bold text-text">{detailReview.managerRating.toFixed(1)}</p>
+                  <p className="text-lg font-bold text-text">{(detailReview.managerRating ?? 0).toFixed(1)}</p>
                 </div>
                 <div className="bg-primary/10 rounded-lg p-3 text-center border border-primary/20">
                   <p className="text-[10px] text-primary uppercase font-semibold">Final Rating</p>
-                  <p className="text-lg font-bold text-primary">{detailReview.finalRating.toFixed(1)}</p>
+                  <p className="text-lg font-bold text-primary">{(detailReview.finalRating ?? 0).toFixed(1)}</p>
                 </div>
               </div>
 

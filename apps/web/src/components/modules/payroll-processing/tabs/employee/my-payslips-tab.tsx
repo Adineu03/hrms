@@ -68,11 +68,12 @@ export default function MyPayslipsTab() {
       setLoading(true);
       setError('');
       const [payslipsRes, ytdRes] = await Promise.all([
-        api.get('/payroll-processing/employee/payslips'),
-        api.get('/payroll-processing/employee/payslips/ytd-summary'),
+        api.get('/payroll-processing/employee/payslips').catch(() => ({ data: [] })),
+        api.get('/payroll-processing/employee/payslips/ytd-summary').catch(() => ({ data: {} })),
       ]);
 
-      const payslipsData = Array.isArray(payslipsRes.data) ? payslipsRes.data : payslipsRes.data?.data || [];
+      const rawPayslips = payslipsRes.data?.data ?? payslipsRes.data;
+      const payslipsData = Array.isArray(rawPayslips) ? rawPayslips : [];
       const ytdData = ytdRes.data?.data || ytdRes.data || {};
 
       setPayslips(payslipsData);
@@ -100,6 +101,9 @@ export default function MyPayslipsTab() {
       setError('');
       const res = await api.get(`/payroll-processing/employee/payslips/${id}`);
       const data = res.data?.data || res.data || {};
+      // Ensure earnings/deductions are arrays
+      data.earnings = Array.isArray(data.earnings) ? data.earnings : [];
+      data.deductions = Array.isArray(data.deductions) ? data.deductions : [];
       setSelectedPayslip(data);
       setShowDetailModal(true);
     } catch {

@@ -51,9 +51,9 @@ export default function ExpensePoliciesViewTab() {
       setLoading(true);
       setError('');
       const [catRes, polRes, limitsRes] = await Promise.all([
-        api.get('/expense-management/employee/policies/categories'),
-        api.get('/expense-management/employee/policies/policies'),
-        api.get('/expense-management/employee/policies/spending-limits'),
+        api.get('/expense-management/employee/policies/categories').catch(() => ({ data: [] })),
+        api.get('/expense-management/employee/policies').catch(() => ({ data: [] })),
+        api.get('/expense-management/employee/policies/limits').catch(() => ({ data: [] })),
       ]);
 
       const catData = Array.isArray(catRes.data) ? catRes.data : catRes.data?.data || [];

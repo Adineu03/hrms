@@ -74,13 +74,13 @@ export default function ProductivityDashboardTab() {
     setError(null);
     try {
       const [prodRes, catRes, trendRes, utilRes] = await Promise.all([
-        api.get('/daily-work-logging/employee/productivity'),
-        api.get('/daily-work-logging/employee/productivity/category-breakdown'),
-        api.get('/daily-work-logging/employee/productivity/weekly-trend'),
-        api.get('/daily-work-logging/employee/productivity/utilization'),
+        api.get('/daily-work-logging/employee/productivity').catch(() => null),
+        api.get('/daily-work-logging/employee/productivity/category-breakdown').catch(() => null),
+        api.get('/daily-work-logging/employee/productivity/weekly-trend').catch(() => null),
+        api.get('/daily-work-logging/employee/productivity/utilization').catch(() => null),
       ]);
 
-      const prodData = prodRes.data?.data || prodRes.data;
+      const prodData = prodRes?.data?.data || prodRes?.data;
       if (prodData) {
         setSummary({
           totalHours: prodData.totalHours || 0,
@@ -100,13 +100,15 @@ export default function ProductivityDashboardTab() {
         }
       }
 
-      const catData = Array.isArray(catRes.data) ? catRes.data : catRes.data?.data || [];
+      const catRaw = catRes?.data;
+      const catData = Array.isArray(catRaw) ? catRaw : Array.isArray(catRaw?.data) ? catRaw.data : [];
       setCategoryBreakdown(catData);
 
-      const trendData = Array.isArray(trendRes.data) ? trendRes.data : trendRes.data?.data || [];
+      const trendRaw = trendRes?.data;
+      const trendData = Array.isArray(trendRaw) ? trendRaw : Array.isArray(trendRaw?.data) ? trendRaw.data : [];
       setWeeklyTrend(trendData);
 
-      const utilData = utilRes.data?.data || utilRes.data;
+      const utilData = utilRes?.data?.data || utilRes?.data;
       if (utilData) {
         setUtilization({
           myUtilization: utilData.myUtilization || 0,
@@ -203,12 +205,12 @@ export default function ProductivityDashboardTab() {
                 <div key={i}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-text">{p.projectName}</span>
-                    <span className="text-xs text-text-muted">{p.hours.toFixed(1)}h ({p.percent.toFixed(0)}%)</span>
+                    <span className="text-xs text-text-muted">{(p.hours ?? 0).toFixed(1)}h ({(p.percent ?? 0).toFixed(0)}%)</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
                       className={`${p.color || PROJECT_COLORS[i % PROJECT_COLORS.length]} h-3 rounded-full transition-all`}
-                      style={{ width: `${p.percent}%` }}
+                      style={{ width: `${p.percent ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -228,12 +230,12 @@ export default function ProductivityDashboardTab() {
                 <div key={i}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-text capitalize">{c.category}</span>
-                    <span className="text-xs text-text-muted">{c.hours.toFixed(1)}h ({c.percent.toFixed(0)}%)</span>
+                    <span className="text-xs text-text-muted">{(c.hours ?? 0).toFixed(1)}h ({(c.percent ?? 0).toFixed(0)}%)</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
                       className={`${CATEGORY_COLORS[c.category] || 'bg-gray-400'} h-3 rounded-full transition-all`}
-                      style={{ width: `${c.percent}%` }}
+                      style={{ width: `${c.percent ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -251,21 +253,21 @@ export default function ProductivityDashboardTab() {
           <h3 className="text-sm font-semibold text-text mb-4">Weekly Trend (Hours per Day)</h3>
           <div className="flex items-end gap-2 h-40">
             {weeklyTrend.map((d, i) => {
-              const maxHours = Math.max(...weeklyTrend.map((t) => t.hours), 1);
-              const height = (d.hours / maxHours) * 100;
-              const billableHeight = (d.billableHours / maxHours) * 100;
+              const maxHours = Math.max(...weeklyTrend.map((t) => t.hours ?? 0), 1);
+              const height = ((d.hours ?? 0) / maxHours) * 100;
+              const billableHeight = ((d.billableHours ?? 0) / maxHours) * 100;
               return (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-xs font-medium text-text">{d.hours.toFixed(1)}</span>
+                  <span className="text-xs font-medium text-text">{(d.hours ?? 0).toFixed(1)}</span>
                   <div className="w-full flex flex-col items-center relative" style={{ height: '120px' }}>
                     <div className="absolute bottom-0 w-full max-w-[40px] flex flex-col">
                       <div
                         className="bg-gray-300 rounded-t"
-                        style={{ height: `${height}%`, minHeight: d.hours > 0 ? '4px' : '0' }}
+                        style={{ height: `${height}%`, minHeight: (d.hours ?? 0) > 0 ? '4px' : '0' }}
                       >
                         <div
                           className="bg-primary rounded-t"
-                          style={{ height: `${billableHeight > 0 ? (billableHeight / height) * 100 : 0}%`, minHeight: d.billableHours > 0 ? '4px' : '0' }}
+                          style={{ height: `${billableHeight > 0 ? (billableHeight / height) * 100 : 0}%`, minHeight: (d.billableHours ?? 0) > 0 ? '4px' : '0' }}
                         />
                       </div>
                     </div>

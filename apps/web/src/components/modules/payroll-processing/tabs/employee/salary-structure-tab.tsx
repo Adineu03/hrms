@@ -56,14 +56,16 @@ export default function SalaryStructureTab() {
       setLoading(true);
       setError('');
       const [salaryRes, historyRes, benefitsRes] = await Promise.all([
-        api.get('/payroll-processing/employee/salary/current'),
-        api.get('/payroll-processing/employee/salary/history'),
-        api.get('/payroll-processing/employee/salary/benefits'),
+        api.get('/payroll-processing/employee/salary/current').catch(() => ({ data: {} })),
+        api.get('/payroll-processing/employee/salary/history').catch(() => ({ data: [] })),
+        api.get('/payroll-processing/employee/salary/benefits').catch(() => ({ data: [] })),
       ]);
 
       const salaryData = salaryRes.data?.data || salaryRes.data || {};
-      const historyData = Array.isArray(historyRes.data) ? historyRes.data : historyRes.data?.data || [];
-      const benefitsData = Array.isArray(benefitsRes.data) ? benefitsRes.data : benefitsRes.data?.data || [];
+      const rawHistory = historyRes.data?.data ?? historyRes.data;
+      const historyData = Array.isArray(rawHistory) ? rawHistory : [];
+      const rawBenefits = benefitsRes.data?.data ?? benefitsRes.data;
+      const benefitsData = Array.isArray(rawBenefits) ? rawBenefits : [];
 
       if (salaryData.basic !== undefined || salaryData.ctc !== undefined) {
         setSalary({
@@ -243,7 +245,7 @@ export default function SalaryStructureTab() {
                     <td className="px-4 py-3 text-sm text-text font-semibold">{formatCurrency(r.revisedCtc)}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                        +{r.incrementPercent?.toFixed(1) || 0}%
+                        +{(r.incrementPercent ?? 0).toFixed(1)}%
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted capitalize">{r.reason?.replace('_', ' ') || '—'}</td>

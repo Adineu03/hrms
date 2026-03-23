@@ -43,14 +43,14 @@ export default function MyEngagementScoreTab() {
       setLoading(true);
       setError('');
       const [engagementRes, historyRes, badgesRes] = await Promise.all([
-        api.get('/engagement-culture/employee/my-engagement'),
-        api.get('/engagement-culture/employee/my-engagement/history'),
-        api.get('/engagement-culture/employee/my-engagement/badges'),
+        api.get('/engagement-culture/employee/my-engagement').catch(() => ({ data: { data: {} } })),
+        api.get('/engagement-culture/employee/my-engagement/participation').catch(() => ({ data: { data: [] } })),
+        api.get('/engagement-culture/employee/my-engagement/badges').catch(() => ({ data: { data: [] } })),
       ]);
 
       const engagement = engagementRes.data?.data || engagementRes.data || {};
-      const history = Array.isArray(historyRes.data) ? historyRes.data : historyRes.data?.data || [];
-      const badges = Array.isArray(badgesRes.data) ? badgesRes.data : badgesRes.data?.data || [];
+      const history = Array.isArray(historyRes.data) ? historyRes.data : Array.isArray(historyRes.data?.data) ? historyRes.data.data : [];
+      const badges = Array.isArray(badgesRes.data) ? badgesRes.data : Array.isArray(badgesRes.data?.data) ? badgesRes.data.data : [];
 
       setData({
         overallScore: engagement.overallScore || engagement.score || 0,

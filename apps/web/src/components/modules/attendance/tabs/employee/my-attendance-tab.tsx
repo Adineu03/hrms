@@ -98,11 +98,17 @@ export default function MyAttendanceTab() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.get('/attendance/employee/my-attendance', {
-        params: { month: month + 1, year },
-      });
-      setDays(Array.isArray(res.data.days) ? res.data.days : []);
-      setSummary(res.data.summary || null);
+      const [calendarRes, summaryRes] = await Promise.all([
+        api.get('/attendance/employee/my-attendance/calendar', {
+          params: { month: month + 1, year },
+        }).catch(() => ({ data: { days: [] } })),
+        api.get('/attendance/employee/my-attendance/summary', {
+          params: { month: month + 1, year },
+        }).catch(() => ({ data: null })),
+      ]);
+      const calData = calendarRes.data || {};
+      setDays(Array.isArray(calData.days) ? calData.days : Array.isArray(calData) ? calData : []);
+      setSummary(summaryRes.data || null);
     } catch {
       setError('Failed to load attendance data.');
     } finally {
@@ -146,7 +152,7 @@ export default function MyAttendanceTab() {
     setSelectedDate(dateStr);
     setIsLoadingDetail(true);
     try {
-      const res = await api.get(`/attendance/employee/my-attendance/${dateStr}`);
+      const res = await api.get(`/attendance/employee/my-attendance/daily/${dateStr}`);
       setDayDetail(res.data);
     } catch {
       setDayDetail(null);
@@ -512,7 +518,7 @@ export default function MyAttendanceTab() {
                 <Timer className="h-4 w-4 text-green-600" />
                 <span className="text-xs">Overtime</span>
               </div>
-              <p className="text-2xl font-bold text-text">{summary.overtimeHours.toFixed(1)}</p>
+              <p className="text-2xl font-bold text-text">{(summary.overtimeHours ?? 0).toFixed(1)}</p>
               <p className="text-xs text-text-muted">hours</p>
             </div>
             <div className="bg-card rounded-xl border border-border p-4 text-center">
@@ -520,7 +526,7 @@ export default function MyAttendanceTab() {
                 <CalendarDays className="h-4 w-4 text-blue-500" />
                 <span className="text-xs">Avg Work</span>
               </div>
-              <p className="text-2xl font-bold text-text">{summary.avgWorkHours.toFixed(1)}</p>
+              <p className="text-2xl font-bold text-text">{(summary.avgWorkHours ?? 0).toFixed(1)}</p>
               <p className="text-xs text-text-muted">hrs/day</p>
             </div>
           </div>

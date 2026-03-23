@@ -127,17 +127,18 @@ export default function AttendanceInsightsTab() {
     setError(null);
     try {
       const [punctRes, workRes, streakRes, breakRes, achieveRes] = await Promise.all([
-        api.get('/attendance/employee/insights/punctuality'),
-        api.get('/attendance/employee/insights/work-hours'),
-        api.get('/attendance/employee/insights/streak'),
-        api.get('/attendance/employee/insights/break-analysis'),
-        api.get('/attendance/employee/insights/achievements'),
+        api.get('/attendance/employee/insights/punctuality').catch(() => ({ data: null })),
+        api.get('/attendance/employee/insights/work-hours').catch(() => ({ data: null })),
+        api.get('/attendance/employee/insights/streak').catch(() => ({ data: null })),
+        api.get('/attendance/employee/insights/break-analysis').catch(() => ({ data: null })),
+        api.get('/attendance/employee/insights/achievements').catch(() => ({ data: [] })),
       ]);
-      setPunctuality(punctRes.data);
-      setWorkHours(workRes.data);
-      setStreak(streakRes.data);
-      setBreakAnalysis(breakRes.data);
-      setAchievements(Array.isArray(achieveRes.data) ? achieveRes.data : achieveRes.data.data || []);
+      setPunctuality(punctRes.data || null);
+      setWorkHours(workRes.data || null);
+      setStreak(streakRes.data || null);
+      setBreakAnalysis(breakRes.data || null);
+      const achData = achieveRes.data;
+      setAchievements(Array.isArray(achData) ? achData : Array.isArray(achData?.data) ? achData.data : []);
     } catch {
       setError('Failed to load attendance insights.');
     } finally {
@@ -156,7 +157,7 @@ export default function AttendanceInsightsTab() {
   };
 
   const getComparisonText = (compared: string, diffMinutes: number) => {
-    const diffHours = (diffMinutes / 60).toFixed(1);
+    const diffHours = ((diffMinutes ?? 0) / 60).toFixed(1);
     if (compared === 'higher') return `${diffHours}h more than team avg`;
     if (compared === 'lower') return `${diffHours}h less than team avg`;
     return 'Same as team avg';
@@ -226,7 +227,7 @@ export default function AttendanceInsightsTab() {
                 <div>
                   <p className="text-xs text-text-muted">Avg Late</p>
                   <p className="text-lg font-semibold text-text">
-                    {punctuality.avgLateMinutes.toFixed(0)}{' '}
+                    {(punctuality.avgLateMinutes ?? 0).toFixed(0)}{' '}
                     <span className="text-sm font-normal text-text-muted">minutes</span>
                   </p>
                 </div>
@@ -247,11 +248,11 @@ export default function AttendanceInsightsTab() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-text-muted">Avg Per Day</p>
-                  <p className="text-2xl font-bold text-text">{workHours.avgPerDay.toFixed(1)}h</p>
+                  <p className="text-2xl font-bold text-text">{(workHours.avgPerDay ?? 0).toFixed(1)}h</p>
                 </div>
                 <div>
                   <p className="text-xs text-text-muted">Avg Per Week</p>
-                  <p className="text-2xl font-bold text-text">{workHours.avgPerWeek.toFixed(1)}h</p>
+                  <p className="text-2xl font-bold text-text">{(workHours.avgPerWeek ?? 0).toFixed(1)}h</p>
                 </div>
               </div>
 
@@ -260,7 +261,7 @@ export default function AttendanceInsightsTab() {
                   <div>
                     <p className="text-xs text-text-muted">Team Average</p>
                     <p className="text-sm font-semibold text-text">
-                      {workHours.teamAvgPerDay.toFixed(1)}h/day
+                      {(workHours.teamAvgPerDay ?? 0).toFixed(1)}h/day
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -328,12 +329,12 @@ export default function AttendanceInsightsTab() {
               <div>
                 <p className="text-xs text-text-muted">Average Break Time Per Day</p>
                 <p className="text-2xl font-bold text-text">
-                  {breakAnalysis.avgBreakMinutes.toFixed(0)}{' '}
+                  {(breakAnalysis.avgBreakMinutes ?? 0).toFixed(0)}{' '}
                   <span className="text-sm font-normal text-text-muted">minutes</span>
                 </p>
               </div>
 
-              {breakAnalysis.breakdown.length > 0 && (
+              {(breakAnalysis.breakdown ?? []).length > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs text-text-muted font-medium">Breakdown by Type</p>
                   {breakAnalysis.breakdown.map((bt) => (
@@ -350,14 +351,14 @@ export default function AttendanceInsightsTab() {
                         <span className="text-xs text-text-muted">{bt.count} times</span>
                       </div>
                       <span className="text-sm font-semibold text-text">
-                        {bt.avgMinutes.toFixed(0)}m avg
+                        {(bt.avgMinutes ?? 0).toFixed(0)}m avg
                       </span>
                     </div>
                   ))}
                 </div>
               )}
 
-              {breakAnalysis.breakdown.length === 0 && (
+              {(breakAnalysis.breakdown ?? []).length === 0 && (
                 <p className="text-sm text-text-muted text-center py-2">
                   No break data available yet.
                 </p>

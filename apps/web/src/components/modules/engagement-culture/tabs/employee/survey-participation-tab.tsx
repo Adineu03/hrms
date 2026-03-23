@@ -55,12 +55,12 @@ export default function SurveyParticipationTab() {
       setLoading(true);
       setError('');
       const [surveysRes, responsesRes] = await Promise.all([
-        api.get('/engagement-culture/employee/surveys'),
-        api.get('/engagement-culture/employee/my-responses'),
+        api.get('/engagement-culture/employee/surveys').catch(() => ({ data: { data: [] } })),
+        api.get('/engagement-culture/employee/surveys/my-responses').catch(() => ({ data: { data: [] } })),
       ]);
 
-      const surveysData = Array.isArray(surveysRes.data) ? surveysRes.data : surveysRes.data?.data || [];
-      const responsesData = Array.isArray(responsesRes.data) ? responsesRes.data : responsesRes.data?.data || [];
+      const surveysData = Array.isArray(surveysRes.data) ? surveysRes.data : Array.isArray(surveysRes.data?.data) ? surveysRes.data.data : [];
+      const responsesData = Array.isArray(responsesRes.data) ? responsesRes.data : Array.isArray(responsesRes.data?.data) ? responsesRes.data.data : [];
 
       setSurveys(surveysData);
       setPastResponses(responsesData);
@@ -81,8 +81,8 @@ export default function SurveyParticipationTab() {
     setShowSurveyModal(true);
     try {
       setLoadingQuestions(true);
-      const res = await api.get(`/engagement-culture/employee/surveys/${survey.id}/questions`);
-      const questionsData = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const res = await api.get(`/engagement-culture/employee/surveys/${survey.id}/questions`).catch(() => ({ data: { data: [] } }));
+      const questionsData = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
       setQuestions(questionsData);
     } catch {
       setError('Failed to load survey questions.');

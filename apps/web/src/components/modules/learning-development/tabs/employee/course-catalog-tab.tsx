@@ -79,8 +79,9 @@ export default function CourseCatalogTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/learning-development/employee/courses');
-      setCourses(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const res = await api.get('/learning-development/employee/catalog').catch(() => ({ data: [] }));
+      const raw = res.data;
+      setCourses(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
     } catch {
       setError('Failed to load course catalog.');
     } finally {
@@ -95,7 +96,7 @@ export default function CourseCatalogTab() {
   const handleEnroll = async (courseId: string) => {
     setError(null);
     try {
-      await api.post(`/learning-development/employee/courses/${courseId}/enroll`);
+      await api.post(`/learning-development/employee/catalog/${courseId}/enroll`);
       setSuccess('Successfully enrolled in course.');
       loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -107,9 +108,9 @@ export default function CourseCatalogTab() {
   const handleBookmark = async (courseId: string, isBookmarked: boolean) => {
     try {
       if (isBookmarked) {
-        await api.delete(`/learning-development/employee/courses/${courseId}/bookmark`);
+        await api.delete(`/learning-development/employee/catalog/${courseId}/bookmark`);
       } else {
-        await api.post(`/learning-development/employee/courses/${courseId}/bookmark`);
+        await api.post(`/learning-development/employee/catalog/${courseId}/bookmark`);
       }
       loadData();
     } catch {

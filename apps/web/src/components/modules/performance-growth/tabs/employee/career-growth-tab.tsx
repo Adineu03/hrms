@@ -84,8 +84,26 @@ export default function CareerGrowthTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/performance-growth/employee/career');
-      setData(res.data?.data || res.data);
+      const [pathsRes, gapRes, oppRes, readyRes, msRes] = await Promise.all([
+        api.get('/performance-growth/employee/career/paths').catch(() => ({ data: [] })),
+        api.get('/performance-growth/employee/career/gap-analysis').catch(() => ({ data: null })),
+        api.get('/performance-growth/employee/career/opportunities').catch(() => ({ data: [] })),
+        api.get('/performance-growth/employee/career/readiness').catch(() => ({ data: null })),
+        api.get('/performance-growth/employee/career/milestones').catch(() => ({ data: [] })),
+      ]);
+      const pathsData = pathsRes.data?.data ?? pathsRes.data;
+      const gapRaw = gapRes.data?.data ?? gapRes.data;
+      const oppData = oppRes.data?.data ?? oppRes.data;
+      const readyData = readyRes.data?.data ?? readyRes.data;
+      const msData = msRes.data?.data ?? msRes.data;
+      setData({
+        tracks: Array.isArray(pathsData) ? pathsData : [],
+        targetRole: gapRaw?.targetRole || null,
+        gaps: Array.isArray(gapRaw?.gaps) ? gapRaw.gaps : (Array.isArray(gapRaw) ? gapRaw : []),
+        opportunities: Array.isArray(oppData) ? oppData : [],
+        promotionReadiness: readyData && typeof readyData === 'object' && !Array.isArray(readyData) ? readyData : null,
+        milestones: Array.isArray(msData) ? msData : [],
+      });
     } catch {
       setError('Failed to load career growth data.');
     } finally {
@@ -100,7 +118,7 @@ export default function CareerGrowthTab() {
   const handleRequestDiscussion = async () => {
     setIsSaving(true);
     try {
-      await api.post('/performance-growth/employee/career/request-discussion');
+      await api.post('/performance-growth/employee/career/discussion-request', {});
       setSuccess('Career discussion request sent to your manager.');
       setTimeout(() => setSuccess(null), 3000);
     } catch {
@@ -335,12 +353,12 @@ export default function CareerGrowthTab() {
                     {career.promotionReadiness.overallScore >= 80 ? 'Ready for Promotion' : career.promotionReadiness.overallScore >= 50 ? 'Getting Close' : 'Work In Progress'}
                   </p>
                   <p className="text-xs text-text-muted">
-                    {career.promotionReadiness.criteria.filter((c) => c.met).length} of {career.promotionReadiness.criteria.length} criteria met
+                    {(career.promotionReadiness.criteria ?? []).filter((c) => c.met).length} of {(career.promotionReadiness.criteria ?? []).length} criteria met
                   </p>
                 </div>
               </div>
               <div className="space-y-2">
-                {career.promotionReadiness.criteria.map((criterion, idx) => (
+                {(career.promotionReadiness.criteria ?? []).map((criterion, idx) => (
                   <div key={idx} className="flex items-start gap-2">
                     {criterion.met ? (
                       <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />

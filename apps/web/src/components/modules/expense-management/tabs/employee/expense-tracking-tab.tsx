@@ -75,8 +75,8 @@ export default function ExpenseTrackingTab() {
       const qs = params.toString() ? `?${params.toString()}` : '';
 
       const [summaryRes, historyRes] = await Promise.all([
-        api.get('/expense-management/employee/tracking/summary'),
-        api.get(`/expense-management/employee/tracking/history${qs}`),
+        api.get('/expense-management/employee/tracking/summary').catch(() => ({ data: {} })),
+        api.get(`/expense-management/employee/tracking/history${qs}`).catch(() => ({ data: [] })),
       ]);
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};

@@ -231,9 +231,9 @@ export default function MyProfileTab() {
               style={{ width: `${completeness.percentage}%` }}
             />
           </div>
-          {completeness.missing.length > 0 && (
+          {(completeness.missing ?? []).length > 0 && (
             <p className="text-xs text-text-muted mt-2">
-              Missing: {completeness.missing.join(', ')}
+              Missing: {(completeness.missing ?? []).join(', ')}
             </p>
           )}
           {completeness.percentage === 100 && (

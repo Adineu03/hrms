@@ -66,12 +66,14 @@ export default function ReimbursementsClaimsTab() {
       setLoading(true);
       setError('');
       const [claimsRes, historyRes] = await Promise.all([
-        api.get('/payroll-processing/employee/reimbursements'),
-        api.get('/payroll-processing/employee/reimbursements/history'),
+        api.get('/payroll-processing/employee/reimbursements').catch(() => ({ data: [] })),
+        api.get('/payroll-processing/employee/reimbursements/history').catch(() => ({ data: [] })),
       ]);
 
-      const claimsData = Array.isArray(claimsRes.data) ? claimsRes.data : claimsRes.data?.data || [];
-      const historyData = Array.isArray(historyRes.data) ? historyRes.data : historyRes.data?.data || [];
+      const rawClaims = claimsRes.data?.data ?? claimsRes.data;
+      const claimsData = Array.isArray(rawClaims) ? rawClaims : [];
+      const rawHistory = historyRes.data?.data ?? historyRes.data;
+      const historyData = Array.isArray(rawHistory) ? rawHistory : [];
 
       setClaims(claimsData);
       setHistory(historyData);

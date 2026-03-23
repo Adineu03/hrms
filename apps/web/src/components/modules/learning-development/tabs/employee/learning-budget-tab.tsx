@@ -79,14 +79,15 @@ export default function LearningBudgetTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [budgetRes, spendRes, reimbRes] = await Promise.all([
-        api.get('/learning-development/employee/budget'),
-        api.get('/learning-development/employee/budget/spend-history'),
-        api.get('/learning-development/employee/budget/reimbursements'),
+      const [budgetRes, spendRes] = await Promise.all([
+        api.get('/learning-development/employee/budget').catch(() => ({ data: null })),
+        api.get('/learning-development/employee/budget/history').catch(() => ({ data: [] })),
       ]);
-      setBudget(budgetRes.data?.data || budgetRes.data);
-      setSpendHistory(Array.isArray(spendRes.data) ? spendRes.data : spendRes.data?.data || []);
-      setReimbursements(Array.isArray(reimbRes.data) ? reimbRes.data : reimbRes.data?.data || []);
+      const budgetRaw = budgetRes.data;
+      setBudget(budgetRaw?.data || budgetRaw);
+      const spendRaw = spendRes.data;
+      setSpendHistory(Array.isArray(spendRaw) ? spendRaw : Array.isArray(spendRaw?.data) ? spendRaw.data : []);
+      setReimbursements([]);
     } catch {
       setError('Failed to load budget data.');
     } finally {
@@ -110,9 +111,11 @@ export default function LearningBudgetTab() {
     }
     setIsSaving(true);
     try {
-      await api.post('/learning-development/employee/budget/reimbursement-request', {
-        ...requestForm,
-        amount: Number(requestForm.amount),
+      await api.post('/learning-development/employee/budget/request', {
+        courseName: requestForm.courseName,
+        provider: requestForm.provider,
+        cost: Number(requestForm.amount),
+        justification: requestForm.justification,
       });
       setSuccess('Reimbursement request submitted successfully.');
       setShowRequestModal(false);

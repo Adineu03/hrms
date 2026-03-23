@@ -91,16 +91,17 @@ export default function DevelopmentPlanTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [planRes, certRes, skillRes, aspirationRes] = await Promise.all([
-        api.get('/performance-growth/employee/development/plan'),
-        api.get('/performance-growth/employee/development/certifications'),
-        api.get('/performance-growth/employee/development/skills'),
-        api.get('/performance-growth/employee/development/aspiration'),
+      const [planRes, allPlansRes, skillRes] = await Promise.all([
+        api.get('/performance-growth/employee/development').catch(() => ({ data: null })),
+        api.get('/performance-growth/employee/development/all').catch(() => ({ data: [] })),
+        api.get('/performance-growth/employee/development/skills').catch(() => ({ data: [] })),
       ]);
       setPlan(planRes.data?.data || planRes.data);
-      setCertifications(Array.isArray(certRes.data) ? certRes.data : certRes.data?.data || []);
-      setSkills(Array.isArray(skillRes.data) ? skillRes.data : skillRes.data?.data || []);
-      setAspiration(aspirationRes.data?.aspiration || aspirationRes.data?.data?.aspiration || '');
+      const allData = allPlansRes.data?.data ?? allPlansRes.data;
+      setCertifications(Array.isArray(allData) ? allData : []);
+      const skillData = skillRes.data?.data ?? skillRes.data;
+      setSkills(Array.isArray(skillData) ? skillData : []);
+      setAspiration('');
     } catch {
       setError('Failed to load development plan.');
     } finally {
@@ -114,7 +115,7 @@ export default function DevelopmentPlanTab() {
 
   const handleToggleActivity = async (activityId: string, isCompleted: boolean) => {
     try {
-      await api.patch(`/performance-growth/employee/development/activities/${activityId}`, {
+      await api.patch(`/performance-growth/employee/development/${activityId}`, {
         isCompleted: !isCompleted,
       });
       loadData();
@@ -130,7 +131,7 @@ export default function DevelopmentPlanTab() {
     }
     setIsSaving(true);
     try {
-      await api.post('/performance-growth/employee/development/activities', activityForm);
+      await api.post(`/performance-growth/employee/development/${plan?.id || 'default'}/activity`, activityForm);
       setSuccess('Activity added.');
       setShowActivityForm(false);
       setActivityForm({ title: '', type: 'course', dueDate: '' });
@@ -150,7 +151,7 @@ export default function DevelopmentPlanTab() {
     }
     setIsSaving(true);
     try {
-      await api.post('/performance-growth/employee/development/certifications', certForm);
+      await api.post(`/performance-growth/employee/development/${plan?.id || 'default'}/certification`, certForm);
       setSuccess('Certification added.');
       setShowCertForm(false);
       setCertForm({ name: '', issuingOrg: '', issueDate: '', expiryDate: '', credentialId: '' });
@@ -165,7 +166,7 @@ export default function DevelopmentPlanTab() {
 
   const handleUpdateSkillLevel = async (skillId: string, level: string) => {
     try {
-      await api.patch(`/performance-growth/employee/development/skills/${skillId}`, { currentLevel: level });
+      await api.post('/performance-growth/employee/development/skills', { skillId, currentLevel: level });
       loadData();
     } catch {
       setError('Failed to update skill level.');
@@ -174,7 +175,7 @@ export default function DevelopmentPlanTab() {
 
   const handleSaveAspiration = async () => {
     try {
-      await api.put('/performance-growth/employee/development/aspiration', { aspiration });
+      await api.post('/performance-growth/employee/development/training-request', { aspiration });
       setAspirationSaved(true);
       setTimeout(() => setAspirationSaved(false), 3000);
     } catch {
