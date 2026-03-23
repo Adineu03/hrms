@@ -71,13 +71,16 @@ export default function KnowledgeTransferTab() {
     try {
       setIsLoading(true);
       const [plansRes, membersRes, departingRes] = await Promise.all([
-        api.get('/onboarding-offboarding/manager/knowledge-transfer'),
-        api.get('/onboarding-offboarding/manager/team-members'),
-        api.get('/onboarding-offboarding/manager/departing-employees'),
+        api.get('/onboarding-offboarding/manager/knowledge-transfer').catch(() => ({ data: [] })),
+        api.get('/onboarding-offboarding/manager/team-members').catch(() => ({ data: [] })),
+        api.get('/onboarding-offboarding/manager/departing-employees').catch(() => ({ data: [] })),
       ]);
-      setPlans(Array.isArray(plansRes.data) ? plansRes.data : plansRes.data?.data || []);
-      setTeamMembers(Array.isArray(membersRes.data) ? membersRes.data : membersRes.data?.data || []);
-      setDepartingEmployees(Array.isArray(departingRes.data) ? departingRes.data : departingRes.data?.data || []);
+      const plansData = plansRes.data;
+      setPlans(Array.isArray(plansData) ? plansData : plansData?.data ?? []);
+      const membersData = membersRes.data;
+      setTeamMembers(Array.isArray(membersData) ? membersData : membersData?.data ?? []);
+      const departingData = departingRes.data;
+      setDepartingEmployees(Array.isArray(departingData) ? departingData : departingData?.data ?? []);
     } catch {
       setError('Failed to load knowledge transfer plans.');
     } finally {

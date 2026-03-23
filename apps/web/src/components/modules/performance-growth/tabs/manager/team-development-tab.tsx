@@ -95,11 +95,13 @@ export default function TeamDevelopmentTab() {
     try {
       setIsLoading(true);
       const [planRes, empRes] = await Promise.all([
-        api.get('/performance-growth/manager/development'),
-        api.get('/performance-growth/manager/employees'),
+        api.get('/performance-growth/manager/development').catch(() => ({ data: [] })),
+        api.get('/core-hr/admin/employees').catch(() => ({ data: [] })),
       ]);
-      setPlans(Array.isArray(planRes.data) ? planRes.data : planRes.data?.data || []);
-      setEmployees(Array.isArray(empRes.data) ? empRes.data : empRes.data?.data || []);
+      const planRaw = planRes.data;
+      setPlans(Array.isArray(planRaw) ? planRaw : Array.isArray(planRaw?.data) ? planRaw.data : []);
+      const empRaw = empRes.data;
+      setEmployees(Array.isArray(empRaw) ? empRaw : Array.isArray(empRaw?.data) ? empRaw.data : []);
     } catch {
       setError('Failed to load development plans.');
     } finally {

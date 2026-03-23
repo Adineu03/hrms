@@ -119,21 +119,23 @@ export default function ShiftPlanningTab() {
     setError(null);
     try {
       const startDate = formatDateKey(weekDates[0]);
-      const endDate = formatDateKey(weekDates[6]);
-      const [rosterRes, swapRes] = await Promise.all([
-        api.get('/attendance/manager/shift-planning', {
-          params: { startDate, endDate },
-        }),
-        api.get('/attendance/manager/shift-planning/swap-requests', {
-          params: { status: 'pending' },
-        }),
+      const [rosterRes, swapRes, coverageRes] = await Promise.all([
+        api.get('/attendance/manager/shift-planning/roster', {
+          params: { weekStart: startDate },
+        }).catch(() => ({ data: {} })),
+        api.get('/attendance/manager/shift-planning/swap-requests').catch(() => ({ data: [] })),
+        api.get('/attendance/manager/shift-planning/coverage', {
+          params: { date: startDate },
+        }).catch(() => ({ data: [] })),
       ]);
 
-      const rosterData = rosterRes.data;
-      setRoster(rosterData.roster || rosterData.assignments || []);
-      setShifts(rosterData.shifts || rosterData.shiftDefinitions || []);
-      setCoverage(rosterData.coverage || []);
-      setSwapRequests(swapRes.data?.requests || swapRes.data || []);
+      const rosterData = rosterRes.data?.data || rosterRes.data || {};
+      setRoster(Array.isArray(rosterData) ? rosterData : rosterData.roster || rosterData.assignments || []);
+      setShifts(Array.isArray(rosterData.shifts) ? rosterData.shifts : rosterData.shiftDefinitions || []);
+      const covData = coverageRes.data?.data || coverageRes.data;
+      setCoverage(Array.isArray(covData) ? covData : covData?.coverage || []);
+      const swapData = swapRes.data?.data || swapRes.data;
+      setSwapRequests(Array.isArray(swapData) ? swapData : swapData?.requests || []);
     } catch {
       setError('Failed to load shift planning data.');
     } finally {
@@ -190,7 +192,8 @@ export default function ShiftPlanningTab() {
     setProcessingSwapId(requestId);
     setError(null);
     try {
-      await api.post(`/attendance/manager/shift-planning/swap-requests/${requestId}/${action}`, {
+      await api.patch(`/attendance/manager/shift-planning/swap-requests/${requestId}`, {
+        action,
         comment: swapComment.trim() || undefined,
       });
       setSwapRequests((prev) =>

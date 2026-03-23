@@ -40,13 +40,14 @@ export default function TeamEngagementTab() {
       setLoading(true);
       setError('');
       const [engagementRes, pulseRes, participationRes] = await Promise.all([
-        api.get('/engagement-culture/manager/team-engagement'),
-        api.get('/engagement-culture/manager/pulse-results'),
-        api.get('/engagement-culture/manager/participation'),
+        api.get('/engagement-culture/manager/team-engagement').catch(() => ({ data: {} })),
+        api.get('/engagement-culture/manager/team-engagement/pulse-results').catch(() => ({ data: [] })),
+        api.get('/engagement-culture/manager/team-engagement/participation').catch(() => ({ data: {} })),
       ]);
 
       const engagement = engagementRes.data?.data || engagementRes.data || {};
-      const pulseResults = Array.isArray(pulseRes.data) ? pulseRes.data : pulseRes.data?.data || [];
+      const rawPulse = pulseRes.data?.data ?? pulseRes.data;
+      const pulseResults = Array.isArray(rawPulse) ? rawPulse : [];
       const participation = participationRes.data?.data || participationRes.data || {};
 
       setData({

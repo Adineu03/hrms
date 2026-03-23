@@ -70,11 +70,12 @@ export default function TeamDashboardTab() {
     setError(null);
     try {
       const [summaryRes, teamRes] = await Promise.all([
-        api.get('/daily-work-logging/manager/summary'),
-        api.get('/daily-work-logging/manager/today'),
+        api.get('/daily-work-logging/manager/dashboard/summary').catch(() => null),
+        api.get('/daily-work-logging/manager/dashboard/today').catch(() => null),
       ]);
-      const summaryData = summaryRes.data?.data || summaryRes.data;
-      if (summaryData) {
+      const summaryRaw = summaryRes?.data;
+      const summaryData = summaryRaw?.data || summaryRaw;
+      if (summaryData && typeof summaryData === 'object') {
         setSummary({
           totalTeamHoursToday: summaryData.totalTeamHoursToday || 0,
           totalTeamHoursThisWeek: summaryData.totalTeamHoursThisWeek || 0,
@@ -82,7 +83,9 @@ export default function TeamDashboardTab() {
           teamSize: summaryData.teamSize || 0,
         });
       }
-      setTeamMembers(Array.isArray(teamRes.data) ? teamRes.data : teamRes.data?.data || []);
+      const teamRaw = teamRes?.data;
+      const teamArr = Array.isArray(teamRaw) ? teamRaw : Array.isArray(teamRaw?.data) ? teamRaw.data : [];
+      setTeamMembers(teamArr);
     } catch {
       setError('Failed to load team dashboard.');
     } finally {

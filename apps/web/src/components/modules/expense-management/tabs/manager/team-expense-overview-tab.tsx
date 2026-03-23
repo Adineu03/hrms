@@ -42,12 +42,13 @@ export default function TeamExpenseOverviewTab() {
       setLoading(true);
       setError('');
       const [summaryRes, membersRes] = await Promise.all([
-        api.get('/expense-management/manager/team-overview/summary'),
-        api.get('/expense-management/manager/team-overview/members'),
+        api.get('/expense-management/manager/team-overview').catch(() => ({ data: {} })),
+        api.get('/expense-management/manager/team-overview/members').catch(() => ({ data: [] })),
       ]);
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};
-      const membersData = Array.isArray(membersRes.data) ? membersRes.data : membersRes.data?.data || [];
+      const rawMembers = membersRes.data?.data ?? membersRes.data;
+      const membersData = Array.isArray(rawMembers) ? rawMembers : [];
 
       setSummary({
         totalExpenses: summaryData.totalExpenses || 0,
@@ -131,7 +132,7 @@ export default function TeamExpenseOverviewTab() {
           </div>
           <div className="bg-background rounded-xl border border-border p-5">
             <p className="text-sm text-text-muted mb-1">Budget Utilization</p>
-            <p className="text-2xl font-bold text-text">{summary.budgetUtilization.toFixed(1)}%</p>
+            <p className="text-2xl font-bold text-text">{(summary.budgetUtilization ?? 0).toFixed(1)}%</p>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
               <div
                 className={`h-2 rounded-full ${

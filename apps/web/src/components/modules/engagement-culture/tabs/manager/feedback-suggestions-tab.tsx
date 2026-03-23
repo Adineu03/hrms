@@ -45,12 +45,14 @@ export default function FeedbackSuggestionsTab() {
       setLoading(true);
       setError('');
       const [feedbackRes, suggestionsRes] = await Promise.all([
-        api.get('/engagement-culture/manager/feedback'),
-        api.get('/engagement-culture/manager/suggestions'),
+        api.get('/engagement-culture/manager/feedback').catch(() => ({ data: [] })),
+        api.get('/engagement-culture/manager/feedback/suggestions').catch(() => ({ data: [] })),
       ]);
 
-      const feedbackData = Array.isArray(feedbackRes.data) ? feedbackRes.data : feedbackRes.data?.data || [];
-      const suggestionsData = Array.isArray(suggestionsRes.data) ? suggestionsRes.data : suggestionsRes.data?.data || [];
+      const rawFeedback = feedbackRes.data?.data ?? feedbackRes.data;
+      const feedbackData = Array.isArray(rawFeedback) ? rawFeedback : [];
+      const rawSuggestions = suggestionsRes.data?.data ?? suggestionsRes.data;
+      const suggestionsData = Array.isArray(rawSuggestions) ? rawSuggestions : [];
 
       setFeedback(feedbackData);
       setSuggestions(suggestionsData);

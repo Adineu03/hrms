@@ -46,12 +46,14 @@ export default function PayrollApprovalsTab() {
       setLoading(true);
       setError('');
       const [pendingRes, historyRes] = await Promise.all([
-        api.get('/payroll-processing/manager/approvals/pending'),
-        api.get('/payroll-processing/manager/approvals/history'),
+        api.get('/payroll-processing/manager/approvals/pending').catch(() => ({ data: [] })),
+        api.get('/payroll-processing/manager/approvals/history').catch(() => ({ data: [] })),
       ]);
 
-      const pendingData = Array.isArray(pendingRes.data) ? pendingRes.data : pendingRes.data?.data || [];
-      const historyData = Array.isArray(historyRes.data) ? historyRes.data : historyRes.data?.data || [];
+      const rawPending = pendingRes.data?.data ?? pendingRes.data;
+      const pendingData = Array.isArray(rawPending) ? rawPending : [];
+      const rawHistory = historyRes.data?.data ?? historyRes.data;
+      const historyData = Array.isArray(rawHistory) ? rawHistory : [];
 
       setPending(pendingData);
       setHistory(historyData);

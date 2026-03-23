@@ -48,13 +48,26 @@ export default function RecognitionManagementTab() {
     try {
       setLoading(true);
       setError('');
-      const res = await api.get('/compensation-rewards/manager/recognition/nominations');
-      const result = res.data?.data || res.data || {};
+      const [nominationsRes, dashboardRes] = await Promise.all([
+        api.get('/compensation-rewards/manager/recognition/nominations').catch(() => null),
+        api.get('/compensation-rewards/manager/recognition/dashboard').catch(() => null),
+      ]);
+      const rawNominations = nominationsRes?.data?.data ?? nominationsRes?.data ?? [];
+      const nominations = Array.isArray(rawNominations) ? rawNominations : [];
+      const dash = dashboardRes?.data?.data ?? dashboardRes?.data ?? {};
       setData({
-        totalGiven: result.totalGiven || 0,
-        totalReceived: result.totalReceived || 0,
-        pendingApprovals: result.pendingApprovals || 0,
-        nominations: Array.isArray(result.nominations) ? result.nominations : Array.isArray(result) ? result : [],
+        totalGiven: dash.given ?? nominations.filter((n: Nomination) => n.status === 'approved').length ?? 0,
+        totalReceived: dash.received ?? 0,
+        pendingApprovals: dash.pendingApprovals ?? nominations.filter((n: Nomination) => n.status === 'pending').length ?? 0,
+        nominations: nominations.map((n: Record<string, unknown>) => ({
+          id: String(n.id ?? ''),
+          nomineeName: String(n.nomineeName ?? n.employeeName ?? '—'),
+          programName: String(n.programName ?? '—'),
+          category: String(n.category ?? '—'),
+          reason: String(n.reason ?? ''),
+          status: String(n.status ?? 'pending'),
+          date: String(n.awardDate ?? n.createdAt ?? ''),
+        })),
       });
     } catch {
       setError('Failed to load recognition data.');

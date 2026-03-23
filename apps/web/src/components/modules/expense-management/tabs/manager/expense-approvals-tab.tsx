@@ -75,12 +75,14 @@ export default function ExpenseApprovalsTab() {
       setLoading(true);
       setError('');
       const [pendingRes, historyRes] = await Promise.all([
-        api.get('/expense-management/manager/approvals/pending'),
-        api.get('/expense-management/manager/approvals/history'),
+        api.get('/expense-management/manager/approvals').catch(() => ({ data: [] })),
+        api.get('/expense-management/manager/approvals').catch(() => ({ data: [] })),
       ]);
 
-      const pendingData = Array.isArray(pendingRes.data) ? pendingRes.data : pendingRes.data?.data || [];
-      const historyData = Array.isArray(historyRes.data) ? historyRes.data : historyRes.data?.data || [];
+      const rawPending = pendingRes.data?.data ?? pendingRes.data;
+      const pendingData = Array.isArray(rawPending) ? rawPending : [];
+      const rawHistory = historyRes.data?.data ?? historyRes.data;
+      const historyData = Array.isArray(rawHistory) ? rawHistory : [];
 
       setPending(pendingData);
       setHistory(historyData);
@@ -106,7 +108,7 @@ export default function ExpenseApprovalsTab() {
     try {
       setLoadingDetail(true);
       setError('');
-      const res = await api.get(`/expense-management/manager/approvals/reports/${id}`);
+      const res = await api.get(`/expense-management/manager/approvals/${id}`);
       const data = res.data?.data || res.data || {};
       setSelectedReport(data);
       setActionComment('');
@@ -122,8 +124,10 @@ export default function ExpenseApprovalsTab() {
     try {
       setActionLoading(`${id}-${action}`);
       setError('');
-      await api.post(`/expense-management/manager/approvals/${action}/${id}`, {
+      await api.post(`/expense-management/manager/approvals/${id}/${action}`, {
         remarks: actionComment.trim(),
+        comments: actionComment.trim(),
+        reason: actionComment.trim(),
       });
       const messages: Record<string, string> = {
         approve: 'Expense report approved successfully.',

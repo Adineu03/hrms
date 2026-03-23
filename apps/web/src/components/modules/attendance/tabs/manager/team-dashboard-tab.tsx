@@ -103,7 +103,8 @@ export default function TeamDashboardTab() {
         params: { date },
       });
       const data = res.data;
-      const teamMembers: TeamMemberAttendance[] = data.members || data.attendance || data || [];
+      const raw = data?.data || data;
+      const teamMembers: TeamMemberAttendance[] = Array.isArray(raw) ? raw : raw?.members || raw?.attendance || [];
       setMembers(teamMembers);
 
       // Calculate summary from data or use provided summary

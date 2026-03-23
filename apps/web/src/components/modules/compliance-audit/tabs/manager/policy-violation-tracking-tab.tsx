@@ -66,7 +66,8 @@ export default function PolicyViolationTrackingTab() {
     try {
       setLoading(true);
       const res = await api.get('/compliance-audit/manager/policy-violations');
-      setViolations(res.data?.data || res.data || []);
+      const raw = res.data?.data || res.data;
+      setViolations(Array.isArray(raw) ? raw : []);
     } catch {
       setError('Failed to load policy violations');
     } finally {
@@ -92,7 +93,7 @@ export default function PolicyViolationTrackingTab() {
   const handleDisciplinaryAction = async (id: string) => {
     if (!disciplinaryAction) return;
     try {
-      await api.patch(`/compliance-audit/manager/policy-violations/${id}/disciplinary-action`, { disciplinaryAction });
+      await api.patch(`/compliance-audit/manager/policy-violations/${id}/disciplinary-action`, { action: disciplinaryAction });
       setDisciplinaryViolationId(null);
       setDisciplinaryAction('');
       fetchViolations();
@@ -106,7 +107,14 @@ export default function PolicyViolationTrackingTab() {
     try {
       setLoadingHistory(true);
       const res = await api.get(`/compliance-audit/manager/policy-violations/history/${historyEmployeeId}`);
-      setHistory(res.data?.data || res.data);
+      const histRaw = res.data?.data || res.data;
+      if (Array.isArray(histRaw)) {
+        setHistory({ employeeId: historyEmployeeId, employeeName: histRaw[0]?.employeeName || historyEmployeeId, violations: histRaw });
+      } else if (histRaw && Array.isArray(histRaw.violations)) {
+        setHistory(histRaw);
+      } else {
+        setHistory({ employeeId: historyEmployeeId, employeeName: historyEmployeeId, violations: [] });
+      }
     } catch {
       setError('Failed to load violation history');
     } finally {

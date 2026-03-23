@@ -48,14 +48,16 @@ export default function TeamExpenseReportsTab() {
       setLoading(true);
       setError('');
       const [summaryRes, categoryRes, topRes] = await Promise.all([
-        api.get('/expense-management/manager/team-reports/summary'),
-        api.get('/expense-management/manager/team-reports/category-breakdown'),
-        api.get('/expense-management/manager/team-reports/top-spenders'),
+        api.get('/expense-management/manager/team-reports/summary').catch(() => ({ data: {} })),
+        api.get('/expense-management/manager/team-reports/category-breakdown').catch(() => ({ data: [] })),
+        api.get('/expense-management/manager/team-reports/top-spenders').catch(() => ({ data: [] })),
       ]);
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};
-      const categoryData = Array.isArray(categoryRes.data) ? categoryRes.data : categoryRes.data?.data || [];
-      const topData = Array.isArray(topRes.data) ? topRes.data : topRes.data?.data || [];
+      const rawCategory = categoryRes.data?.data ?? categoryRes.data;
+      const categoryData = Array.isArray(rawCategory) ? rawCategory : [];
+      const rawTop = topRes.data?.data ?? topRes.data;
+      const topData = Array.isArray(rawTop) ? rawTop : [];
 
       setSummary({
         totalSpend: summaryData.totalSpend || 0,
@@ -193,7 +195,7 @@ export default function TeamExpenseReportsTab() {
                             style={{ width: `${Math.min(c.percentage, 100)}%` }}
                           />
                         </div>
-                        <span className="text-xs text-text-muted">{c.percentage.toFixed(1)}%</span>
+                        <span className="text-xs text-text-muted">{(c.percentage ?? 0).toFixed(1)}%</span>
                       </div>
                     </td>
                   </tr>

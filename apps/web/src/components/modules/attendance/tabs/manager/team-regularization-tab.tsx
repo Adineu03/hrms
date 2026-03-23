@@ -98,8 +98,9 @@ export default function TeamRegularizationTab() {
         params.status = 'approved,rejected';
       }
 
-      const res = await api.get('/attendance/manager/regularizations', { params });
-      setRequests(res.data?.requests || res.data || []);
+      const res = await api.get('/attendance/manager/regularizations', { params }).catch(() => ({ data: [] }));
+      const resData = res.data?.data || res.data;
+      setRequests(Array.isArray(resData) ? resData : resData?.requests || []);
     } catch {
       setError('Failed to load regularization requests.');
     } finally {
@@ -116,7 +117,8 @@ export default function TeamRegularizationTab() {
     setIsProcessing(true);
     setError(null);
     try {
-      await api.post(`/attendance/manager/regularizations/${requestId}/${action}`, {
+      await api.patch(`/attendance/manager/regularizations/${requestId}`, {
+        action,
         comment: comment?.trim() || undefined,
       });
       setRequests((prev) =>
@@ -152,7 +154,8 @@ export default function TeamRegularizationTab() {
     setIsProcessing(true);
     setError(null);
     try {
-      await api.post(`/attendance/manager/regularizations/bulk-${action}`, {
+      await api.post('/attendance/manager/regularizations/bulk-action', {
+        action,
         requestIds: Array.from(selectedIds),
       });
       setRequests((prev) =>

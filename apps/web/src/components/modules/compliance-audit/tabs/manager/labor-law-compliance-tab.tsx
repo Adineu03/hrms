@@ -75,15 +75,22 @@ export default function LaborLawComplianceTab() {
     try {
       setLoading(true);
       const [whRes, lcRes, hsRes, ccRes] = await Promise.all([
-        api.get('/compliance-audit/manager/labor-law/working-hours'),
-        api.get('/compliance-audit/manager/labor-law/leave-compliance'),
-        api.get('/compliance-audit/manager/labor-law/health-safety'),
-        api.get('/compliance-audit/manager/labor-law/contractor-classification'),
+        api.get('/compliance-audit/manager/labor-law/working-hours').catch(() => ({ data: {} })),
+        api.get('/compliance-audit/manager/labor-law/leave-compliance').catch(() => ({ data: {} })),
+        api.get('/compliance-audit/manager/labor-law/health-safety').catch(() => ({ data: {} })),
+        api.get('/compliance-audit/manager/labor-law/contractor-classification').catch(() => ({ data: {} })),
       ]);
-      setWorkingHours(whRes.data?.data || whRes.data || []);
-      setLeaveCompliance(lcRes.data?.data || lcRes.data || []);
-      setHealthSafety(hsRes.data?.data || hsRes.data || []);
-      setContractors(ccRes.data?.data || ccRes.data || []);
+      const whRaw = whRes.data?.data;
+      setWorkingHours(Array.isArray(whRaw) ? whRaw : Array.isArray(whRaw?.checklists) ? whRaw.checklists : []);
+
+      const lcRaw = lcRes.data?.data;
+      setLeaveCompliance(Array.isArray(lcRaw) ? lcRaw : Array.isArray(lcRaw?.checklists) ? lcRaw.checklists : []);
+
+      const hsRaw = hsRes.data?.data;
+      setHealthSafety(Array.isArray(hsRaw) ? hsRaw : Array.isArray(hsRaw?.checklists) ? hsRaw.checklists : []);
+
+      const ccRaw = ccRes.data?.data;
+      setContractors(Array.isArray(ccRaw) ? ccRaw : Array.isArray(ccRaw?.checklists) ? ccRaw.checklists : []);
     } catch {
       setError('Failed to load labor law compliance data');
     } finally {

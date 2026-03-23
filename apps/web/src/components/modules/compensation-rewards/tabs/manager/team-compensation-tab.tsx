@@ -32,14 +32,30 @@ export default function TeamCompensationTab() {
     try {
       setLoading(true);
       setError('');
-      const res = await api.get('/compensation-rewards/manager/team-compensation');
-      const result = res.data?.data || res.data || {};
+      const [teamRes, budgetRes] = await Promise.all([
+        api.get('/compensation-rewards/manager/team-compensation').catch(() => null),
+        api.get('/compensation-rewards/manager/team-compensation/budget-utilization').catch(() => null),
+      ]);
+      const rawMembers = teamRes?.data?.data ?? teamRes?.data ?? [];
+      const members: TeamMember[] = (Array.isArray(rawMembers) ? rawMembers : []).map((m: Record<string, unknown>) => ({
+        id: (m.userId ?? m.id ?? '') as string,
+        name: (m.name ?? '') as string,
+        designation: (m.designationId ?? m.designation ?? '—') as string,
+        grade: (m.gradeId ?? m.grade ?? '—') as string,
+        currentCtc: Number(m.currentCtc ?? 0),
+        band: (m.band ?? '—') as string,
+        lastIncrement: (m.effectiveFrom ?? m.lastIncrement ?? '—') as string,
+        tenure: (m.tenure ?? '—') as string,
+      }));
+      const budget = budgetRes?.data?.data ?? budgetRes?.data ?? {};
+      const totalCtc = members.reduce((sum, m) => sum + (m.currentCtc ?? 0), 0);
+      const avgCtc = members.length > 0 ? totalCtc / members.length : 0;
       setData({
-        teamSize: result.teamSize || 0,
-        avgCtc: result.avgCtc || 0,
-        budgetUtilization: result.budgetUtilization || 0,
-        lastRevision: result.lastRevision || '—',
-        members: Array.isArray(result.members) ? result.members : [],
+        teamSize: budget.teamSize ?? members.length ?? 0,
+        avgCtc: budget.averageCtc ?? avgCtc ?? 0,
+        budgetUtilization: budget.budgetUtilization ?? 0,
+        lastRevision: budget.lastRevision ?? '—',
+        members,
       });
     } catch {
       setError('Failed to load team compensation data.');
@@ -53,7 +69,7 @@ export default function TeamCompensationTab() {
   }, [loadData]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val ?? 0);
 
   if (loading) {
     return (

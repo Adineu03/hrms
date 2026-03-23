@@ -94,7 +94,8 @@ export default function LeaveReportsTab() {
       const res = await api.get(reportEndpoints[reportType], {
         params: { startDate, endDate },
       });
-      const data = res.data?.data || res.data?.rows || res.data || [];
+      const raw = res.data?.data || res.data?.rows || res.data || [];
+      const data = Array.isArray(raw) ? raw : [];
 
       switch (reportType) {
         case 'utilization':

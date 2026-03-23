@@ -48,8 +48,9 @@ export default function IncrementPlanningTab() {
     try {
       setLoading(true);
       setError('');
-      const res = await api.get('/compensation-rewards/manager/increment-planning/revisions');
-      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const res = await api.get('/compensation-rewards/manager/increment-planning/revisions').catch(() => null);
+      const raw = res?.data?.data ?? res?.data ?? [];
+      const data = Array.isArray(raw) ? raw : [];
       setRevisions(data);
       if (data.length > 0) {
         setSelectedRevision(data[0].id);
@@ -66,8 +67,17 @@ export default function IncrementPlanningTab() {
     try {
       setTeamLoading(true);
       setError('');
-      const res = await api.get(`/compensation-rewards/manager/increment-planning/revisions/${revisionId}/team`);
-      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const res = await api.get(`/compensation-rewards/manager/increment-planning/revisions/${revisionId}/team`).catch(() => null);
+      const raw = res?.data?.data ?? res?.data ?? [];
+      const data: TeamIncrement[] = (Array.isArray(raw) ? raw : []).map((item: Record<string, unknown>) => ({
+        id: (item.employeeId ?? item.id ?? '') as string,
+        employeeName: (item.employeeName ?? '') as string,
+        currentCtc: Number(item.currentCtc ?? 0),
+        proposedCtc: Number(item.proposedCtc ?? 0),
+        incrementPct: Number(item.incrementPercent ?? item.incrementPct ?? 0),
+        meritScore: Number(item.meritScore ?? 0),
+        status: (item.status ?? 'pending') as string,
+      }));
       setTeam(data);
     } catch {
       setError('Failed to load team data.');
@@ -123,7 +133,7 @@ export default function IncrementPlanningTab() {
   }, [success]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val ?? 0);
 
   const statusColor = (status: string) => {
     switch (status) {

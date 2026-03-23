@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -95,10 +95,27 @@ export default function TeamReportsTab() {
     setError(null);
     setHasGenerated(false);
     try {
-      const res = await api.get('/attendance/manager/reports', {
-        params: { type: reportType, startDate, endDate },
-      });
-      const data = res.data?.data || res.data?.rows || res.data || [];
+      // Backend has separate endpoints per report type
+      const typeEndpointMap: Record<ReportType, string> = {
+        attendance: '/attendance/manager/reports/attendance',
+        absenteeism: '/attendance/manager/reports/absenteeism',
+        punctuality: '/attendance/manager/reports/punctuality',
+        shift_compliance: '/attendance/manager/reports/shift-compliance',
+      };
+      const endpoint = typeEndpointMap[reportType];
+      const params: Record<string, string> = {};
+      if (reportType === 'punctuality') {
+        // Punctuality endpoint uses month/year params
+        const sd = new Date(startDate);
+        params.month = String(sd.getMonth() + 1);
+        params.year = String(sd.getFullYear());
+      } else {
+        params.startDate = startDate;
+        params.endDate = endDate;
+      }
+      const res = await api.get(endpoint, { params }).catch(() => ({ data: [] }));
+      const raw = res.data?.data || res.data?.rows || res.data;
+      const data = Array.isArray(raw) ? raw : [];
 
       switch (reportType) {
         case 'attendance':
@@ -125,11 +142,37 @@ export default function TeamReportsTab() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const res = await api.get('/attendance/manager/reports/export', {
-        params: { type: reportType, startDate, endDate },
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      // No dedicated export endpoint - generate CSV client-side from loaded data
+      let csvRows: string[][] = [];
+      switch (reportType) {
+        case 'attendance':
+          csvRows = [
+            ['Employee', 'Present', 'Absent', 'Late', 'Half Days', 'WFH', 'Total Hours', 'OT Hours'],
+            ...attendanceData.map((r) => [r.employeeName, String(r.presentDays), String(r.absentDays), String(r.lateDays), String(r.halfDays), String(r.wfhDays), (r.totalHours ?? 0).toFixed(1), (r.otHours ?? 0).toFixed(1)]),
+          ];
+          break;
+        case 'absenteeism':
+          csvRows = [
+            ['Employee', 'Absent Days', 'Mondays', 'Fridays', 'Post-Holiday', 'Trend'],
+            ...absenteeismData.map((r) => [r.employeeName, String(r.absentDays), String(r.mondayAbsences), String(r.fridayAbsences), String(r.postHolidayAbsences), r.trend]),
+          ];
+          break;
+        case 'punctuality':
+          csvRows = [
+            ['Employee', 'Total Days', 'On-Time %', 'Late Days', 'Avg Late Min', 'Score'],
+            ...punctualityData.map((r) => [r.employeeName, String(r.totalDays), (r.onTimePercent ?? 0).toFixed(1), String(r.lateDays), (r.avgLateMinutes ?? 0).toFixed(0), String(r.score)]),
+          ];
+          break;
+        case 'shift_compliance':
+          csvRows = [
+            ['Employee', 'Assigned Shifts', 'Adherent', 'Violations', 'Compliance %'],
+            ...shiftComplianceData.map((r) => [r.employeeName, String(r.assignedShifts), String(r.adherent), String(r.violations), (r.compliancePercent ?? 0).toFixed(1)]),
+          ];
+          break;
+      }
+      const csvContent = csvRows.map((row) => row.map((c) => `"${c}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `${reportType}-report-${startDate}-${endDate}.csv`);
@@ -174,8 +217,8 @@ export default function TeamReportsTab() {
               </td>
               <td className="px-4 py-3 text-sm text-text-muted">{row.halfDays}</td>
               <td className="px-4 py-3 text-sm text-text-muted">{row.wfhDays}</td>
-              <td className="px-4 py-3 text-sm text-text-muted font-medium">{row.totalHours.toFixed(1)}h</td>
-              <td className="px-4 py-3 text-sm text-text-muted">{row.otHours.toFixed(1)}h</td>
+              <td className="px-4 py-3 text-sm text-text-muted font-medium">{(row.totalHours ?? 0).toFixed(1)}h</td>
+              <td className="px-4 py-3 text-sm text-text-muted">{(row.otHours ?? 0).toFixed(1)}h</td>
             </tr>
           ))}
           {attendanceData.length === 0 && (
@@ -272,14 +315,14 @@ export default function TeamReportsTab() {
                         : 'bg-red-50 text-red-700'
                   }`}
                 >
-                  {row.onTimePercent.toFixed(1)}%
+                  {(row.onTimePercent ?? 0).toFixed(1)}%
                 </span>
               </td>
               <td className="px-4 py-3 text-sm">
                 <span className="bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full text-xs font-medium">{row.lateDays}</span>
               </td>
               <td className="px-4 py-3 text-sm text-text-muted">
-                {row.avgLateMinutes > 0 ? `${row.avgLateMinutes.toFixed(0)} min` : '--'}
+                {(row.avgLateMinutes ?? 0) > 0 ? `${(row.avgLateMinutes ?? 0).toFixed(0)} min` : '--'}
               </td>
               <td className="px-4 py-3 text-sm">
                 <span
@@ -345,7 +388,7 @@ export default function TeamReportsTab() {
                         : 'bg-red-50 text-red-700'
                   }`}
                 >
-                  {row.compliancePercent.toFixed(1)}%
+                  {(row.compliancePercent ?? 0).toFixed(1)}%
                 </span>
               </td>
             </tr>

@@ -188,4 +188,26 @@ export class DevelopmentPlanningService {
 
     return updated;
   }
+
+  async deleteDevelopmentPlan(orgId: string, id: string) {
+    const [existing] = await this.db
+      .select({ id: schema.learningPaths.id })
+      .from(schema.learningPaths)
+      .where(
+        and(
+          eq(schema.learningPaths.id, id),
+          eq(schema.learningPaths.orgId, orgId),
+          eq(schema.learningPaths.isActive, true),
+        ),
+      );
+
+    if (!existing) throw new NotFoundException('Development plan not found');
+
+    await this.db
+      .update(schema.learningPaths)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(schema.learningPaths.id, id));
+
+    return { message: 'Development plan deleted successfully' };
+  }
 }

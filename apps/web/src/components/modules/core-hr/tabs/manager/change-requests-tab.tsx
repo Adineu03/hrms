@@ -84,11 +84,13 @@ export default function ChangeRequestsTab() {
     async function loadData() {
       try {
         const [requestsRes, teamRes] = await Promise.all([
-          api.get('/core-hr/manager/change-requests'),
-          api.get('/core-hr/manager/team'),
+          api.get('/core-hr/manager/change-requests').catch(() => ({ data: [] })),
+          api.get('/core-hr/manager/team').catch(() => ({ data: [] })),
         ]);
-        setRequests(requestsRes.data?.requests || requestsRes.data || []);
-        const teamData = teamRes.data?.members || teamRes.data || [];
+        const requestsRaw = requestsRes.data?.requests || requestsRes.data?.data || requestsRes.data;
+        setRequests(Array.isArray(requestsRaw) ? requestsRaw : []);
+        const teamRaw = teamRes.data?.members || teamRes.data?.data || teamRes.data;
+        const teamData = Array.isArray(teamRaw) ? teamRaw : [];
         setEmployees(
           teamData.map((e: Record<string, unknown>) => ({
             id: e.id as string,
@@ -135,7 +137,8 @@ export default function ChangeRequestsTab() {
       } else {
         // Reload
         const reloadRes = await api.get('/core-hr/manager/change-requests');
-        setRequests(reloadRes.data?.requests || reloadRes.data || []);
+        const reloadRaw = reloadRes.data?.requests || reloadRes.data?.data || reloadRes.data;
+        setRequests(Array.isArray(reloadRaw) ? reloadRaw : []);
       }
       setSuccessMessage('Change request created successfully.');
       setShowForm(false);
@@ -335,7 +338,7 @@ export default function ChangeRequestsTab() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-text font-medium capitalize">
-                      {req.type.replace(/_/g, ' ')}
+                      {(req.type || '').replace(/_/g, ' ')}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">
                       {req.employeeName}

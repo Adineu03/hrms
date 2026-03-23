@@ -93,18 +93,19 @@ export default function OvertimeApprovalTab() {
       if (dateTo) params.dateTo = dateTo;
 
       const [requestsRes, summaryRes] = await Promise.all([
-        api.get('/attendance/manager/overtime', { params }),
-        api.get('/attendance/manager/overtime/summary'),
+        api.get('/attendance/manager/overtime/requests', { params }).catch(() => ({ data: [] })),
+        api.get('/attendance/manager/overtime/summary').catch(() => ({ data: {} })),
       ]);
 
-      setRequests(requestsRes.data?.requests || requestsRes.data || []);
-      const summaryData = summaryRes.data;
+      const reqData = requestsRes.data?.data || requestsRes.data;
+      setRequests(Array.isArray(reqData) ? reqData : reqData?.requests || []);
+      const summaryData = summaryRes.data?.data || summaryRes.data || {};
       setSummary({
         pendingCount: summaryData?.pendingCount || 0,
         approvedThisMonth: summaryData?.approvedThisMonth || 0,
         totalOtHoursThisMonth: summaryData?.totalOtHoursThisMonth || 0,
       });
-      setMonthlyOT(summaryData?.monthlyBreakdown || []);
+      setMonthlyOT(Array.isArray(summaryData?.monthlyBreakdown) ? summaryData.monthlyBreakdown : []);
     } catch {
       setError('Failed to load overtime data.');
     } finally {
@@ -120,7 +121,8 @@ export default function OvertimeApprovalTab() {
     setIsProcessing(true);
     setError(null);
     try {
-      await api.post(`/attendance/manager/overtime/${requestId}/${action}`, {
+      await api.patch(`/attendance/manager/overtime/requests/${requestId}`, {
+        action,
         comment: comment?.trim() || undefined,
       });
       setRequests((prev) =>
@@ -151,7 +153,8 @@ export default function OvertimeApprovalTab() {
     setIsProcessing(true);
     setError(null);
     try {
-      await api.post(`/attendance/manager/overtime/bulk-${action}`, {
+      await api.post('/attendance/manager/overtime/requests/bulk-action', {
+        action,
         requestIds: Array.from(selectedIds),
       });
       setRequests((prev) =>

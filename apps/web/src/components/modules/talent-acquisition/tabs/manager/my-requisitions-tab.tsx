@@ -219,15 +219,15 @@ export default function MyRequisitionsTab() {
           <div className="grid grid-cols-3 gap-4 mb-3">
             <div>
               <p className="text-xs text-text-muted">Total Budget</p>
-              <p className="text-lg font-bold text-text">${budget.totalBudget.toLocaleString()}</p>
+              <p className="text-lg font-bold text-text">${(budget.totalBudget ?? 0).toLocaleString()}</p>
             </div>
             <div>
               <p className="text-xs text-text-muted">Utilized</p>
-              <p className="text-lg font-bold text-blue-600">${budget.utilized.toLocaleString()}</p>
+              <p className="text-lg font-bold text-blue-600">${(budget.utilized ?? 0).toLocaleString()}</p>
             </div>
             <div>
               <p className="text-xs text-text-muted">Remaining</p>
-              <p className="text-lg font-bold text-green-600">${budget.remaining.toLocaleString()}</p>
+              <p className="text-lg font-bold text-green-600">${(budget.remaining ?? 0).toLocaleString()}</p>
             </div>
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -236,7 +236,7 @@ export default function MyRequisitionsTab() {
               style={{ width: `${Math.min(100, budget.utilizationPercent)}%` }}
             />
           </div>
-          <p className="text-xs text-text-muted mt-1">{budget.utilizationPercent.toFixed(1)}% utilized</p>
+          <p className="text-xs text-text-muted mt-1">{(budget.utilizationPercent ?? 0).toFixed(1)}% utilized</p>
         </div>
       )}
 

@@ -441,3 +441,18 @@
 **Status:** DONE
 
 ---
+
+## Issue #27 — Core HR Manager: Team Directory crashes "members.map is not a function"
+
+**Problem:** Core HR > Manager view > Team Directory tab crashes at line 92: `members.map is not a function`.
+
+**Files affected:**
+- `apps/web/src/components/modules/core-hr/tabs/manager/team-directory-tab.tsx` (line 51)
+
+**Root cause:** API returns `{ data: [...], meta: {...} }` but the code does `data.members || data || []`. Since `data.members` is undefined and `data` is a truthy object, `members` gets set to the response object instead of an array.
+
+**Solution:** Changed extraction to: `Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : data?.members || []`
+
+**Status:** FIXED
+
+---

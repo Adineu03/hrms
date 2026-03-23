@@ -87,7 +87,7 @@ export default function TeamPerformanceTab() {
     );
   }
 
-  const summary = data || {
+  const summary = {
     teamSize: 0,
     avgRating: 0,
     goalsOnTrackPercent: 0,
@@ -95,9 +95,11 @@ export default function TeamPerformanceTab() {
     members: [],
     pendingActions: [],
     ratingDistribution: [],
+    ...data,
   };
 
-  const maxDistCount = Math.max(...(summary.ratingDistribution.map((d) => d.count) || [1]), 1);
+  const ratingDist = Array.isArray(summary.ratingDistribution) ? summary.ratingDistribution : [];
+  const maxDistCount = Math.max(...(ratingDist.map((d: any) => d.count) || [1]), 1);
 
   return (
     <div className="space-y-6">
@@ -123,7 +125,7 @@ export default function TeamPerformanceTab() {
             <Star className="h-4 w-4 text-yellow-500" />
             <p className="text-xs text-text-muted uppercase font-semibold">Avg Rating</p>
           </div>
-          <p className="text-2xl font-bold text-text">{summary.avgRating.toFixed(1)}</p>
+          <p className="text-2xl font-bold text-text">{(summary.avgRating ?? 0).toFixed(1)}</p>
         </div>
         <div className="bg-background border border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -164,8 +166,8 @@ export default function TeamPerformanceTab() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <Star className={`h-3.5 w-3.5 ${member.currentRating >= 4 ? 'text-yellow-500' : member.currentRating >= 3 ? 'text-blue-400' : 'text-gray-400'}`} />
-                        <span className="text-sm text-text">{member.currentRating.toFixed(1)}</span>
+                        <Star className={`h-3.5 w-3.5 ${(member.currentRating ?? 0) >= 4 ? 'text-yellow-500' : (member.currentRating ?? 0) >= 3 ? 'text-blue-400' : 'text-gray-400'}`} />
+                        <span className="text-sm text-text">{(member.currentRating ?? 0).toFixed(1)}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">

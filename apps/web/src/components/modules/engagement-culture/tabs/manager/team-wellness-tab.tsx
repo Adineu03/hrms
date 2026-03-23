@@ -38,8 +38,8 @@ export default function TeamWellnessTab() {
       setLoading(true);
       setError('');
       const [wellnessRes, stressRes] = await Promise.all([
-        api.get('/engagement-culture/manager/team-wellness'),
-        api.get('/engagement-culture/manager/stress-indicators'),
+        api.get('/engagement-culture/manager/team-wellness').catch(() => ({ data: {} })),
+        api.get('/engagement-culture/manager/team-wellness/stress-indicators').catch(() => ({ data: {} })),
       ]);
 
       const wellness = wellnessRes.data?.data || wellnessRes.data || {};

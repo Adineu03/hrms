@@ -47,8 +47,13 @@ export default function TeamLearningTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/learning-development/manager/team-learning');
-      setData(res.data?.data || res.data);
+      const res = await api.get('/learning-development/manager/team-dashboard').catch(() => null);
+      if (res) {
+        const d = res.data?.data || res.data;
+        if (d && typeof d === 'object') {
+          setData({ ...d, members: Array.isArray(d.members) ? d.members : [] });
+        }
+      }
     } catch {
       setError('Failed to load team learning data.');
     } finally {

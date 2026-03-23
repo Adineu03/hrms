@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -332,10 +332,10 @@ export default function ApprovalQueueTab() {
           </thead>
           <tbody className="divide-y divide-border">
             {requests.map((req) => (
-              <>
-                <tr key={req.id} className="bg-card hover:bg-background/50 transition-colors">
+              <React.Fragment key={req.id}>
+                <tr className="bg-card hover:bg-background/50 transition-colors">
                   <td className="px-4 py-3">
-                    {req.status === 'pending' && (
+                    {(req.status || '') === 'pending' && (
                       <input
                         type="checkbox"
                         checked={selectedIds.has(req.id)}
@@ -361,7 +361,7 @@ export default function ApprovalQueueTab() {
                       </button>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-text-muted">{req.leaveType}</td>
+                  <td className="px-4 py-3 text-sm text-text-muted">{typeof req.leaveType === 'object' ? req.leaveType?.name || '' : req.leaveType}</td>
                   <td className="px-4 py-3 text-sm text-text-muted">
                     {new Date(req.startDate).toLocaleDateString()} - {new Date(req.endDate).toLocaleDateString()}
                   </td>
@@ -380,11 +380,11 @@ export default function ApprovalQueueTab() {
                         STATUS_STYLES[req.status]
                       }`}
                     >
-                      {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                      {(req.status || 'unknown').charAt(0).toUpperCase() + (req.status || 'unknown').slice(1)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {req.status === 'pending' ? (
+                    {(req.status || '') === 'pending' ? (
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
@@ -469,7 +469,7 @@ export default function ApprovalQueueTab() {
                                             STATUS_STYLES[h.status] || 'bg-gray-100 text-gray-600'
                                           }`}
                                         >
-                                          {h.status.charAt(0).toUpperCase() + h.status.slice(1)}
+                                          {(h.status || 'unknown').charAt(0).toUpperCase() + (h.status || 'unknown').slice(1)}
                                         </span>
                                       </td>
                                     </tr>
@@ -485,7 +485,7 @@ export default function ApprovalQueueTab() {
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             ))}
             {requests.length === 0 && (
               <tr>

@@ -70,8 +70,9 @@ export default function DevelopmentPlanningTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/learning-development/manager/development-plans');
-      setIdps(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const res = await api.get('/learning-development/manager/development-plans').catch(() => null);
+      const d = res?.data?.data ?? res?.data;
+      setIdps(Array.isArray(d) ? d : []);
     } catch {
       setError('Failed to load development plans.');
     } finally {

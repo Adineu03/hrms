@@ -42,12 +42,13 @@ export default function TeamPayrollOverviewTab() {
       setLoading(true);
       setError('');
       const [summaryRes, trendsRes] = await Promise.all([
-        api.get('/payroll-processing/manager/team-overview/summary'),
-        api.get('/payroll-processing/manager/team-overview/headcount-cost'),
+        api.get('/payroll-processing/manager/team-overview/summary').catch(() => ({ data: {} })),
+        api.get('/payroll-processing/manager/team-overview/headcount-cost').catch(() => ({ data: [] })),
       ]);
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};
-      const trendsData = Array.isArray(trendsRes.data) ? trendsRes.data : trendsRes.data?.data || [];
+      const rawTrends = trendsRes.data?.data ?? trendsRes.data;
+      const trendsData = Array.isArray(rawTrends) ? rawTrends : [];
 
       setSummary({
         headcount: summaryData.headcount || 0,
@@ -174,7 +175,7 @@ export default function TeamPayrollOverviewTab() {
                           t.change > 0 ? 'text-red-600' : 'text-green-600'
                         }`}>
                           {t.change > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingUp className="h-3 w-3 rotate-180" />}
-                          {Math.abs(t.change).toFixed(1)}%
+                          {Math.abs(t.change ?? 0).toFixed(1)}%
                         </span>
                       ) : (
                         <span className="text-xs text-gray-500">—</span>

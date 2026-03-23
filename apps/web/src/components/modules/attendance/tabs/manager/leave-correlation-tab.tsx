@@ -101,20 +101,30 @@ export default function LeaveCorrelationTab() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.get('/attendance/manager/leave-correlation', {
-        params: { month: selectedMonth + 1, year: selectedYear },
+      const monthParam = String(selectedMonth + 1);
+      const yearParam = String(selectedYear);
+      const [calendarRes, unapprovedRes, summaryRes] = await Promise.all([
+        api.get('/attendance/manager/leave-correlation/calendar', {
+          params: { month: monthParam, year: yearParam },
+        }).catch(() => ({ data: {} })),
+        api.get('/attendance/manager/leave-correlation/unapproved-absences').catch(() => ({ data: [] })),
+        api.get('/attendance/manager/leave-correlation/summary').catch(() => ({ data: {} })),
+      ]);
+
+      const calData = calendarRes.data?.data || calendarRes.data || {};
+      const empData = Array.isArray(calData) ? calData : calData.employees || calData.correlation || [];
+      setEmployees(Array.isArray(empData) ? empData : []);
+
+      const unapData = unapprovedRes.data?.data || unapprovedRes.data;
+      setUnapproved(Array.isArray(unapData) ? unapData : unapData?.unapprovedAbsences || unapData?.unapproved || []);
+
+      const sumData = summaryRes.data?.data || summaryRes.data || {};
+      setSummary({
+        totalAbsences: sumData?.totalAbsences || 0,
+        withLeave: sumData?.withLeave || 0,
+        withoutLeave: sumData?.withoutLeave || 0,
+        compliancePercent: sumData?.compliancePercent || 0,
       });
-      const data = res.data;
-      setEmployees(data.employees || data.correlation || []);
-      setUnapproved(data.unapprovedAbsences || data.unapproved || []);
-      setSummary(
-        data.summary || {
-          totalAbsences: 0,
-          withLeave: 0,
-          withoutLeave: 0,
-          compliancePercent: 0,
-        }
-      );
     } catch {
       setError('Failed to load leave correlation data.');
     } finally {

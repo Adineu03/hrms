@@ -79,11 +79,13 @@ export default function TeamOrgTab() {
     async function loadData() {
       try {
         const [changesRes, teamRes] = await Promise.all([
-          api.get('/core-hr/manager/org-changes'),
-          api.get('/core-hr/manager/team'),
+          api.get('/core-hr/manager/org-changes').catch(() => ({ data: [] })),
+          api.get('/core-hr/manager/team').catch(() => ({ data: [] })),
         ]);
-        setChanges(changesRes.data?.changes || changesRes.data || []);
-        const teamData = teamRes.data?.members || teamRes.data || [];
+        const changesRaw = changesRes.data?.changes || changesRes.data?.data || changesRes.data;
+        setChanges(Array.isArray(changesRaw) ? changesRaw : []);
+        const teamRaw = teamRes.data?.members || teamRes.data?.data || teamRes.data;
+        const teamData = Array.isArray(teamRaw) ? teamRaw : [];
         setEmployees(
           teamData.map((e: Record<string, unknown>) => ({
             id: e.id as string,
@@ -129,7 +131,8 @@ export default function TeamOrgTab() {
       } else {
         // Reload
         const reloadRes = await api.get('/core-hr/manager/org-changes');
-        setChanges(reloadRes.data?.changes || reloadRes.data || []);
+        const reloadRaw = reloadRes.data?.changes || reloadRes.data?.data || reloadRes.data;
+        setChanges(Array.isArray(reloadRaw) ? reloadRaw : []);
       }
       setSuccessMessage('Change request submitted successfully.');
       setShowForm(false);
@@ -314,7 +317,7 @@ export default function TeamOrgTab() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-text font-medium capitalize">
-                      {change.type.replace('_', ' ')}
+                      {(change.type || '').replace('_', ' ')}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">
                       {change.employeeName}

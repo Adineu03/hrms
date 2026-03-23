@@ -49,20 +49,19 @@ export default function TeamCostReportsTab() {
       setLoading(true);
       setError('');
       const [breakdownRes, budgetRes] = await Promise.all([
-        api.get('/payroll-processing/manager/cost-reports/breakdown'),
-        api.get('/payroll-processing/manager/cost-reports/budget-vs-actual'),
+        api.get('/payroll-processing/manager/cost-reports/breakdown').catch(() => ({ data: [] })),
+        api.get('/payroll-processing/manager/cost-reports/budget-vs-actual').catch(() => ({ data: {} })),
       ]);
 
-      const breakdownData = Array.isArray(breakdownRes.data) ? breakdownRes.data : breakdownRes.data?.data || [];
+      const rawBreakdown = breakdownRes.data?.data ?? breakdownRes.data;
+      const breakdownData = Array.isArray(rawBreakdown) ? rawBreakdown : [];
       const budgetData = budgetRes.data?.data || budgetRes.data || {};
 
       setBreakdown(breakdownData);
 
       // Extract leave impact if nested
-      if (budgetData.leaveImpact) {
-        const liData = Array.isArray(budgetData.leaveImpact) ? budgetData.leaveImpact : [];
-        setLeaveImpact(liData);
-      }
+      const liRaw = budgetData.leaveImpact;
+      setLeaveImpact(Array.isArray(liRaw) ? liRaw : []);
 
       setBudgetVsActual({
         totalBudget: budgetData.totalBudget || 0,
@@ -140,19 +139,19 @@ export default function TeamCostReportsTab() {
               {budgetVsActual.variance > 0 ? '+' : ''}{formatCurrency(budgetVsActual.variance)}
             </p>
             <p className="text-xs text-text-muted mt-1">
-              {budgetVsActual.variancePercent > 0 ? '+' : ''}{budgetVsActual.variancePercent.toFixed(1)}%
+              {(budgetVsActual.variancePercent ?? 0) > 0 ? '+' : ''}{(budgetVsActual.variancePercent ?? 0).toFixed(1)}%
             </p>
           </div>
           <div className="bg-background rounded-xl border border-border p-5">
             <p className="text-sm text-text-muted mb-1">Utilization</p>
-            <p className="text-2xl font-bold text-text">{budgetVsActual.utilizationPercent.toFixed(1)}%</p>
+            <p className="text-2xl font-bold text-text">{(budgetVsActual.utilizationPercent ?? 0).toFixed(1)}%</p>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
               <div
                 className={`h-2 rounded-full ${
-                  budgetVsActual.utilizationPercent > 100 ? 'bg-red-500' :
-                  budgetVsActual.utilizationPercent > 90 ? 'bg-yellow-500' : 'bg-green-500'
+                  (budgetVsActual.utilizationPercent ?? 0) > 100 ? 'bg-red-500' :
+                  (budgetVsActual.utilizationPercent ?? 0) > 90 ? 'bg-yellow-500' : 'bg-green-500'
                 }`}
-                style={{ width: `${Math.min(budgetVsActual.utilizationPercent, 100)}%` }}
+                style={{ width: `${Math.min(budgetVsActual.utilizationPercent ?? 0, 100)}%` }}
               />
             </div>
           </div>

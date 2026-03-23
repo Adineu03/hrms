@@ -89,22 +89,21 @@ export default function DelegationTab() {
     setError(null);
     try {
       const [delegationsRes, approvalsRes, teamRes] = await Promise.all([
-        api.get('/leave-management/manager/delegations'),
-        api.get('/leave-management/manager/delegations/pending-approvals'),
-        api.get('/leave-management/manager/delegations/team-members'),
+        api.get('/leave-management/manager/delegations').catch(() => ({ data: [] })),
+        api.get('/leave-management/manager/delegations/pending-approvals').catch(() => ({ data: [] })),
+        api.get('/leave-management/manager/delegations/team-members').catch(() => ({ data: [] })),
       ]);
+      const dData = delegationsRes.data;
       setDelegations(
-        Array.isArray(delegationsRes.data)
-          ? delegationsRes.data
-          : delegationsRes.data?.data || []
+        Array.isArray(dData) ? dData : dData?.data || []
       );
+      const aData = approvalsRes.data;
       setDelegatedApprovals(
-        Array.isArray(approvalsRes.data)
-          ? approvalsRes.data
-          : approvalsRes.data?.data || []
+        Array.isArray(aData) ? aData : aData?.data || []
       );
+      const tData = teamRes.data;
       setTeamMembers(
-        Array.isArray(teamRes.data) ? teamRes.data : teamRes.data?.data || []
+        Array.isArray(tData) ? tData : tData?.data || []
       );
     } catch {
       setError('Failed to load delegation data.');
@@ -566,7 +565,7 @@ export default function DelegationTab() {
                           STATUS_STYLES[d.status]
                         }`}
                       >
-                        {d.status.charAt(0).toUpperCase() + d.status.slice(1)}
+                        {(d.status || 'unknown').charAt(0).toUpperCase() + (d.status || 'unknown').slice(1)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">

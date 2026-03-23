@@ -78,11 +78,13 @@ export default function LearningAssignmentsTab() {
     try {
       setIsLoading(true);
       const [aRes, oRes] = await Promise.all([
-        api.get('/learning-development/manager/assignments'),
-        api.get('/learning-development/manager/assignments/overdue'),
+        api.get('/learning-development/manager/assignments').catch(() => null),
+        api.get('/learning-development/manager/assignments/overdue').catch(() => null),
       ]);
-      setAssignments(Array.isArray(aRes.data) ? aRes.data : aRes.data?.data || []);
-      setOverdueItems(Array.isArray(oRes.data) ? oRes.data : oRes.data?.data || []);
+      const aData = aRes?.data?.data ?? aRes?.data;
+      const oData = oRes?.data?.data ?? oRes?.data;
+      setAssignments(Array.isArray(aData) ? aData : []);
+      setOverdueItems(Array.isArray(oData) ? oData : []);
     } catch {
       setError('Failed to load learning assignments.');
     } finally {
@@ -126,7 +128,7 @@ export default function LearningAssignmentsTab() {
 
   const handleSendReminder = async (assignmentId: string) => {
     try {
-      await api.post(`/learning-development/manager/assignments/${assignmentId}/remind`);
+      await api.post(`/learning-development/manager/assignments/${assignmentId}/reminder`);
       setSuccess('Reminder sent.');
       setTimeout(() => setSuccess(null), 3000);
     } catch {

@@ -64,10 +64,11 @@ export default function TeamComplianceTab() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await api.get('/core-hr/manager/compliance');
-        const data = res.data;
+        const res = await api.get('/core-hr/manager/compliance').catch(() => ({ data: {} }));
+        const data = res.data || {};
         setSummary(data.summary || null);
-        setItems(data.items || []);
+        const itemsRaw = data.items || data.data || data;
+        setItems(Array.isArray(itemsRaw) ? itemsRaw : []);
       } catch {
         setError('Failed to load compliance data.');
       } finally {
@@ -170,19 +171,19 @@ export default function TeamComplianceTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {items.map((item) => {
+              {items.map((item, idx) => {
                 const config = STATUS_CONFIG[item.status] || STATUS_CONFIG.missing;
                 const StatusIcon = config.icon;
                 return (
                   <tr
-                    key={item.id}
+                    key={item.id || idx}
                     className="bg-card hover:bg-background/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm text-text font-medium">
                       {item.employeeName}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted capitalize">
-                      {item.type.replace('_', ' ')}
+                      {(item.type || '').replace('_', ' ')}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">
                       {item.name}

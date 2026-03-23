@@ -54,14 +54,84 @@ export default function QuickActionsTab() {
       setLoading(true);
       setError('');
       const [actionsRes, recentRes, pendingRes] = await Promise.all([
-        api.get('/platform-experience/manager/quick-actions'),
-        api.get('/platform-experience/manager/quick-actions/recent'),
-        api.get('/platform-experience/manager/quick-actions/pending-approvals'),
+        api.get('/platform-experience/manager/quick-actions').catch(() => ({ data: null })),
+        api.get('/platform-experience/manager/quick-actions/recent').catch(() => ({ data: null })),
+        api.get('/platform-experience/manager/quick-actions/pending-approvals').catch(() => ({ data: null })),
       ]);
 
-      const actionsData = Array.isArray(actionsRes.data) ? actionsRes.data : actionsRes.data?.data || [];
-      const recentData = Array.isArray(recentRes.data) ? recentRes.data : recentRes.data?.data || [];
-      const pendingData = Array.isArray(pendingRes.data) ? pendingRes.data : pendingRes.data?.data || [];
+      // Backend returns { data: { teamSize, pendingLeaveRequests, ... } } — transform to QuickAction[]
+      const rawActions = actionsRes.data?.data ?? actionsRes.data ?? {};
+      const actionsData: QuickAction[] = [];
+      if (rawActions && typeof rawActions === 'object' && !Array.isArray(rawActions)) {
+        if (rawActions.pendingLeaveRequests != null) {
+          actionsData.push({ id: 'leave', label: 'Pending Leave Requests', type: 'leave', count: Number(rawActions.pendingLeaveRequests) || 0, icon: 'calendar' });
+        }
+        if (rawActions.pendingOvertimeRequests != null) {
+          actionsData.push({ id: 'overtime', label: 'Pending Overtime Requests', type: 'overtime', count: Number(rawActions.pendingOvertimeRequests) || 0, icon: 'timer' });
+        }
+        if (rawActions.unreadNotifications != null) {
+          actionsData.push({ id: 'notifications', label: 'Unread Notifications', type: 'approval', count: Number(rawActions.unreadNotifications) || 0, icon: 'clipboard' });
+        }
+        if (rawActions.teamAnnouncements != null) {
+          actionsData.push({ id: 'announcements', label: 'Team Announcements', type: 'document', count: Number(rawActions.teamAnnouncements) || 0, icon: 'file' });
+        }
+      } else if (Array.isArray(rawActions)) {
+        actionsData.push(...rawActions);
+      }
+
+      // Backend returns { data: { bookmarks, recentActivity } } — transform to RecentItem[]
+      const rawRecent = recentRes.data?.data ?? recentRes.data ?? {};
+      let recentData: RecentItem[] = [];
+      if (rawRecent && typeof rawRecent === 'object' && !Array.isArray(rawRecent)) {
+        const activity = Array.isArray(rawRecent.recentActivity) ? rawRecent.recentActivity : [];
+        const bookmarks = Array.isArray(rawRecent.bookmarks) ? rawRecent.bookmarks : [];
+        recentData = [
+          ...activity.map((a: Record<string, unknown>) => ({
+            id: String(a.id ?? ''),
+            title: String(a.title ?? a.message ?? ''),
+            type: String(a.type ?? a.moduleId ?? 'general'),
+            timestamp: String(a.createdAt ?? ''),
+            status: a.isRead ? 'read' : 'unread',
+          })),
+          ...bookmarks.map((b: Record<string, unknown>) => ({
+            id: String(b.id ?? ''),
+            title: String(b.title ?? ''),
+            type: String(b.moduleId ?? 'bookmark'),
+            timestamp: String(b.lastAccessed ?? ''),
+            status: 'bookmarked',
+          })),
+        ];
+      } else if (Array.isArray(rawRecent)) {
+        recentData = rawRecent;
+      }
+
+      // Backend returns { data: { leaveRequests, overtimeRequests } } — transform to PendingApproval[]
+      const rawPending = pendingRes.data?.data ?? pendingRes.data ?? {};
+      let pendingData: PendingApproval[] = [];
+      if (rawPending && typeof rawPending === 'object' && !Array.isArray(rawPending)) {
+        const leaves = Array.isArray(rawPending.leaveRequests) ? rawPending.leaveRequests : [];
+        const overtime = Array.isArray(rawPending.overtimeRequests) ? rawPending.overtimeRequests : [];
+        pendingData = [
+          ...leaves.map((l: Record<string, unknown>) => ({
+            id: String(l.id ?? ''),
+            employeeName: String(l.employeeName ?? ''),
+            type: 'leave',
+            details: `${l.fromDate ?? ''} to ${l.toDate ?? ''}`,
+            requestedAt: String(l.createdAt ?? ''),
+            status: String(l.status ?? 'pending'),
+          })),
+          ...overtime.map((o: Record<string, unknown>) => ({
+            id: String(o.id ?? ''),
+            employeeName: String(o.employeeName ?? ''),
+            type: 'overtime',
+            details: `${o.date ?? ''} — ${o.hours ?? 0}h`,
+            requestedAt: String(o.createdAt ?? ''),
+            status: String(o.status ?? 'pending'),
+          })),
+        ];
+      } else if (Array.isArray(rawPending)) {
+        pendingData = rawPending;
+      }
 
       setActions(actionsData);
       setRecentItems(recentData);

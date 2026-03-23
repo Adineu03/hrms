@@ -46,8 +46,10 @@ export default function ResourceAllocationTab() {
   const loadData = useCallback(async () => {
     setError(null);
     try {
-      const res = await api.get('/daily-work-logging/manager/resources');
-      setResources(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const res = await api.get('/daily-work-logging/manager/resources').catch(() => null);
+      const raw = res?.data;
+      const arr = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : Array.isArray(raw?.members) ? raw.members : [];
+      setResources(arr);
     } catch {
       setError('Failed to load resource allocation data.');
     } finally {
@@ -167,17 +169,17 @@ export default function ResourceAllocationTab() {
             {resources.map((r) => (
               <tr key={r.employeeId} className="bg-card hover:bg-background/50 transition-colors">
                 <td className="px-4 py-3 text-sm text-text font-medium">{r.employeeName}</td>
-                <td className="px-4 py-3 text-sm text-text-muted">{r.capacity.toFixed(1)}</td>
-                <td className="px-4 py-3 text-sm text-text-muted">{r.allocated.toFixed(1)}</td>
+                <td className="px-4 py-3 text-sm text-text-muted">{(r.capacity ?? r.allocatedHours ?? 0).toFixed(1)}</td>
+                <td className="px-4 py-3 text-sm text-text-muted">{(r.allocated ?? r.allocatedHours ?? 0).toFixed(1)}</td>
                 <td className="px-4 py-3 text-sm">
-                  <span className={r.available < 0 ? 'text-red-700 font-medium' : 'text-green-700 font-medium'}>
-                    {r.available.toFixed(1)}
+                  <span className={(r.available ?? r.availableHours ?? 0) < 0 ? 'text-red-700 font-medium' : 'text-green-700 font-medium'}>
+                    {(r.available ?? r.availableHours ?? 0).toFixed(1)}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex-1">{renderProgressBar(r.utilization)}</div>
-                    <span className="text-xs font-medium text-text w-10 text-right">{r.utilization.toFixed(0)}%</span>
+                    <div className="flex-1">{renderProgressBar(r.utilization ?? r.totalAllocationPercentage ?? 0)}</div>
+                    <span className="text-xs font-medium text-text w-10 text-right">{(r.utilization ?? r.totalAllocationPercentage ?? 0).toFixed(0)}%</span>
                   </div>
                 </td>
                 <td className="px-4 py-3">

@@ -132,14 +132,14 @@ export default function SampleReports() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {reports.map((report) => {
+        {reports.map((report, idx) => {
           const Icon = REPORT_ICONS[report.type] ?? FileText;
           const colors = REPORT_COLORS[report.type] ?? REPORT_COLORS.headcount;
-          const isPdfLoading = downloading?.id === report.id && downloading.format === 'pdf';
-          const isCsvLoading = downloading?.id === report.id && downloading.format === 'csv';
+          const isPdfLoading = downloading?.id === report.id && downloading?.format === 'pdf';
+          const isCsvLoading = downloading?.id === report.id && downloading?.format === 'csv';
 
           return (
-            <div key={report.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <div key={report.id || idx} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
               <div className="flex items-start gap-4 mb-4">
                 <div className={`p-3 rounded-xl flex-shrink-0 ${colors.icon}`}>
                   <Icon className="h-5 w-5" />

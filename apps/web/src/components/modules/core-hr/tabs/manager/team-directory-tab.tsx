@@ -46,9 +46,9 @@ export default function TeamDirectoryTab() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await api.get('/core-hr/manager/team');
+        const res = await api.get('/core-hr/manager/team', { params: { limit: 500 } });
         const data = res.data;
-        const teamMembers: TeamMember[] = data.members || data || [];
+        const teamMembers: TeamMember[] = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : data?.members || [];
         setMembers(teamMembers);
 
         // Calculate stats

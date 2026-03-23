@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UnauthorizedException } from '@nestjs/common';
 import { Roles } from '../../../../shared/auth/decorators/roles.decorator';
 import { TenantService } from '../../../../shared/multi-tenancy/tenant.service';
 import { DevelopmentPlanningService } from './development-planning.service';
@@ -44,5 +44,11 @@ export class DevelopmentPlanningController {
   @Roles('super_admin', 'admin', 'manager')
   async update(@Param('id') id: string, @Body() body: any) {
     return this.service.updateDevelopmentPlan(this.getOrgIdOrThrow(), id, body);
+  }
+
+  @Delete(':id')
+  @Roles('super_admin', 'admin', 'manager')
+  async remove(@Param('id') id: string) {
+    return this.service.deleteDevelopmentPlan(this.getOrgIdOrThrow(), id);
   }
 }

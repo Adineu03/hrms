@@ -82,11 +82,13 @@ export default function GoalManagementTab() {
     try {
       setIsLoading(true);
       const [goalsRes, empRes] = await Promise.all([
-        api.get('/performance-growth/manager/goals'),
-        api.get('/performance-growth/manager/employees'),
+        api.get('/performance-growth/manager/goals').catch(() => ({ data: [] })),
+        api.get('/core-hr/admin/employees').catch(() => ({ data: [] })),
       ]);
-      setGoals(Array.isArray(goalsRes.data) ? goalsRes.data : goalsRes.data?.data || []);
-      setEmployees(Array.isArray(empRes.data) ? empRes.data : empRes.data?.data || []);
+      const goalsRaw = goalsRes.data;
+      setGoals(Array.isArray(goalsRaw) ? goalsRaw : Array.isArray(goalsRaw?.data) ? goalsRaw.data : []);
+      const empRaw = empRes.data;
+      setEmployees(Array.isArray(empRaw) ? empRaw : Array.isArray(empRaw?.data) ? empRaw.data : []);
     } catch {
       setError('Failed to load team goals.');
     } finally {
@@ -122,7 +124,7 @@ export default function GoalManagementTab() {
   const handleApproveModification = async (goalId: string) => {
     setError(null);
     try {
-      await api.patch(`/performance-growth/manager/goals/${goalId}/approve`);
+      await api.post(`/performance-growth/manager/goals/${goalId}/approve`);
       setSuccess('Goal modification approved.');
       loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -134,7 +136,7 @@ export default function GoalManagementTab() {
   const handleRejectModification = async (goalId: string) => {
     setError(null);
     try {
-      await api.patch(`/performance-growth/manager/goals/${goalId}/reject`);
+      await api.post(`/performance-growth/manager/goals/${goalId}/reject`);
       setSuccess('Goal modification rejected.');
       loadData();
       setTimeout(() => setSuccess(null), 3000);

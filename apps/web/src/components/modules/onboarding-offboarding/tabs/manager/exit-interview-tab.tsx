@@ -80,11 +80,13 @@ export default function ExitInterviewTab() {
     try {
       setIsLoading(true);
       const [interviewRes, departingRes] = await Promise.all([
-        api.get('/onboarding-offboarding/manager/exit-interviews'),
-        api.get('/onboarding-offboarding/manager/departing-employees'),
+        api.get('/onboarding-offboarding/manager/exit-interviews').catch(() => ({ data: [] })),
+        api.get('/onboarding-offboarding/manager/departing-employees').catch(() => ({ data: [] })),
       ]);
-      setInterviews(Array.isArray(interviewRes.data) ? interviewRes.data : interviewRes.data?.data || []);
-      setDepartingEmployees(Array.isArray(departingRes.data) ? departingRes.data : departingRes.data?.data || []);
+      const interviewData = interviewRes.data;
+      setInterviews(Array.isArray(interviewData) ? interviewData : interviewData?.data ?? []);
+      const departingData = departingRes.data;
+      setDepartingEmployees(Array.isArray(departingData) ? departingData : departingData?.data ?? []);
     } catch {
       setError('Failed to load exit interviews.');
     } finally {
@@ -125,7 +127,7 @@ export default function ExitInterviewTab() {
     setIsSaving(true);
     setError(null);
     try {
-      await api.patch(`/onboarding-offboarding/manager/exit-interviews/${selectedInterview.id}/record`, responseForm);
+      await api.post(`/onboarding-offboarding/manager/exit-interviews/${selectedInterview.id}/complete`, responseForm);
       setSuccess('Interview responses recorded.');
       setShowResponseForm(false);
       setSelectedInterview(null);

@@ -89,11 +89,13 @@ export default function OneOnOneTab() {
     try {
       setIsLoading(true);
       const [meetingRes, empRes] = await Promise.all([
-        api.get('/performance-growth/manager/one-on-ones'),
-        api.get('/performance-growth/manager/employees'),
+        api.get('/performance-growth/manager/one-on-ones').catch(() => ({ data: [] })),
+        api.get('/core-hr/admin/employees').catch(() => ({ data: [] })),
       ]);
-      setMeetings(Array.isArray(meetingRes.data) ? meetingRes.data : meetingRes.data?.data || []);
-      setEmployees(Array.isArray(empRes.data) ? empRes.data : empRes.data?.data || []);
+      const meetingRaw = meetingRes.data;
+      setMeetings(Array.isArray(meetingRaw) ? meetingRaw : Array.isArray(meetingRaw?.data) ? meetingRaw.data : []);
+      const empRaw = empRes.data;
+      setEmployees(Array.isArray(empRaw) ? empRaw : Array.isArray(empRaw?.data) ? empRaw.data : []);
     } catch {
       setError('Failed to load 1-on-1 meetings.');
     } finally {
@@ -132,7 +134,7 @@ export default function OneOnOneTab() {
   const handleSaveNotes = async (meetingId: string) => {
     setError(null);
     try {
-      await api.patch(`/performance-growth/manager/one-on-ones/${meetingId}/notes`, {
+      await api.patch(`/performance-growth/manager/one-on-ones/${meetingId}`, {
         notes: meetingNotes[meetingId] || '',
       });
       setSuccess('Notes saved.');
@@ -146,7 +148,7 @@ export default function OneOnOneTab() {
     try {
       await api.patch(`/performance-growth/manager/one-on-ones/${meetingId}/action-items/${actionItemId}`, {
         isCompleted: !isCompleted,
-      });
+      }).catch(() => { throw new Error('Failed'); });
       loadData();
     } catch {
       setError('Failed to update action item.');
@@ -157,7 +159,7 @@ export default function OneOnOneTab() {
     const text = newActionItems[meetingId]?.trim();
     if (!text) return;
     try {
-      await api.post(`/performance-growth/manager/one-on-ones/${meetingId}/action-items`, { text });
+      await api.patch(`/performance-growth/manager/one-on-ones/${meetingId}`, { newActionItem: text });
       setNewActionItems((prev) => ({ ...prev, [meetingId]: '' }));
       loadData();
     } catch {
@@ -167,7 +169,7 @@ export default function OneOnOneTab() {
 
   const handleCompleteMeeting = async (meetingId: string) => {
     try {
-      await api.patch(`/performance-growth/manager/one-on-ones/${meetingId}/complete`);
+      await api.post(`/performance-growth/manager/one-on-ones/${meetingId}/complete`, {});
       setSuccess('Meeting marked as completed.');
       loadData();
       setTimeout(() => setSuccess(null), 3000);

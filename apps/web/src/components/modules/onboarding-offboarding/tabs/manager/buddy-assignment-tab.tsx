@@ -62,13 +62,16 @@ export default function BuddyAssignmentTab() {
     try {
       setIsLoading(true);
       const [assignRes, membersRes, hiresRes] = await Promise.all([
-        api.get('/onboarding-offboarding/manager/buddy-assignments'),
-        api.get('/onboarding-offboarding/manager/team-members'),
-        api.get('/onboarding-offboarding/manager/new-hires'),
+        api.get('/onboarding-offboarding/manager/buddies').catch(() => ({ data: [] })),
+        api.get('/onboarding-offboarding/manager/team-members').catch(() => ({ data: [] })),
+        api.get('/onboarding-offboarding/manager/new-hires').catch(() => ({ data: [] })),
       ]);
-      setAssignments(Array.isArray(assignRes.data) ? assignRes.data : assignRes.data?.data || []);
-      setTeamMembers(Array.isArray(membersRes.data) ? membersRes.data : membersRes.data?.data || []);
-      setNewHires(Array.isArray(hiresRes.data) ? hiresRes.data : hiresRes.data?.data || []);
+      const assignData = assignRes.data;
+      setAssignments(Array.isArray(assignData) ? assignData : assignData?.data ?? []);
+      const membersData = membersRes.data;
+      setTeamMembers(Array.isArray(membersData) ? membersData : membersData?.data ?? []);
+      const hiresData = hiresRes.data;
+      setNewHires(Array.isArray(hiresData) ? hiresData : hiresData?.data ?? []);
     } catch {
       setError('Failed to load buddy assignments.');
     } finally {
@@ -89,10 +92,10 @@ export default function BuddyAssignmentTab() {
     setIsSaving(true);
     try {
       if (editingAssignment) {
-        await api.patch(`/onboarding-offboarding/manager/buddy-assignments/${editingAssignment.id}`, formData);
+        await api.patch(`/onboarding-offboarding/manager/buddies/${editingAssignment.id}`, formData);
         setSuccess('Buddy reassigned successfully.');
       } else {
-        await api.post('/onboarding-offboarding/manager/buddy-assignments', formData);
+        await api.post('/onboarding-offboarding/manager/buddies', formData);
         setSuccess('Buddy assigned successfully.');
       }
       setShowAssignForm(false);

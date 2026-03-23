@@ -94,14 +94,15 @@ export default function ReviewFeedbackTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [reviewRes, feedbackRes, empRes] = await Promise.all([
-        api.get('/performance-growth/manager/reviews'),
-        api.get('/performance-growth/manager/feedback-history'),
-        api.get('/performance-growth/manager/employees'),
+      const [reviewRes, empRes] = await Promise.all([
+        api.get('/performance-growth/manager/reviews').catch(() => ({ data: [] })),
+        api.get('/core-hr/admin/employees').catch(() => ({ data: [] })),
       ]);
-      setPendingReviews(Array.isArray(reviewRes.data) ? reviewRes.data : reviewRes.data?.data || []);
-      setFeedbackHistory(Array.isArray(feedbackRes.data) ? feedbackRes.data : feedbackRes.data?.data || []);
-      setEmployees(Array.isArray(empRes.data) ? empRes.data : empRes.data?.data || []);
+      const reviewRaw = reviewRes.data;
+      setPendingReviews(Array.isArray(reviewRaw) ? reviewRaw : Array.isArray(reviewRaw?.data) ? reviewRaw.data : []);
+      setFeedbackHistory([]);
+      const empRaw = empRes.data;
+      setEmployees(Array.isArray(empRaw) ? empRaw : Array.isArray(empRaw?.data) ? empRaw.data : []);
     } catch {
       setError('Failed to load reviews and feedback.');
     } finally {
@@ -122,7 +123,7 @@ export default function ReviewFeedbackTab() {
     setIsSaving(true);
     setError(null);
     try {
-      await api.post(`/performance-growth/manager/reviews/${reviewId}/submit`, {
+      await api.patch(`/performance-growth/manager/reviews/${reviewId}`, {
         managerRating: reviewData.rating,
         managerComments: reviewData.comments,
       });
@@ -144,7 +145,7 @@ export default function ReviewFeedbackTab() {
     }
     setIsSaving(true);
     try {
-      await api.post('/performance-growth/manager/feedback', feedbackForm);
+      await api.post('/performance-growth/manager/reviews/feedback', feedbackForm);
       setSuccess('Feedback sent successfully.');
       setFeedbackForm({ employeeId: '', type: 'appreciation', category: 'work_quality', content: '' });
       loadData();

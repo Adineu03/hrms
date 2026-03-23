@@ -58,13 +58,31 @@ export default function AuditSupportTab() {
     try {
       setLoading(true);
       const [reportRes, certRes, evidenceRes] = await Promise.all([
-        api.get('/compliance-audit/manager/audit-support/team-report'),
-        api.get('/compliance-audit/manager/audit-support/certifications'),
-        api.get('/compliance-audit/manager/audit-support/evidence'),
+        api.get('/compliance-audit/manager/audit-support/team-report').catch(() => ({ data: {} })),
+        api.get('/compliance-audit/manager/audit-support/certifications').catch(() => ({ data: [] })),
+        api.get('/compliance-audit/manager/audit-support/evidence').catch(() => ({ data: [] })),
       ]);
-      setTeamReport(reportRes.data?.data || reportRes.data);
-      setCertifications(certRes.data?.data || certRes.data || []);
-      setEvidence(evidenceRes.data?.data || evidenceRes.data || []);
+      const reportRaw = reportRes.data?.data || reportRes.data;
+      if (reportRaw && typeof reportRaw === 'object') {
+        setTeamReport({
+          period: reportRaw.period || 'Current Period',
+          generatedAt: reportRaw.generatedAt || reportRaw.reportGeneratedAt || new Date().toISOString(),
+          totalMembers: reportRaw.totalMembers ?? reportRaw.trainings?.total ?? 0,
+          compliantCount: reportRaw.compliantCount ?? Math.round((reportRaw.overallComplianceScore ?? 0) / 100 * (reportRaw.trainings?.total ?? 0)),
+          nonCompliantCount: reportRaw.nonCompliantCount ?? (reportRaw.trainings?.total ?? 0) - Math.round((reportRaw.overallComplianceScore ?? 0) / 100 * (reportRaw.trainings?.total ?? 0)),
+          overdueTrainings: reportRaw.overdueTrainings ?? reportRaw.trainings?.byStatus?.overdue ?? 0,
+          pendingAcknowledgments: reportRaw.pendingAcknowledgments ?? reportRaw.acknowledgments?.total ?? 0,
+          openViolations: reportRaw.openViolations ?? 0,
+        });
+      } else {
+        setTeamReport(null);
+      }
+
+      const certRaw = certRes.data?.data || certRes.data;
+      setCertifications(Array.isArray(certRaw) ? certRaw : []);
+
+      const evidenceRaw = evidenceRes.data?.data || evidenceRes.data;
+      setEvidence(Array.isArray(evidenceRaw) ? evidenceRaw : []);
     } catch {
       setError('Failed to load audit support data');
     } finally {

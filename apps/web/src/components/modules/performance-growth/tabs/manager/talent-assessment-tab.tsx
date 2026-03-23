@@ -72,8 +72,18 @@ export default function TalentAssessmentTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/performance-growth/manager/talent');
-      setData(res.data?.data || res.data);
+      const [nineBoxRes, successionRes, hiPoRes] = await Promise.all([
+        api.get('/performance-growth/manager/talent/nine-box').catch(() => ({ data: [] })),
+        api.get('/performance-growth/manager/talent/succession').catch(() => ({ data: [] })),
+        api.get('/performance-growth/manager/talent/high-potential').catch(() => ({ data: [] })),
+      ]);
+      const nbRaw = nineBoxRes.data;
+      const nineBoxEmployees = Array.isArray(nbRaw) ? nbRaw : Array.isArray(nbRaw?.data) ? nbRaw.data : [];
+      const sRaw = successionRes.data;
+      const successionRoles = Array.isArray(sRaw) ? sRaw : Array.isArray(sRaw?.data) ? sRaw.data : [];
+      const hpRaw = hiPoRes.data;
+      const highPotentials = Array.isArray(hpRaw) ? hpRaw : Array.isArray(hpRaw?.data) ? hpRaw.data : [];
+      setData({ nineBoxEmployees, successionRoles, highPotentials });
     } catch {
       setError('Failed to load talent assessment data.');
     } finally {
@@ -274,7 +284,7 @@ export default function TalentAssessmentTab() {
                     </div>
                     <div className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 text-yellow-500" />
-                      <span className="text-sm font-semibold text-text">{hp.rating.toFixed(1)}</span>
+                      <span className="text-sm font-semibold text-text">{(hp.rating ?? 0).toFixed(1)}</span>
                     </div>
                   </div>
                   {hp.strengths?.length > 0 && (
