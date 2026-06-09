@@ -221,7 +221,7 @@ export default function MyExitProcessTab() {
               </div>
               <div>
                 <span className="text-xs text-text-muted block">Status</span>
-                <span className="text-sm font-medium text-primary capitalize">{exitProcess.status.replace(/_/g, ' ')}</span>
+                <span className="text-sm font-medium text-primary capitalize">{(exitProcess.status ?? '').replace(/_/g, ' ') || '--'}</span>
               </div>
             </div>
           </div>
@@ -240,7 +240,7 @@ export default function MyExitProcessTab() {
                     {item.signedBy && <p className="text-[10px] text-text-muted">By: {item.signedBy}</p>}
                   </div>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${CLEARANCE_STYLES[item.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {item.status}
+                    {(item.status ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </div>
               ))}
@@ -258,7 +258,7 @@ export default function MyExitProcessTab() {
                 <div key={asset.id} className="bg-card border border-border rounded-lg px-4 py-3 flex items-center justify-between">
                   <span className="text-sm text-text">{asset.assetName}</span>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ASSET_STYLES[asset.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {asset.status.replace(/_/g, ' ')}
+                    {(asset.status ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </div>
               ))}
@@ -276,27 +276,27 @@ export default function MyExitProcessTab() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-text-muted">Leave Encashment</span>
-                    <span className="text-text font-medium">${exitProcess.settlement.leaveEncashment.toLocaleString()}</span>
+                    <span className="text-text font-medium">${Number(exitProcess.settlement.leaveEncashment || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-muted">Gratuity</span>
-                    <span className="text-text font-medium">${exitProcess.settlement.gratuity.toLocaleString()}</span>
+                    <span className="text-text font-medium">${Number(exitProcess.settlement.gratuity || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-muted">Notice Pay</span>
-                    <span className="text-text font-medium">${exitProcess.settlement.noticePay.toLocaleString()}</span>
+                    <span className="text-text font-medium">${Number(exitProcess.settlement.noticePay || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-muted">Bonus Dues</span>
-                    <span className="text-text font-medium">${exitProcess.settlement.bonusDues.toLocaleString()}</span>
+                    <span className="text-text font-medium">${Number(exitProcess.settlement.bonusDues || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-muted">Deductions</span>
-                    <span className="text-red-600 font-medium">-${exitProcess.settlement.deductions.toLocaleString()}</span>
+                    <span className="text-red-600 font-medium">-${Number(exitProcess.settlement.deductions || 0).toLocaleString()}</span>
                   </div>
                   <div className="border-t border-border pt-2 flex justify-between text-sm font-bold">
                     <span className="text-text">Net Payable</span>
-                    <span className="text-primary">${exitProcess.settlement.netPayable.toLocaleString()}</span>
+                    <span className="text-primary">${Number(exitProcess.settlement.netPayable || 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>

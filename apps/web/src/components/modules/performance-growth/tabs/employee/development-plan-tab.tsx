@@ -23,22 +23,24 @@ const selectClassName =
   'w-full px-3 py-2 border border-border rounded-lg bg-white text-text text-sm focus:ring-2 focus:ring-primary focus:border-primary appearance-none';
 
 interface Activity {
-  id: string;
+  id?: string;
   title: string;
   type: string;
   status: string;
-  isCompleted: boolean;
-  dueDate: string;
+  isCompleted?: boolean;
+  dueDate?: string;
 }
 
 interface IdpPlan {
   id: string;
   title: string;
-  progress: number;
+  progress: number | string;
   status: string;
-  activities: Activity[];
+  activities?: Activity[];
+  certifications?: Certification[];
+  careerAspiration?: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;
 }
 
 interface Certification {
@@ -96,12 +98,34 @@ export default function DevelopmentPlanTab() {
         api.get('/performance-growth/employee/development/all').catch(() => ({ data: [] })),
         api.get('/performance-growth/employee/development/skills').catch(() => ({ data: [] })),
       ]);
-      setPlan(planRes.data?.data || planRes.data);
+      const planData: IdpPlan | null = planRes.data?.data || planRes.data || null;
+      setPlan(planData);
+
+      // Certifications live on the plan record (development/all returns plan records, not certs).
       const allData = allPlansRes.data?.data ?? allPlansRes.data;
-      setCertifications(Array.isArray(allData) ? allData : []);
-      const skillData = skillRes.data?.data ?? skillRes.data;
-      setSkills(Array.isArray(skillData) ? skillData : []);
-      setAspiration('');
+      const plansList: IdpPlan[] = Array.isArray(allData) ? allData : [];
+      const collectedCerts: Certification[] = plansList
+        .flatMap((p) => (Array.isArray(p?.certifications) ? p.certifications : []))
+        .filter(Boolean);
+      const planCerts = Array.isArray(planData?.certifications) ? planData!.certifications! : [];
+      setCertifications(collectedCerts.length > 0 ? collectedCerts : planCerts);
+
+      // Skills endpoint returns { skills: ["System Design", ...] } (array of strings) or array of objects.
+      const skillData = skillRes.data?.skills ?? skillRes.data?.data ?? skillRes.data;
+      const skillArr = Array.isArray(skillData) ? skillData : [];
+      const normalizedSkills: SkillSelfAssessment[] = skillArr.map(
+        (s: SkillSelfAssessment | string, i: number) =>
+          typeof s === 'string'
+            ? { id: `skill-${i}`, skillName: s, currentLevel: 'Intermediate', targetLevel: 'Advanced' }
+            : {
+                id: s.id ?? `skill-${i}`,
+                skillName: s.skillName ?? String(s),
+                currentLevel: s.currentLevel ?? 'Intermediate',
+                targetLevel: s.targetLevel ?? 'Advanced',
+              },
+      );
+      setSkills(normalizedSkills);
+      setAspiration(planData?.careerAspiration ?? '');
     } catch {
       setError('Failed to load development plan.');
     } finally {
@@ -237,10 +261,10 @@ export default function DevelopmentPlanTab() {
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-text-muted">Progress</span>
-              <span className="text-xs font-medium text-text">{plan.progress || 0}%</span>
+              <span className="text-xs font-medium text-text">{Math.round(Number(plan.progress) || 0)}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${plan.progress || 0}%` }} />
+              <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${Number(plan.progress) || 0}%` }} />
             </div>
           </div>
 
@@ -257,33 +281,37 @@ export default function DevelopmentPlanTab() {
                 Add Activity
               </button>
             </div>
-            {(plan.activities || []).length === 0 ? (
+            {(plan.activities ?? []).length === 0 ? (
               <p className="text-xs text-text-muted italic">No activities defined yet.</p>
             ) : (
-              plan.activities.map((activity) => (
-                <div key={activity.id} className="flex items-center gap-3 bg-background rounded-lg px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleActivity(activity.id, activity.isCompleted)}
-                    className="flex-shrink-0"
-                  >
-                    {activity.isCompleted ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Square className="h-4 w-4 text-text-muted hover:text-primary transition-colors" />
-                    )}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <span className={`text-sm ${activity.isCompleted ? 'text-text-muted line-through' : 'text-text'}`}>
-                      {activity.title}
-                    </span>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-text-muted capitalize">{activity.type}</span>
-                      {activity.dueDate && <span className="text-[10px] text-text-muted">Due: {new Date(activity.dueDate).toLocaleDateString()}</span>}
+              (plan.activities ?? []).map((activity, idx) => {
+                const isCompleted = activity.isCompleted ?? activity.status === 'completed';
+                return (
+                  <div key={activity.id ?? `${activity.title}-${idx}`} className="flex items-center gap-3 bg-background rounded-lg px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleActivity(activity.id ?? String(idx), isCompleted)}
+                      className="flex-shrink-0"
+                    >
+                      {isCompleted ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Square className="h-4 w-4 text-text-muted hover:text-primary transition-colors" />
+                      )}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-sm ${isCompleted ? 'text-text-muted line-through' : 'text-text'}`}>
+                        {activity.title}
+                      </span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-text-muted capitalize">{activity.type?.replace(/_/g, ' ')}</span>
+                        {activity.status && <span className="text-[10px] text-text-muted capitalize">{activity.status.replace(/_/g, ' ')}</span>}
+                        {activity.dueDate && <span className="text-[10px] text-text-muted">Due: {new Date(activity.dueDate).toLocaleDateString()}</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

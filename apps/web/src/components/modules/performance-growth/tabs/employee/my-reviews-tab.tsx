@@ -44,7 +44,12 @@ interface CompletedReview {
 
 interface YoyTrend {
   year: string;
+  cycleName?: string;
+  startDate?: string;
   rating: number;
+  selfRating?: number | string;
+  managerRating?: number | string;
+  finalRating?: number | string;
 }
 
 const PHASE_STYLES: Record<string, string> = {
@@ -82,7 +87,17 @@ export default function MyReviewsTab() {
       const histData = historyRes.data?.data ?? historyRes.data;
       setCompletedReviews(Array.isArray(histData) ? histData : []);
       const trendData = trendRes.data?.data ?? trendRes.data;
-      setYoyTrend(Array.isArray(trendData) ? trendData : []);
+      const normalizedTrend: YoyTrend[] = Array.isArray(trendData)
+        ? trendData.map((t: YoyTrend, i: number) => ({
+            ...t,
+            year:
+              t.year ??
+              t.cycleName ??
+              (t.startDate ? new Date(t.startDate).getFullYear().toString() : `Cycle ${i + 1}`),
+            rating: Number(t.rating ?? t.finalRating ?? t.managerRating ?? 0),
+          }))
+        : [];
+      setYoyTrend(normalizedTrend);
     } catch {
       setError('Failed to load review data.');
     } finally {
@@ -220,8 +235,8 @@ export default function MyReviewsTab() {
                     <tr key={review.id} className="bg-card hover:bg-background/50 transition-colors">
                       <td className="px-4 py-3 text-sm text-text font-medium">{review.cycleName}</td>
                       <td className="px-4 py-3">
-                        <span className={`text-sm font-bold ${review.finalRating >= 4 ? 'text-green-600' : review.finalRating >= 3 ? 'text-blue-600' : 'text-yellow-600'}`}>
-                          {(review.finalRating ?? 0).toFixed(1)}/5
+                        <span className={`text-sm font-bold ${(Number(review.finalRating) || 0) >= 4 ? 'text-green-600' : (Number(review.finalRating) || 0) >= 3 ? 'text-blue-600' : 'text-yellow-600'}`}>
+                          {(Number(review.finalRating) || 0).toFixed(1)}/5
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-text-muted">{new Date(review.completedAt).toLocaleDateString()}</td>
@@ -266,20 +281,20 @@ export default function MyReviewsTab() {
           ) : (
             <div className="bg-background border border-border rounded-xl p-4 space-y-3">
               {yoyTrend.map((entry, idx) => (
-                <div key={entry.year} className="space-y-1">
+                <div key={`${entry.year}-${idx}`} className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-text font-medium">{entry.year}</span>
                     <div className="flex items-center gap-1">
-                      <span className="text-xs font-bold text-text">{(entry.rating ?? 0).toFixed(1)}</span>
+                      <span className="text-xs font-bold text-text">{(Number(entry.rating) || 0).toFixed(1)}</span>
                       {idx > 0 && (
-                        <span className={`text-[10px] font-medium ${(entry.rating ?? 0) >= (yoyTrend[idx - 1].rating ?? 0) ? 'text-green-600' : 'text-red-600'}`}>
-                          {(entry.rating ?? 0) >= (yoyTrend[idx - 1].rating ?? 0) ? '+' : ''}{((entry.rating ?? 0) - (yoyTrend[idx - 1].rating ?? 0)).toFixed(1)}
+                        <span className={`text-[10px] font-medium ${(Number(entry.rating) || 0) >= (Number(yoyTrend[idx - 1].rating) || 0) ? 'text-green-600' : 'text-red-600'}`}>
+                          {(Number(entry.rating) || 0) >= (Number(yoyTrend[idx - 1].rating) || 0) ? '+' : ''}{((Number(entry.rating) || 0) - (Number(yoyTrend[idx - 1].rating) || 0)).toFixed(1)}
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${(entry.rating / 5) * 100}%` }} />
+                    <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${((Number(entry.rating) || 0) / 5) * 100}%` }} />
                   </div>
                 </div>
               ))}
@@ -303,15 +318,15 @@ export default function MyReviewsTab() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-background rounded-lg p-3 text-center">
                   <p className="text-[10px] text-text-muted uppercase font-semibold">Self Rating</p>
-                  <p className="text-lg font-bold text-text">{(detailReview.selfRating ?? 0).toFixed(1)}</p>
+                  <p className="text-lg font-bold text-text">{(Number(detailReview.selfRating) || 0).toFixed(1)}</p>
                 </div>
                 <div className="bg-background rounded-lg p-3 text-center">
                   <p className="text-[10px] text-text-muted uppercase font-semibold">Manager Rating</p>
-                  <p className="text-lg font-bold text-text">{(detailReview.managerRating ?? 0).toFixed(1)}</p>
+                  <p className="text-lg font-bold text-text">{(Number(detailReview.managerRating) || 0).toFixed(1)}</p>
                 </div>
                 <div className="bg-primary/10 rounded-lg p-3 text-center border border-primary/20">
                   <p className="text-[10px] text-primary uppercase font-semibold">Final Rating</p>
-                  <p className="text-lg font-bold text-primary">{(detailReview.finalRating ?? 0).toFixed(1)}</p>
+                  <p className="text-lg font-bold text-primary">{(Number(detailReview.finalRating) || 0).toFixed(1)}</p>
                 </div>
               </div>
 

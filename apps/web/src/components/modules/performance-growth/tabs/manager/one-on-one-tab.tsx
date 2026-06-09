@@ -40,13 +40,16 @@ interface Meeting {
   employeeName: string;
   employeeId: string;
   scheduledDate: string;
-  scheduledTime: string;
-  isRecurring: boolean;
-  recurringFrequency: string;
+  scheduledTime?: string;
+  scheduledAt?: string;
+  duration?: number;
+  isRecurring?: boolean;
+  recurringFrequency?: string;
+  recurrencePattern?: string;
   status: string;
-  agendaItems: AgendaItem[];
-  actionItems: ActionItem[];
-  notes: string;
+  agendaItems?: AgendaItem[];
+  actionItems?: ActionItem[];
+  notes?: string;
 }
 
 interface Employee {
@@ -93,7 +96,31 @@ export default function OneOnOneTab() {
         api.get('/core-hr/manager/team').catch(() => ({ data: [] })),
       ]);
       const meetingRaw = meetingRes.data;
-      setMeetings(Array.isArray(meetingRaw) ? meetingRaw : Array.isArray(meetingRaw?.data) ? meetingRaw.data : []);
+      const meetingList: Meeting[] = Array.isArray(meetingRaw)
+        ? meetingRaw
+        : Array.isArray(meetingRaw?.data)
+          ? meetingRaw.data
+          : [];
+      // API returns scheduledAt (timestamp), recurrencePattern, status "scheduled".
+      // Normalize to the fields the UI expects (scheduledDate/scheduledTime/recurringFrequency, status "upcoming").
+      const normalizedMeetings: Meeting[] = meetingList.map((m) => {
+        const when = m.scheduledAt ? new Date(m.scheduledAt) : null;
+        return {
+          ...m,
+          scheduledDate: m.scheduledDate ?? m.scheduledAt ?? '',
+          scheduledTime:
+            m.scheduledTime ??
+            (when && !Number.isNaN(when.getTime())
+              ? when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : ''),
+          isRecurring: m.isRecurring ?? Boolean(m.recurrencePattern),
+          recurringFrequency: m.recurringFrequency ?? m.recurrencePattern ?? '',
+          status: m.status === 'scheduled' ? 'upcoming' : m.status,
+          agendaItems: Array.isArray(m.agendaItems) ? m.agendaItems : [],
+          actionItems: Array.isArray(m.actionItems) ? m.actionItems : [],
+        };
+      });
+      setMeetings(normalizedMeetings);
       const empRaw = empRes.data;
       setEmployees(Array.isArray(empRaw) ? empRaw : Array.isArray(empRaw?.data) ? empRaw.data : []);
     } catch {
@@ -289,8 +316,8 @@ export default function OneOnOneTab() {
                         <p className="text-xs text-text-muted italic">No agenda items.</p>
                       ) : (
                         <ul className="space-y-1">
-                          {meeting.agendaItems.map((item) => (
-                            <li key={item.id} className="text-xs text-text flex items-start gap-2">
+                          {(meeting.agendaItems ?? []).map((item, ai) => (
+                            <li key={item.id ?? `agenda-${ai}`} className="text-xs text-text flex items-start gap-2">
                               <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                               <span>{item.text}</span>
                               <span className="text-[10px] text-text-muted">({item.addedBy})</span>
@@ -322,8 +349,8 @@ export default function OneOnOneTab() {
                     {/* Action Items */}
                     <div>
                       <h4 className="text-xs font-semibold text-text-muted uppercase mb-2">Action Items</h4>
-                      {(meeting.actionItems || []).map((item) => (
-                        <div key={item.id} className="flex items-center gap-2 mb-1">
+                      {(meeting.actionItems ?? []).map((item, aci) => (
+                        <div key={item.id ?? `action-${aci}`} className="flex items-center gap-2 mb-1">
                           <button
                             type="button"
                             onClick={() => handleToggleActionItem(meeting.id, item.id, item.isCompleted)}
@@ -388,7 +415,7 @@ export default function OneOnOneTab() {
                   <span className="text-sm text-text font-medium">{meeting.employeeName}</span>
                   <p className="text-xs text-text-muted">
                     {meeting.scheduledDate ? new Date(meeting.scheduledDate).toLocaleDateString() : '--'}
-                    {meeting.actionItems?.length > 0 && ` -- ${meeting.actionItems.filter((a) => a.isCompleted).length}/${meeting.actionItems.length} actions done`}
+                    {(meeting.actionItems?.length ?? 0) > 0 && ` -- ${(meeting.actionItems ?? []).filter((a) => a.isCompleted).length}/${(meeting.actionItems ?? []).length} actions done`}
                   </p>
                 </div>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[meeting.status] || 'bg-gray-100 text-gray-600'}`}>

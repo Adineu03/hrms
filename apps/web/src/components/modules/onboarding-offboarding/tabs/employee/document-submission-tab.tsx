@@ -56,10 +56,45 @@ export default function DocumentSubmissionTab() {
         api.get('/onboarding-offboarding/employee/documents').catch(() => ({ data: [] })),
         api.get('/onboarding-offboarding/employee/documents/offer-letter').catch(() => ({ data: [] })),
       ]);
+      // documents endpoint returns { requiredDocuments, uploadedDocuments } — not a flat array.
       const docData = docRes.data;
-      setDocuments(Array.isArray(docData) ? docData : Array.isArray(docData?.data) ? docData.data : []);
+      const rawDocs: any[] = Array.isArray(docData)
+        ? docData
+        : Array.isArray(docData?.data)
+          ? docData.data
+          : Array.isArray(docData?.requiredDocuments)
+            ? docData.requiredDocuments
+            : [];
+      setDocuments(
+        rawDocs.map((d, i) => ({
+          id: d.id ?? d.taskId ?? d.task_id ?? `doc-${i}`,
+          name: d.name ?? d.title ?? '--',
+          description: d.description ?? '',
+          status: d.status ?? d.verificationStatus ?? 'pending',
+          uploadedAt: d.uploadedAt ?? d.completedAt ?? d.completed_at ?? null,
+          rejectionReason: d.rejectionReason ?? d.rejection_reason ?? null,
+          fileUrl: d.fileUrl ?? d.file_url ?? d.attachments?.[0]?.fileUrl ?? null,
+          isMandatory: d.isMandatory ?? d.is_mandatory ?? true,
+        })),
+      );
+
       const polData = policyRes.data;
-      setPolicies(Array.isArray(polData) ? polData : Array.isArray(polData?.data) ? polData.data : []);
+      const rawPolicies: any[] = Array.isArray(polData)
+        ? polData
+        : Array.isArray(polData?.data)
+          ? polData.data
+          : Array.isArray(polData?.policies)
+            ? polData.policies
+            : [];
+      setPolicies(
+        rawPolicies.map((p, i) => ({
+          id: p.id ?? p.policyId ?? p.policy_id ?? `policy-${i}`,
+          policyName: p.policyName ?? p.policy_name ?? p.name ?? p.title ?? '--',
+          description: p.description ?? '',
+          acknowledged: Boolean(p.acknowledged ?? p.isAcknowledged ?? false),
+          acknowledgedAt: p.acknowledgedAt ?? p.acknowledged_at ?? null,
+        })),
+      );
     } catch {
       setError('Failed to load documents.');
     } finally {
@@ -165,7 +200,7 @@ export default function DocumentSubmissionTab() {
                       <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[10px] font-medium">Required</span>
                     )}
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${DOC_STATUS_STYLES[doc.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {doc.status}
+                      {(doc.status ?? '').replace(/_/g, ' ') || '--'}
                     </span>
                   </div>
                   {doc.description && <p className="text-xs text-text-muted mt-0.5">{doc.description}</p>}

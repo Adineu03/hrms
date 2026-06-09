@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -304,14 +304,14 @@ export default function OnboardingWorkflowTab() {
           </thead>
           <tbody className="divide-y divide-border">
             {workflows.map((wf) => (
-              <>
-                <tr key={wf.id} className="bg-card hover:bg-background/50 transition-colors">
+              <Fragment key={wf.id}>
+                <tr className="bg-card hover:bg-background/50 transition-colors">
                   <td className="px-4 py-3 text-sm text-text font-medium">{wf.name}</td>
                   <td className="px-4 py-3 text-sm text-text-muted">{wf.departmentName || 'All'}</td>
                   <td className="px-4 py-3 text-sm text-text-muted">{wf.taskCount || wf.tasks?.length || 0}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[wf.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {wf.status}
+                      {(wf.status ?? '').replace(/_/g, ' ') || '--'}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -334,7 +334,7 @@ export default function OnboardingWorkflowTab() {
                   </td>
                 </tr>
                 {expandedWorkflow === wf.id && (
-                  <tr key={`${wf.id}-tasks`}>
+                  <tr>
                     <td colSpan={5} className="px-4 py-3 bg-background/30">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between mb-2">
@@ -381,7 +381,7 @@ export default function OnboardingWorkflowTab() {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
             {workflows.length === 0 && (
               <tr>

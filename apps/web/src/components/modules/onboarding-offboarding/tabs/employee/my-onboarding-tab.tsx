@@ -68,8 +68,43 @@ export default function MyOnboardingTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/onboarding-offboarding/employee/my-onboarding');
-      setJourney(res.data?.data || res.data);
+      const [overviewRes, checklistRes] = await Promise.all([
+        api.get('/onboarding-offboarding/employee/my-onboarding'),
+        api.get('/onboarding-offboarding/employee/my-onboarding/checklist').catch(() => ({ data: null })),
+      ]);
+      const overview = overviewRes.data?.data || overviewRes.data;
+      const checklist = checklistRes.data?.data || checklistRes.data;
+
+      if (!overview?.id) {
+        setJourney(null);
+        return;
+      }
+
+      const rawTasks: any[] = Array.isArray(checklist?.tasks) ? checklist.tasks : [];
+      const tasks: OnboardingTask[] = rawTasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        status: t.status,
+        dueDate: t.dueDate,
+        category: t.taskType,
+        isMandatory: t.taskType === 'policy_acknowledgement' || t.taskType === 'document_upload',
+      }));
+
+      const totalTasks = checklist?.totalTasks ?? overview.totalTasks ?? tasks.length;
+      const completedTasks = checklist?.completedTasks ?? overview.completedTasks ?? 0;
+
+      setJourney({
+        completionPercent: overview.progressPercentage ?? 0,
+        totalTasks,
+        completedTasks,
+        startDate: overview.startDate,
+        expectedEndDate: overview.targetCompletionDate,
+        tasks,
+        buddy: overview.buddyName ? { name: overview.buddyName, designation: '', email: '', phone: '' } : null,
+        firstDayEssentials: null,
+        welcomeMessage: '',
+      });
     } catch {
       setError('Failed to load onboarding journey.');
     } finally {
@@ -192,7 +227,7 @@ export default function MyOnboardingTab() {
                     <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[10px] font-medium">Required</span>
                   )}
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TASK_STATUS_STYLES[task.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {task.status.replace(/_/g, ' ')}
+                    {(task.status ?? 'pending').replace(/_/g, ' ')}
                   </span>
                 </div>
                 {task.description && (
@@ -224,10 +259,12 @@ export default function MyOnboardingTab() {
               <div className="space-y-2">
                 <div>
                   <p className="text-sm font-medium text-text">{journey.buddy.name}</p>
-                  <p className="text-xs text-text-muted">{journey.buddy.designation}</p>
+                  {journey.buddy.designation && (
+                    <p className="text-xs text-text-muted">{journey.buddy.designation}</p>
+                  )}
                 </div>
                 <div className="text-xs text-text-muted space-y-1">
-                  <p>Email: {journey.buddy.email}</p>
+                  {journey.buddy.email && <p>Email: {journey.buddy.email}</p>}
                   {journey.buddy.phone && <p>Phone: {journey.buddy.phone}</p>}
                 </div>
               </div>

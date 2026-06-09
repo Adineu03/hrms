@@ -115,7 +115,23 @@ export default function ExitInterviewTab() {
         api.get('/onboarding-offboarding/manager/departing-employees').catch(() => ({ data: [] })),
       ]);
       const interviewData = interviewRes.data;
-      setInterviews(Array.isArray(interviewData) ? interviewData : interviewData?.data ?? []);
+      const rawInterviews: any[] = Array.isArray(interviewData)
+        ? interviewData
+        : interviewData?.data ?? [];
+      setInterviews(
+        rawInterviews.map((iv) => ({
+          id: iv.id,
+          employeeName: iv.employeeName ?? iv.employee_name ?? '--',
+          employeeId: iv.employeeId ?? iv.employee_id ?? '',
+          department: iv.department ?? '',
+          scheduledDate: iv.scheduledDate ?? iv.scheduledAt ?? iv.scheduled_at ?? null,
+          conductedDate: iv.conductedDate ?? iv.completedAt ?? iv.completed_at ?? null,
+          status: iv.status ?? 'pending',
+          themes: Array.isArray(iv.themes) ? iv.themes : [],
+          overallRating: iv.overallRating ?? iv.overall_rating ?? null,
+          notes: iv.notes ?? '',
+        })),
+      );
       const departingData = departingRes.data;
       setDepartingEmployees(Array.isArray(departingData) ? departingData : departingData?.data ?? []);
     } catch {
@@ -251,7 +267,7 @@ export default function ExitInterviewTab() {
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[iv.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {iv.status}
+                    {(iv.status ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </td>
                 <td className="px-4 py-3">

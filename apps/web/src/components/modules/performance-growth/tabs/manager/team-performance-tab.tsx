@@ -16,11 +16,11 @@ import {
 interface TeamMember {
   id: string;
   name: string;
-  designation: string;
-  currentRating: number;
-  goalCompletionPercent: number;
-  reviewStatus: string;
-  lastReviewDate: string;
+  designation?: string;
+  currentRating?: number | string;
+  goalCompletionPercent?: number | string;
+  reviewStatus?: string;
+  lastReviewDate?: string;
 }
 
 interface PendingAction {
@@ -33,8 +33,10 @@ interface PendingAction {
 
 interface TeamSummary {
   teamSize: number;
-  avgRating: number;
-  goalsOnTrackPercent: number;
+  avgRating: number | string;
+  goalsOnTrackPercent?: number;
+  goalsOnTrack?: number;
+  totalGoals?: number;
   pendingReviews: number;
   members: TeamMember[];
   pendingActions: PendingAction[];
@@ -101,6 +103,14 @@ export default function TeamPerformanceTab() {
   const ratingDist = Array.isArray(summary.ratingDistribution) ? summary.ratingDistribution : [];
   const maxDistCount = Math.max(...(ratingDist.map((d: any) => d.count) || [1]), 1);
 
+  // API returns goalsOnTrack/totalGoals rather than goalsOnTrackPercent — derive it when missing.
+  const goalsOnTrackPercent =
+    summary.goalsOnTrackPercent != null
+      ? Number(summary.goalsOnTrackPercent) || 0
+      : Number(summary.totalGoals)
+        ? Math.round((Number(summary.goalsOnTrack) / Number(summary.totalGoals)) * 100)
+        : 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -125,14 +135,14 @@ export default function TeamPerformanceTab() {
             <Star className="h-4 w-4 text-yellow-500" />
             <p className="text-xs text-text-muted uppercase font-semibold">Avg Rating</p>
           </div>
-          <p className="text-2xl font-bold text-text">{(summary.avgRating ?? 0).toFixed(1)}</p>
+          <p className="text-2xl font-bold text-text">{(Number(summary.avgRating) || 0).toFixed(1)}</p>
         </div>
         <div className="bg-background border border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Target className="h-4 w-4 text-green-500" />
             <p className="text-xs text-text-muted uppercase font-semibold">Goals On Track</p>
           </div>
-          <p className="text-2xl font-bold text-text">{summary.goalsOnTrackPercent}%</p>
+          <p className="text-2xl font-bold text-text">{goalsOnTrackPercent}%</p>
         </div>
         <div className="bg-background border border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -166,24 +176,24 @@ export default function TeamPerformanceTab() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <Star className={`h-3.5 w-3.5 ${(member.currentRating ?? 0) >= 4 ? 'text-yellow-500' : (member.currentRating ?? 0) >= 3 ? 'text-blue-400' : 'text-gray-400'}`} />
-                        <span className="text-sm text-text">{(member.currentRating ?? 0).toFixed(1)}</span>
+                        <Star className={`h-3.5 w-3.5 ${(Number(member.currentRating) || 0) >= 4 ? 'text-yellow-500' : (Number(member.currentRating) || 0) >= 3 ? 'text-blue-400' : 'text-gray-400'}`} />
+                        <span className="text-sm text-text">{(Number(member.currentRating) || 0).toFixed(1)}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-14 bg-gray-200 rounded-full h-1.5">
                           <div
-                            className={`h-1.5 rounded-full ${member.goalCompletionPercent >= 80 ? 'bg-green-500' : member.goalCompletionPercent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                            style={{ width: `${member.goalCompletionPercent}%` }}
+                            className={`h-1.5 rounded-full ${Number(member.goalCompletionPercent) >= 80 ? 'bg-green-500' : Number(member.goalCompletionPercent) >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                            style={{ width: `${Number(member.goalCompletionPercent) || 0}%` }}
                           />
                         </div>
-                        <span className="text-xs text-text-muted">{member.goalCompletionPercent}%</span>
+                        <span className="text-xs text-text-muted">{Math.round(Number(member.goalCompletionPercent) || 0)}%</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${REVIEW_STATUS_STYLES[member.reviewStatus] || 'bg-gray-100 text-gray-600'}`}>
-                        {member.reviewStatus?.replace(/_/g, ' ')}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${REVIEW_STATUS_STYLES[member.reviewStatus ?? ''] || 'bg-gray-100 text-gray-600'}`}>
+                        {member.reviewStatus ? member.reviewStatus.replace(/_/g, ' ') : '--'}
                       </span>
                     </td>
                   </tr>

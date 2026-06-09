@@ -33,6 +33,24 @@ interface TeamMember {
   name: string;
 }
 
+// The buddies endpoint returns onboarding rows keyed on employee* / onboardingId
+// fields. Normalize them to the BuddyAssignment shape this component renders.
+function mapBuddyAssignment(raw: any): BuddyAssignment {
+  const feedbackCount = Number(raw.feedbackCount ?? raw.feedback_count ?? 0);
+  return {
+    id: raw.id ?? raw.onboardingId ?? raw.onboarding_id ?? '',
+    newHireName: raw.newHireName ?? raw.employeeName ?? raw.employee_name ?? '--',
+    newHireId: raw.newHireId ?? raw.employeeId ?? raw.employee_id ?? '',
+    buddyName: raw.buddyName ?? raw.buddy_name ?? '--',
+    buddyId: raw.buddyId ?? raw.buddy_id ?? '',
+    assignedDate: raw.assignedDate ?? raw.startDate ?? raw.start_date ?? raw.createdAt ?? '',
+    interactionCount: Number(raw.interactionCount ?? raw.feedbackCount ?? raw.feedback_count ?? 0),
+    feedbackStatus:
+      raw.feedbackStatus ?? raw.feedback_status ?? (feedbackCount > 0 ? 'submitted' : 'pending'),
+    status: raw.status ?? 'pending',
+  };
+}
+
 const STATUS_STYLES: Record<string, string> = {
   active: 'bg-green-100 text-green-700',
   completed: 'bg-blue-100 text-blue-700',
@@ -67,7 +85,8 @@ export default function BuddyAssignmentTab() {
         api.get('/onboarding-offboarding/manager/new-hires').catch(() => ({ data: [] })),
       ]);
       const assignData = assignRes.data;
-      setAssignments(Array.isArray(assignData) ? assignData : assignData?.data ?? []);
+      const rawAssignments: any[] = Array.isArray(assignData) ? assignData : assignData?.data ?? [];
+      setAssignments(rawAssignments.map(mapBuddyAssignment));
       const membersData = membersRes.data;
       setTeamMembers(Array.isArray(membersData) ? membersData : membersData?.data ?? []);
       const hiresData = hiresRes.data;
@@ -174,8 +193,8 @@ export default function BuddyAssignmentTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {assignments.map((a) => (
-              <tr key={a.id} className="bg-card hover:bg-background/50 transition-colors">
+            {assignments.map((a, idx) => (
+              <tr key={a.id || a.newHireId || idx} className="bg-card hover:bg-background/50 transition-colors">
                 <td className="px-4 py-3 text-sm text-text font-medium">{a.newHireName}</td>
                 <td className="px-4 py-3 text-sm text-text-muted">{a.buddyName}</td>
                 <td className="px-4 py-3 text-sm text-text-muted">
@@ -184,12 +203,12 @@ export default function BuddyAssignmentTab() {
                 <td className="px-4 py-3 text-sm text-text-muted">{a.interactionCount}</td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${FEEDBACK_STYLES[a.feedbackStatus] || 'bg-gray-100 text-gray-600'}`}>
-                    {a.feedbackStatus.replace(/_/g, ' ')}
+                    {(a.feedbackStatus ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[a.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {a.status}
+                    {(a.status ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </td>
                 <td className="px-4 py-3">

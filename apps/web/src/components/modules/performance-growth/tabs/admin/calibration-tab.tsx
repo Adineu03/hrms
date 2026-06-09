@@ -21,10 +21,10 @@ interface CalibrationEmployee {
   id: string;
   employeeName: string;
   designation: string;
-  preCalibrated: number;
-  calibrated: number | null;
-  managerRating: number;
-  selfRating: number;
+  preCalibrated: number | string;
+  calibrated: number | string | null;
+  managerRating: number | string;
+  selfRating: number | string;
 }
 
 interface CalibrationGroup {
@@ -69,7 +69,17 @@ export default function CalibrationTab() {
     try {
       setIsLoading(true);
       const res = await api.get('/performance-growth/admin/calibration/groups').catch(() => ({ data: [] }));
-      setGroups(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const raw = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const normalized: CalibrationGroup[] = (Array.isArray(raw) ? raw : []).map((g: any) => ({
+        id: g.id ?? g.groupId,
+        name: g.name ?? g.groupName ?? 'Group',
+        type: g.type ?? 'department',
+        totalEmployees: g.totalEmployees ?? g.memberCount ?? 0,
+        status: g.status ?? 'pending',
+        employees: Array.isArray(g.employees) ? g.employees : [],
+        distribution: Array.isArray(g.distribution) ? g.distribution : [],
+      }));
+      setGroups(normalized);
     } catch {
       setError('Failed to load calibration data.');
     } finally {
@@ -248,12 +258,12 @@ export default function CalibrationTab() {
                                 <span className="text-sm text-text font-medium">{emp.employeeName}</span>
                                 <p className="text-xs text-text-muted">{emp.designation}</p>
                               </td>
-                              <td className="px-4 py-3 text-sm text-text-muted">{emp.selfRating}</td>
-                              <td className="px-4 py-3 text-sm text-text-muted">{emp.managerRating}</td>
-                              <td className="px-4 py-3 text-sm text-text-muted">{emp.preCalibrated}</td>
+                              <td className="px-4 py-3 text-sm text-text-muted">{emp.selfRating != null ? Number(emp.selfRating) || '--' : '--'}</td>
+                              <td className="px-4 py-3 text-sm text-text-muted">{emp.managerRating != null ? Number(emp.managerRating) || '--' : '--'}</td>
+                              <td className="px-4 py-3 text-sm text-text-muted">{emp.preCalibrated != null ? Number(emp.preCalibrated) || '--' : '--'}</td>
                               <td className="px-4 py-3">
                                 <select
-                                  value={editedRatings[emp.id] ?? emp.calibrated ?? emp.preCalibrated}
+                                  value={Math.round(Number(editedRatings[emp.id] ?? emp.calibrated ?? emp.preCalibrated) || 0) || ''}
                                   onChange={(e) => handleRatingChange(emp.id, parseFloat(e.target.value))}
                                   className={`${selectClassName} !w-20`}
                                 >

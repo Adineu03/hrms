@@ -113,7 +113,47 @@ export default function CareerGrowthTab() {
         ],
       }));
 
+      // career/gap-analysis returns { targetRole: "Senior Software Engineer" (string), gapAnalysis: {}, skills: [...] }
       const gapRaw = gapRes.data?.data ?? gapRes.data;
+      const rawTargetRole = gapRaw?.targetRole;
+      let targetRole: TargetRole | null = null;
+      if (rawTargetRole && typeof rawTargetRole === 'object') {
+        // Already an object — normalize array fields.
+        targetRole = {
+          title: rawTargetRole.title ?? '',
+          requiredSkills: Array.isArray(rawTargetRole.requiredSkills) ? rawTargetRole.requiredSkills : [],
+          requiredExperience: rawTargetRole.requiredExperience ?? '',
+          currentSkillMatch: Number(rawTargetRole.currentSkillMatch ?? 0),
+        };
+      } else if (typeof rawTargetRole === 'string' && rawTargetRole.trim()) {
+        // API gives only a title string + a flat skills array.
+        const skillList: string[] = Array.isArray(gapRaw?.skills) ? gapRaw.skills : [];
+        targetRole = {
+          title: rawTargetRole,
+          requiredSkills: skillList,
+          requiredExperience: '',
+          currentSkillMatch: 0,
+        };
+      }
+
+      // career/gap-analysis gapAnalysis is an object map { skill: {...} }; coerce to GapItem[].
+      const rawGapAnalysis = gapRaw?.gapAnalysis;
+      let gaps: GapItem[] = [];
+      if (Array.isArray(gapRaw?.gaps)) {
+        gaps = gapRaw.gaps;
+      } else if (Array.isArray(gapRaw)) {
+        gaps = gapRaw;
+      } else if (rawGapAnalysis && typeof rawGapAnalysis === 'object' && !Array.isArray(rawGapAnalysis)) {
+        gaps = Object.entries(rawGapAnalysis as Record<string, { currentLevel?: string; requiredLevel?: string; progressPercent?: number }>).map(
+          ([skill, v]) => ({
+            skill,
+            currentLevel: v?.currentLevel ?? '—',
+            requiredLevel: v?.requiredLevel ?? '—',
+            progressPercent: Number(v?.progressPercent ?? 0),
+          }),
+        );
+      }
+
       const oppData = oppRes.data?.data ?? oppRes.data;
       // career/readiness returns { latestRating, goalCompletionRate, reviewCount, readinessScore }
       const readyRaw = readyRes.data?.data ?? readyRes.data;
@@ -167,8 +207,8 @@ export default function CareerGrowthTab() {
           ];
       setData({
         tracks,
-        targetRole: gapRaw?.targetRole || null,
-        gaps: Array.isArray(gapRaw?.gaps) ? gapRaw.gaps : (Array.isArray(gapRaw) ? gapRaw : []),
+        targetRole,
+        gaps,
         opportunities: Array.isArray(oppData) ? oppData : [],
         promotionReadiness,
         milestones,
@@ -318,7 +358,7 @@ export default function CareerGrowthTab() {
               <div>
                 <span className="text-[10px] text-text-muted uppercase font-semibold">Required Skills:</span>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {career.targetRole.requiredSkills.map((skill, idx) => (
+                  {(career.targetRole.requiredSkills ?? []).map((skill, idx) => (
                     <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700">{skill}</span>
                   ))}
                 </div>

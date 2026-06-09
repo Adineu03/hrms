@@ -204,9 +204,9 @@ export default function PostJoiningTab() {
           {(data.checkIns || []).map((checkIn) => (
             <div key={checkIn.id} className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-text capitalize">{checkIn.type.replace(/_/g, ' ')}</span>
+                <span className="text-sm font-semibold text-text capitalize">{(checkIn.type ?? '').replace(/_/g, ' ') || '--'}</span>
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${CHECKIN_STYLES[checkIn.status] || 'bg-gray-100 text-gray-600'}`}>
-                  {checkIn.status}
+                  {(checkIn.status ?? '').replace(/_/g, ' ') || '--'}
                 </span>
               </div>
               <p className="text-xs text-text-muted mb-2">
@@ -280,7 +280,7 @@ export default function PostJoiningTab() {
                   )}
                 </div>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${BENEFIT_STYLES[benefit.status] || 'bg-gray-100 text-gray-600'}`}>
-                  {benefit.status.replace(/_/g, ' ')}
+                  {(benefit.status ?? '').replace(/_/g, ' ') || '--'}
                 </span>
               </div>
             ))}
@@ -305,12 +305,12 @@ export default function PostJoiningTab() {
               <tbody className="divide-y divide-border">
                 {data.supportRequests.map((req) => (
                   <tr key={req.id} className="bg-card hover:bg-background/50 transition-colors">
-                    <td className="px-4 py-3 text-sm text-text-muted capitalize">{req.type.replace(/_/g, ' ')}</td>
+                    <td className="px-4 py-3 text-sm text-text-muted capitalize">{(req.type ?? '').replace(/_/g, ' ') || '--'}</td>
                     <td className="px-4 py-3 text-sm text-text font-medium">{req.subject}</td>
-                    <td className="px-4 py-3 text-sm text-text-muted">{new Date(req.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm text-text-muted">{req.createdAt ? new Date(req.createdAt).toLocaleDateString() : '--'}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${REQUEST_STATUS_STYLES[req.status] || 'bg-gray-100 text-gray-600'}`}>
-                        {req.status.replace(/_/g, ' ')}
+                        {(req.status ?? '').replace(/_/g, ' ') || '--'}
                       </span>
                     </td>
                   </tr>

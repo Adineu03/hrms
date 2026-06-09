@@ -38,7 +38,7 @@ interface OrgGoal {
   description: string;
   category: string;
   targetDate: string;
-  completionPercent: number;
+  completionPercent: number | string;
   status: string;
   createdAt: string;
 }
@@ -204,7 +204,7 @@ export default function GoalFrameworkTab() {
   const totalTemplates = templates.length;
   const activeOrgGoals = orgGoals.filter((g) => g.status === 'active' || g.status === 'on_track').length;
   const avgCompletion = orgGoals.length > 0
-    ? Math.round(orgGoals.reduce((sum, g) => sum + (g.completionPercent || 0), 0) / orgGoals.length)
+    ? Math.round(orgGoals.reduce((sum, g) => sum + (Number(g.completionPercent) || 0), 0) / orgGoals.length)
     : 0;
 
   if (isLoading) {
@@ -355,9 +355,9 @@ export default function GoalFrameworkTab() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                        <div className="bg-primary h-1.5 rounded-full" style={{ width: `${goal.completionPercent || 0}%` }} />
+                        <div className="bg-primary h-1.5 rounded-full" style={{ width: `${Number(goal.completionPercent) || 0}%` }} />
                       </div>
-                      <span className="text-xs text-text-muted">{goal.completionPercent || 0}%</span>
+                      <span className="text-xs text-text-muted">{Math.round(Number(goal.completionPercent) || 0)}%</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">

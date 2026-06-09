@@ -25,7 +25,7 @@ const selectClassName =
 interface CompetencyRating {
   competencyId: string;
   competencyName: string;
-  rating: number;
+  rating: number | string;
 }
 
 interface CurrentReview {
@@ -35,17 +35,17 @@ interface CurrentReview {
   deadline: string;
   status: string;
   ratingScale: string;
-  selfRating: number | null;
+  selfRating: number | string | null;
   selfComments: string;
-  achievements: string[];
-  competencyRatings: CompetencyRating[];
+  achievements?: string[];
+  competencyRatings?: CompetencyRating[];
 }
 
 interface PreviousReview {
   id: string;
   cycleName: string;
-  selfRating: number;
-  finalRating: number;
+  selfRating: number | string;
+  finalRating: number | string;
   submittedAt: string;
   comments: string;
 }
@@ -84,13 +84,16 @@ export default function SelfReviewTab() {
       setPreviousReviews(Array.isArray(prevData) ? prevData : []);
 
       if (current) {
-        setSelfRating(current.selfRating || 0);
+        setSelfRating(Math.round(Number(current.selfRating) || 0));
         setSelfComments(current.selfComments || '');
-        setAchievements(current.achievements?.length > 0 ? current.achievements : ['']);
+        setAchievements(Array.isArray(current.achievements) && current.achievements.length > 0 ? current.achievements : ['']);
         const compRatings: Record<string, number> = {};
-        (current.competencyRatings || []).forEach((cr: CompetencyRating) => {
-          compRatings[cr.competencyId] = cr.rating;
-        });
+        // competencyRatings may arrive as an object map {} instead of an array — guard before forEach.
+        if (Array.isArray(current.competencyRatings)) {
+          current.competencyRatings.forEach((cr: CompetencyRating) => {
+            compRatings[cr.competencyId] = Number(cr.rating) || 0;
+          });
+        }
         setCompetencyRatings(compRatings);
       }
     } catch {
@@ -264,7 +267,7 @@ export default function SelfReviewTab() {
               </div>
 
               {/* Competency Ratings */}
-              {currentReview.competencyRatings?.length > 0 && (
+              {Array.isArray(currentReview.competencyRatings) && currentReview.competencyRatings.length > 0 && (
                 <div>
                   <label className="block text-xs font-medium text-text-muted mb-2">Competency Self-Ratings</label>
                   <div className="space-y-2">
@@ -304,7 +307,7 @@ export default function SelfReviewTab() {
           ) : (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-700">
               <CheckCircle2 className="h-5 w-5 inline mr-2" />
-              Your self-review has been submitted. Rating: {currentReview.selfRating}/5
+              Your self-review has been submitted. Rating: {Number(currentReview.selfRating) || 0}/5
             </div>
           )}
         </>
@@ -330,8 +333,8 @@ export default function SelfReviewTab() {
                     <span className="text-xs text-text-muted">{new Date(review.submittedAt).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center gap-4 mt-1 text-xs text-text-muted">
-                    <span>Self: {review.selfRating}/5</span>
-                    <span>Final: {review.finalRating}/5</span>
+                    <span>Self: {Number(review.selfRating) || 0}/5</span>
+                    <span>Final: {Number(review.finalRating) || 0}/5</span>
                   </div>
                   {review.comments && <p className="text-xs text-text-muted mt-1">{review.comments}</p>}
                 </div>

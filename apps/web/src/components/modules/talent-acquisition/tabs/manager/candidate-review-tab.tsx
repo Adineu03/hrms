@@ -26,6 +26,7 @@ interface Candidate {
   experience: number;
   overallScore: number;
   stage: string;
+  currentStageId: string;
   source: string;
   appliedAt: string;
   interviewScores: { round: string; score: number; interviewer: string }[];
@@ -37,6 +38,11 @@ interface Candidate {
 interface CompareData {
   candidates: Candidate[];
   criteria: { name: string; scores: { applicationId: string; score: number }[] }[];
+}
+
+interface PipelineStage {
+  id: string;
+  name: string;
 }
 
 const inputClassName = 'w-full px-3 py-2 border border-border rounded-lg bg-white text-text text-sm focus:ring-2 focus:ring-primary focus:border-primary';
@@ -62,7 +68,8 @@ const SOURCE_STYLES: Record<string, string> = {
   direct: 'bg-gray-50 text-gray-700',
 };
 
-const STAGES = ['applied', 'screening', 'shortlisted', 'interview', 'evaluation', 'offer', 'hired', 'rejected'];
+const stageStyle = (stage?: string | null) =>
+  STAGE_STYLES[(stage ?? '').toLowerCase()] || 'bg-gray-50 text-gray-700';
 
 export default function CandidateReviewTab() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -77,6 +84,7 @@ export default function CandidateReviewTab() {
 
   // Stage move
   const [moveStage, setMoveStage] = useState('');
+  const [stages, setStages] = useState<PipelineStage[]>([]);
 
   // Compare mode
   const [compareMode, setCompareMode] = useState(false);
@@ -84,11 +92,41 @@ export default function CandidateReviewTab() {
   const [compareData, setCompareData] = useState<CompareData | null>(null);
   const [isComparing, setIsComparing] = useState(false);
 
+  const normalizeCandidate = (row: Record<string, any>): Candidate => {
+    const notes = Array.isArray(row.feedback)
+      ? row.feedback.map((f: any, idx: number) => ({
+          id: f.id ?? `${row.id}-note-${idx}`,
+          author: f.author ?? f.authorId ?? 'Unknown',
+          text: f.text ?? f.content ?? '',
+          createdAt: f.createdAt ?? row.updatedAt ?? row.createdAt,
+        }))
+      : [];
+    return {
+      id: row.id,
+      applicationId: row.applicationId ?? row.id,
+      name: row.candidateName ?? row.name ?? `${row.candidateFirstName ?? ''} ${row.candidateLastName ?? ''}`.trim(),
+      email: row.candidateEmail ?? row.email ?? '',
+      currentTitle: row.candidateCurrentTitle ?? row.currentTitle ?? '',
+      currentCompany: row.candidateCurrentCompany ?? row.currentCompany ?? '',
+      experience: row.candidateExperience ?? row.experience ?? 0,
+      overallScore: row.overallScore ?? 0,
+      stage: row.stageName ?? row.stage ?? row.status ?? '',
+      currentStageId: row.currentStageId ?? '',
+      source: row.source ?? '',
+      appliedAt: row.appliedAt ?? row.createdAt,
+      interviewScores: Array.isArray(row.interviewScores) ? row.interviewScores : [],
+      notes,
+      resumeUrl: row.resumeUrl ?? row.candidateResumeUrl ?? '',
+      skills: Array.isArray(row.candidateSkills) ? row.candidateSkills : Array.isArray(row.skills) ? row.skills : [],
+    };
+  };
+
   const loadData = useCallback(async () => {
     setError(null);
     try {
       const res = await api.get('/talent-acquisition/manager/candidates');
-      setCandidates(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const rows = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      setCandidates(rows.map(normalizeCandidate));
     } catch {
       setError('Failed to load candidates.');
     } finally {
@@ -100,15 +138,46 @@ export default function CandidateReviewTab() {
     loadData();
   }, [loadData]);
 
+  // Load the pipeline stages this candidate can be moved to (value=id, label=name).
+  useEffect(() => {
+    if (!selectedCandidate) {
+      setStages([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get(
+          `/talent-acquisition/manager/candidates/${selectedCandidate.applicationId}/stages`
+        );
+        const rows = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        if (!cancelled) {
+          setStages(rows.map((s: Record<string, any>) => ({ id: s.id, name: s.name })));
+        }
+      } catch {
+        if (!cancelled) setStages([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCandidate]);
+
   const addNote = async () => {
     if (!selectedCandidate || !noteText.trim()) return;
     setIsSubmitting(true);
     setError(null);
     try {
       const res = await api.post(`/talent-acquisition/manager/candidates/${selectedCandidate.applicationId}/note`, {
-        text: noteText.trim(),
+        content: noteText.trim(),
       });
-      const newNote = res.data?.data || res.data;
+      const saved = res.data?.note ?? res.data?.data ?? res.data ?? {};
+      const newNote = {
+        id: saved.id ?? `${selectedCandidate.applicationId}-note-${Date.now()}`,
+        author: saved.author ?? saved.authorId ?? 'You',
+        text: saved.content ?? saved.text ?? noteText.trim(),
+        createdAt: saved.createdAt ?? new Date().toISOString(),
+      };
       setSelectedCandidate((prev) => prev ? { ...prev, notes: [...(prev.notes || []), newNote] } : null);
       setNoteText('');
       setSuccess('Note added successfully.');
@@ -122,17 +191,20 @@ export default function CandidateReviewTab() {
 
   const handleMoveStage = async () => {
     if (!selectedCandidate || !moveStage) return;
+    const targetStage = stages.find((s) => s.id === moveStage);
+    const stageName = targetStage?.name ?? '';
     setIsSubmitting(true);
     setError(null);
     try {
-      await api.post(`/talent-acquisition/manager/candidates/${selectedCandidate.applicationId}/move-stage`, {
-        stage: moveStage,
+      const res = await api.post(`/talent-acquisition/manager/candidates/${selectedCandidate.applicationId}/move-stage`, {
+        stageId: moveStage,
       });
-      setSelectedCandidate((prev) => prev ? { ...prev, stage: moveStage } : null);
+      const newStageName = res.data?.newStageName ?? stageName;
+      setSelectedCandidate((prev) => prev ? { ...prev, stage: newStageName, currentStageId: moveStage } : null);
       setCandidates((prev) =>
-        prev.map((c) => (c.applicationId === selectedCandidate.applicationId ? { ...c, stage: moveStage } : c))
+        prev.map((c) => (c.applicationId === selectedCandidate.applicationId ? { ...c, stage: newStageName, currentStageId: moveStage } : c))
       );
-      setSuccess(`Candidate moved to ${formatLabel(moveStage)} stage.`);
+      setSuccess(`Candidate moved to ${newStageName} stage.`);
       setMoveStage('');
       setTimeout(() => setSuccess(null), 4000);
     } catch {
@@ -161,7 +233,16 @@ export default function CandidateReviewTab() {
     try {
       const ids = Array.from(compareIds).join(',');
       const res = await api.get(`/talent-acquisition/manager/candidates/compare?applicationIds=${ids}`);
-      setCompareData(res.data?.data || res.data);
+      const raw = res.data?.data || res.data;
+      const normalized: CompareData = {
+        candidates: (raw?.candidates || []).map((c: Record<string, any>) => ({
+          ...c,
+          name: c.candidateName ?? c.name ?? '',
+          stage: c.applicationStatus ?? c.currentStage ?? c.stage ?? '',
+        })),
+        criteria: raw?.criteria || [],
+      };
+      setCompareData(normalized);
     } catch {
       setError('Failed to compare candidates.');
     } finally {
@@ -169,7 +250,10 @@ export default function CandidateReviewTab() {
     }
   };
 
-  const formatLabel = (s: string) => s.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const formatLabel = (s?: string | null) =>
+    (s ?? '').trim()
+      ? (s as string).split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+      : '—';
 
   const renderStars = (score: number) => {
     const stars = [];
@@ -247,7 +331,7 @@ export default function CandidateReviewTab() {
                 <td className="px-4 py-3 text-sm text-text-muted font-medium">Stage</td>
                 {compareData.candidates?.map((c) => (
                   <td key={c.applicationId} className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STAGE_STYLES[c.stage] || 'bg-gray-50 text-gray-700'}`}>
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${stageStyle(c.stage)}`}>
                       {formatLabel(c.stage)}
                     </span>
                   </td>
@@ -315,7 +399,7 @@ export default function CandidateReviewTab() {
             </div>
             <div>
               <p className="text-xs text-text-muted">Stage</p>
-              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STAGE_STYLES[selectedCandidate.stage] || 'bg-gray-50 text-gray-700'}`}>
+              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${stageStyle(selectedCandidate.stage)}`}>
                 {formatLabel(selectedCandidate.stage)}
               </span>
             </div>
@@ -371,9 +455,11 @@ export default function CandidateReviewTab() {
           <div className="flex items-center gap-3">
             <select value={moveStage} onChange={(e) => setMoveStage(e.target.value)} className={selectClassName}>
               <option value="">Select stage...</option>
-              {STAGES.filter((s) => s !== selectedCandidate.stage).map((s) => (
-                <option key={s} value={s}>{formatLabel(s)}</option>
-              ))}
+              {stages
+                .filter((s) => s.id !== selectedCandidate.currentStageId)
+                .map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
             </select>
             <button
               type="button"
@@ -519,7 +605,7 @@ export default function CandidateReviewTab() {
                 <span className="text-xs text-text-muted">{candidate.experience}y exp</span>
               </div>
               <div className="mt-2 flex items-center justify-between">
-                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${STAGE_STYLES[candidate.stage] || 'bg-gray-50 text-gray-700'}`}>
+                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${stageStyle(candidate.stage)}`}>
                   {formatLabel(candidate.stage)}
                 </span>
                 <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${SOURCE_STYLES[candidate.source] || 'bg-gray-50 text-gray-700'}`}>

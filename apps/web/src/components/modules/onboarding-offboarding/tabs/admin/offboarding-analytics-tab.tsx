@@ -20,34 +20,26 @@ interface OffboardingMetrics {
   exitInterviewRate: number;
 }
 
-interface ExitTrend {
-  id: string;
-  employeeName: string;
-  department: string;
-  exitType: string;
-  lastWorkingDate: string;
-  processingDays: number;
-  status: string;
+// The exit-trends endpoint groups exits by department and returns aggregate
+// counts (no per-employee rows). Render those grouped buckets.
+interface ExitTrendGroup {
+  groupName: string;
+  totalExits: number;
+  resignations: number;
+  terminations: number;
+  retirements: number;
+  contractEnds: number;
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  completed: 'bg-green-100 text-green-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  pending: 'bg-yellow-50 text-yellow-700',
-  delayed: 'bg-red-100 text-red-700',
-};
-
-const EXIT_TYPE_STYLES: Record<string, string> = {
-  resignation: 'bg-blue-50 text-blue-700',
-  termination: 'bg-red-50 text-red-700',
-  retirement: 'bg-purple-50 text-purple-700',
-  contract_end: 'bg-orange-50 text-orange-700',
-  mutual_separation: 'bg-gray-100 text-gray-600',
-};
+function num(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
 
 export default function OffboardingAnalyticsTab() {
   const [metrics, setMetrics] = useState<OffboardingMetrics | null>(null);
-  const [exitTrends, setExitTrends] = useState<ExitTrend[]>([]);
+  const [exitTrends, setExitTrends] = useState<ExitTrendGroup[]>([]);
+  const [groupBy, setGroupBy] = useState<string>('department');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,12 +51,52 @@ export default function OffboardingAnalyticsTab() {
     setIsLoading(true);
     setError(null);
     try {
-      const [metricsRes, trendsRes] = await Promise.all([
+      const [overviewRes, trendsRes, assetRes, interviewRes] = await Promise.all([
         api.get('/onboarding-offboarding/admin/offboarding-analytics/overview').catch(() => ({ data: null })),
-        api.get('/onboarding-offboarding/admin/offboarding-analytics/exit-trends').catch(() => ({ data: [] })),
+        api.get('/onboarding-offboarding/admin/offboarding-analytics/exit-trends').catch(() => ({ data: null })),
+        api.get('/onboarding-offboarding/admin/offboarding-analytics/asset-recovery').catch(() => ({ data: null })),
+        api.get('/onboarding-offboarding/admin/offboarding-analytics/exit-interview-rates').catch(() => ({ data: null })),
       ]);
-      setMetrics(metricsRes.data?.data || metricsRes.data);
-      setExitTrends(Array.isArray(trendsRes.data) ? trendsRes.data : trendsRes.data?.data || []);
+
+      const overview = overviewRes.data?.data ?? overviewRes.data ?? {};
+      const asset = assetRes.data?.data ?? assetRes.data ?? {};
+      const interview = interviewRes.data?.data ?? interviewRes.data ?? {};
+
+      const assetSummary = asset.summary ?? asset ?? {};
+      const totalOffboardings = num(assetSummary.total_offboardings ?? assetSummary.totalOffboardings);
+      const settlementsCompleted = num(assetSummary.settlements_completed ?? assetSummary.settlementsCompleted);
+      const assetRecoveryRate =
+        totalOffboardings > 0 ? Math.round((settlementsCompleted / totalOffboardings) * 100) : 0;
+
+      const interviewSummary = interview.summary ?? interview ?? {};
+      const exitInterviewRate = Math.round(
+        num(interviewSummary.completion_rate ?? interviewSummary.completionRate),
+      );
+
+      setMetrics({
+        totalExits: num(overview.totalExits ?? overview.total_exits),
+        avgProcessingDays: num(overview.averageProcessingDays ?? overview.avgProcessingDays),
+        assetRecoveryRate,
+        exitInterviewRate,
+      });
+
+      const trendsData = trendsRes.data ?? {};
+      setGroupBy(trendsData.groupBy ?? 'department');
+      const rawTrends: any[] = Array.isArray(trendsData)
+        ? trendsData
+        : Array.isArray(trendsData.data)
+          ? trendsData.data
+          : [];
+      setExitTrends(
+        rawTrends.map((t) => ({
+          groupName: t.group_name ?? t.groupName ?? '--',
+          totalExits: num(t.total_exits ?? t.totalExits),
+          resignations: num(t.resignations),
+          terminations: num(t.terminations),
+          retirements: num(t.retirements),
+          contractEnds: num(t.contract_ends ?? t.contractEnds),
+        })),
+      );
     } catch {
       setError('Failed to load offboarding analytics.');
     } finally {
@@ -133,38 +165,30 @@ export default function OffboardingAnalyticsTab() {
 
       {/* Exit Trends Table */}
       <div>
-        <h3 className="text-sm font-semibold text-text mb-3">Exit Trends</h3>
+        <h3 className="text-sm font-semibold text-text mb-3 capitalize">
+          Exit Trends by {(groupBy ?? 'department').replace(/_/g, ' ')}
+        </h3>
         <div className="border border-border rounded-xl overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="bg-background border-b border-border">
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Employee</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Department</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Exit Type</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Last Working Day</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Processing Days</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Status</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3 capitalize">{(groupBy ?? 'department').replace(/_/g, ' ')}</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Total Exits</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Resignations</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Terminations</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Retirements</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Contract Ends</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {exitTrends.map((item) => (
-                <tr key={item.id} className="bg-card hover:bg-background/50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-text font-medium">{item.employeeName}</td>
-                  <td className="px-4 py-3 text-sm text-text-muted">{item.department}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${EXIT_TYPE_STYLES[item.exitType] || 'bg-gray-100 text-gray-600'}`}>
-                      {item.exitType.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-muted">
-                    {item.lastWorkingDate ? new Date(item.lastWorkingDate).toLocaleDateString() : '--'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-text-muted">{item.processingDays}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[item.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {item.status.replace(/_/g, ' ')}
-                    </span>
-                  </td>
+              {exitTrends.map((item, idx) => (
+                <tr key={`${item.groupName}-${idx}`} className="bg-card hover:bg-background/50 transition-colors">
+                  <td className="px-4 py-3 text-sm text-text font-medium">{item.groupName}</td>
+                  <td className="px-4 py-3 text-sm text-text-muted">{item.totalExits}</td>
+                  <td className="px-4 py-3 text-sm text-text-muted">{item.resignations}</td>
+                  <td className="px-4 py-3 text-sm text-text-muted">{item.terminations}</td>
+                  <td className="px-4 py-3 text-sm text-text-muted">{item.retirements}</td>
+                  <td className="px-4 py-3 text-sm text-text-muted">{item.contractEnds}</td>
                 </tr>
               ))}
               {exitTrends.length === 0 && (

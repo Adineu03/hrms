@@ -322,7 +322,7 @@ export default function TalentAssessmentTab() {
                     </div>
                     <div className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 text-yellow-500" />
-                      <span className="text-sm font-semibold text-text">{(hp.rating ?? 0).toFixed(1)}</span>
+                      <span className="text-sm font-semibold text-text">{(Number(hp.rating) || 0).toFixed(1)}</span>
                     </div>
                   </div>
                   {hp.strengths?.length > 0 && (

@@ -46,6 +46,14 @@ export class CandidateReviewController {
     return this.service.getCandidateDetail(orgId, managerId, applicationId);
   }
 
+  @Get(':applicationId/stages')
+  @Roles('super_admin', 'admin', 'manager')
+  async getStagesForApplication(@Param('applicationId') applicationId: string) {
+    const orgId = this.getOrgIdOrThrow();
+    const managerId = this.getUserIdOrThrow();
+    return this.service.getStagesForApplication(orgId, managerId, applicationId);
+  }
+
   @Post(':applicationId/note')
   @Roles('super_admin', 'admin', 'manager')
   async addNote(

@@ -52,7 +52,36 @@ export default function TeamOnboardingTab() {
     try {
       setIsLoading(true);
       const res = await api.get('/onboarding-offboarding/manager/team-onboarding');
-      setNewHires(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const rawHires: any[] = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const startOfDay = (d: string) => {
+        const t = new Date(d).getTime();
+        return Number.isNaN(t) ? 0 : Math.max(0, Math.floor((Date.now() - t) / (1000 * 60 * 60 * 24)));
+      };
+      setNewHires(
+        rawHires.map((h) => {
+          const total = Number(h.totalTasks ?? h.total_tasks ?? 0);
+          const completed = Number(h.completedTasks ?? h.completed_tasks ?? 0);
+          return {
+            id: h.id,
+            employeeName:
+              h.employeeName ?? [h.firstName, h.lastName].filter(Boolean).join(' ') ?? '--',
+            department: h.department ?? '',
+            designation: h.designation ?? '',
+            startDate: h.startDate ?? h.start_date ?? '',
+            daysElapsed:
+              typeof h.daysElapsed === 'number'
+                ? h.daysElapsed
+                : h.startDate
+                  ? startOfDay(h.startDate)
+                  : 0,
+            completionPercent: Number(h.completionPercent ?? h.progressPercentage ?? h.progress_percentage ?? 0),
+            pendingTasks: Number(h.pendingTasks ?? Math.max(0, total - completed)),
+            totalTasks: total,
+            status: h.status ?? 'on_track',
+            tasks: Array.isArray(h.tasks) ? h.tasks : [],
+          };
+        }),
+      );
     } catch {
       setError('Failed to load team onboarding data.');
     } finally {
@@ -121,7 +150,7 @@ export default function TeamOnboardingTab() {
                   <p className="text-xs text-text-muted">{hire.designation} - {hire.department}</p>
                 </div>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[hire.status] || 'bg-gray-100 text-gray-600'}`}>
-                  {hire.status.replace(/_/g, ' ')}
+                  {(hire.status ?? '').replace(/_/g, ' ') || '--'}
                 </span>
               </div>
 

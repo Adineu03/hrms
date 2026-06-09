@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { eq, and, desc, sql, inArray } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray, or, isNull, asc } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -210,6 +210,65 @@ export class CandidateReviewService {
     };
   }
 
+  /**
+   * Returns the pipeline stages a candidate (application) can be moved to.
+   * Includes stages scoped to the application's requisition plus org-global
+   * stages (requisitionId is null — the default seeded pipeline). This is the
+   * exact set accepted by moveStage(), so the frontend selector stays in sync.
+   */
+  async getStagesForApplication(orgId: string, managerId: string, applicationId: string) {
+    const reqIds = await this.getManagerRequisitionIds(orgId, managerId);
+    if (reqIds.length === 0) {
+      throw new NotFoundException('Application not found or access denied');
+    }
+
+    const [application] = await this.db
+      .select({
+        id: schema.applications.id,
+        requisitionId: schema.applications.requisitionId,
+        currentStageId: schema.applications.currentStageId,
+      })
+      .from(schema.applications)
+      .where(
+        and(
+          eq(schema.applications.id, applicationId),
+          eq(schema.applications.orgId, orgId),
+          inArray(schema.applications.requisitionId, reqIds),
+        ),
+      );
+
+    if (!application) {
+      throw new NotFoundException('Application not found or access denied');
+    }
+
+    const stages = await this.db
+      .select({
+        id: schema.recruitmentPipelineStages.id,
+        name: schema.recruitmentPipelineStages.name,
+        code: schema.recruitmentPipelineStages.code,
+        stageType: schema.recruitmentPipelineStages.stageType,
+        sortOrder: schema.recruitmentPipelineStages.sortOrder,
+      })
+      .from(schema.recruitmentPipelineStages)
+      .where(
+        and(
+          eq(schema.recruitmentPipelineStages.orgId, orgId),
+          eq(schema.recruitmentPipelineStages.isActive, true),
+          or(
+            eq(schema.recruitmentPipelineStages.requisitionId, application.requisitionId),
+            isNull(schema.recruitmentPipelineStages.requisitionId),
+          ),
+        ),
+      )
+      .orderBy(asc(schema.recruitmentPipelineStages.sortOrder));
+
+    return {
+      currentStageId: application.currentStageId,
+      data: stages,
+      total: stages.length,
+    };
+  }
+
   async compareCandidates(orgId: string, managerId: string, body: Record<string, any>) {
     const applicationIds: string[] = body.applicationIds;
     if (!applicationIds || !Array.isArray(applicationIds) || applicationIds.length < 2) {
@@ -405,7 +464,8 @@ export class CandidateReviewService {
       throw new BadRequestException('stageId is required');
     }
 
-    // Verify the target stage exists and belongs to the same requisition
+    // Verify the target stage exists and either belongs to the same requisition
+    // or is an org-global stage (requisitionId is null — the default seeded pipeline).
     const [targetStage] = await this.db
       .select({ id: schema.recruitmentPipelineStages.id, name: schema.recruitmentPipelineStages.name })
       .from(schema.recruitmentPipelineStages)
@@ -413,7 +473,10 @@ export class CandidateReviewService {
         and(
           eq(schema.recruitmentPipelineStages.id, targetStageId),
           eq(schema.recruitmentPipelineStages.orgId, orgId),
-          eq(schema.recruitmentPipelineStages.requisitionId, application.requisitionId),
+          or(
+            eq(schema.recruitmentPipelineStages.requisitionId, application.requisitionId),
+            isNull(schema.recruitmentPipelineStages.requisitionId),
+          ),
           eq(schema.recruitmentPipelineStages.isActive, true),
         ),
       );

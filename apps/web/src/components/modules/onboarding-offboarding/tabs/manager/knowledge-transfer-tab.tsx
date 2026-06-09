@@ -76,7 +76,29 @@ export default function KnowledgeTransferTab() {
         api.get('/onboarding-offboarding/manager/departing-employees').catch(() => ({ data: [] })),
       ]);
       const plansData = plansRes.data;
-      setPlans(Array.isArray(plansData) ? plansData : plansData?.data ?? []);
+      const rawPlans: any[] = Array.isArray(plansData) ? plansData : plansData?.data ?? [];
+      setPlans(
+        rawPlans.map((p) => {
+          const itemsCount = Number(p.itemsCount ?? p.itemCount ?? p.item_count ?? 0);
+          const completedCount = Number(p.completedCount ?? p.completed_count ?? 0);
+          const completionPercent =
+            p.completionPercent ??
+            p.completion_percent ??
+            (itemsCount > 0 ? Math.round((completedCount / itemsCount) * 100) : 0);
+          return {
+            id: p.id,
+            departingEmployeeName: p.departingEmployeeName ?? p.employeeName ?? p.employee_name ?? '--',
+            departingEmployeeId: p.departingEmployeeId ?? p.employeeId ?? p.employee_id ?? '',
+            assignedToName: p.assignedToName ?? p.assigneeName ?? p.assignee_name ?? '--',
+            assignedToId: p.assignedToId ?? p.assignedTo ?? p.assigned_to ?? '',
+            itemsCount,
+            completedCount,
+            completionPercent: Number(completionPercent),
+            status: p.status ?? 'draft',
+            createdAt: p.createdAt ?? p.created_at ?? '',
+          };
+        }),
+      );
       const membersData = membersRes.data;
       setTeamMembers(Array.isArray(membersData) ? membersData : membersData?.data ?? []);
       const departingData = departingRes.data;
@@ -206,7 +228,7 @@ export default function KnowledgeTransferTab() {
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[plan.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {plan.status}
+                    {(plan.status ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </td>
                 <td className="px-4 py-3">

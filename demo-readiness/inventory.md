@@ -4,7 +4,7 @@
 > Status legend: **OK** = renders with real data, no errors · **⚠️ EMPTY** = renders but blank/zero where it should have data · **🔴 ERROR** = console/page error, failed `/api/v1/*` call, or error boundary.
 > The green gate (Sprint 7): this table is **100% OK** across all rows.
 
-_Last survey run: 2026-06-09 · 247 tab-views across 57 module×role views._
+_Last survey run: 2026-06-09 · 263 tab-views across 57 module×role views._
 
 ## How this gets filled
 1. App up (`pnpm dev`) + data (`pnpm seed`). 2. `pnpm --filter @hrms/web test:survey` (writes `apps/web/e2e/results/*.json` + screenshots). 3. `pnpm --filter @hrms/web survey:report` regenerates this file.
@@ -12,19 +12,18 @@ _Last survey run: 2026-06-09 · 247 tab-views across 57 module×role views._
 ## Summary
 | | OK | EMPTY | ERROR | Total |
 |---|---|---|---|---|
-| admin | 78 | 23 | 3 | 104 |
-| manager | 42 | 13 | 9 | 64 |
-| employee | 60 | 17 | 2 | 79 |
-| **All** | **180** | **53** | **14** | **247** |
+| admin | 82 | 23 | 1 | 106 |
+| manager | 57 | 13 | 6 | 76 |
+| employee | 65 | 15 | 1 | 81 |
+| **All** | **204** | **51** | **8** | **263** |
 
-<details><summary>⚠️ Module×role views with no tab bar / special screen (2)</summary>
+<details><summary>⚠️ Module×role views with no tab bar / special screen (1)</summary>
 
 - cold-start-setup / manager — single default view, no tab bar
-- performance-growth / manager — error boundary ("Something went wrong")
 
 </details>
 
-## Triaged backlog — EMPTY / ERROR by sprint cluster (67 of 247)
+## Triaged backlog — EMPTY / ERROR by sprint cluster (59 of 263)
 
 ### Sprint 1 — cold-start-setup, core-hr, leave-management  · 0 to fix (🔴 0 / ⚠️ 0)
 _All green._
@@ -32,17 +31,8 @@ _All green._
 ### Sprint 2 — attendance, daily-work-logging, payroll-processing  · 0 to fix (🔴 0 / ⚠️ 0)
 _All green._
 
-### Sprint 3 — talent-acquisition, onboarding-offboarding, performance-growth  · 8 to fix (🔴 6 / ⚠️ 2)
-| Module | Role | Tab | Status | Notes |
-|---|---|---|---|---|
-| talent-acquisition | manager | Candidate Review | 🔴 ERROR | error boundary ("Something went wrong"); console: %o  %s TypeError: Cannot read properties of undefined (reading 'split')     at formatLabel (webpack-internal:///(app-pages-browser)/./src/components/modules/talent-acquisition/tabs/manager/candidate-review-tab.tsx:170:32)     at eval (webpack-internal:///(app-pages-browser)/./src/components/modules/; module-level crash — ErrorBoundary swallowed the whole module; remaining 3 tab(s) unreachable |
-| onboarding-offboarding | admin | Onboarding Analytics | 🔴 ERROR | error boundary ("Something went wrong"); console: %o  %s TypeError: Cannot read properties of undefined (reading 'replace')     at eval (webpack-internal:///(app-pages-browser)/./src/components/modules/onboarding-offboarding/tabs/admin/onboarding-analytics-tab.tsx:502:83)     at Array.map (<anonymous>)     at OnboardingAnalyticsTab (webpack-interna; module-level crash — ErrorBoundary swallowed the whole module; remaining 2 tab(s) unreachable |
-| onboarding-offboarding | manager | Team Offboarding | 🔴 ERROR | error boundary ("Something went wrong"); console: %o  %s TypeError: member.clearanceStatus.replace is not a function     at eval (webpack-internal:///(app-pages-browser)/./src/components/modules/onboarding-offboarding/tabs/manager/team-offboarding-tab.tsx:292:82)     at Array.map (<anonymous>)     at TeamOffboardingTab (webpack-internal:///(app-pag; module-level crash — ErrorBoundary swallowed the whole module; remaining 4 tab(s) unreachable |
-| onboarding-offboarding | employee | My Onboarding | ⚠️ EMPTY | empty-text matched: "No tasks assigned yet" |
-| onboarding-offboarding | employee | Orientation & Training | ⚠️ EMPTY | empty-text matched: "No training modules assigned yet" |
-| performance-growth | admin | Calibration | 🔴 ERROR | console: Each child in a list should have a unique "key" prop.%s%s See https://react.dev/link/warning-keys for more information.   Check the render method of `CalibrationTab`. |
-| performance-growth | manager | default | 🔴 ERROR | error boundary ("Something went wrong") |
-| performance-growth | employee | My Reviews | 🔴 ERROR | error boundary ("Something went wrong"); console: %o  %s TypeError: (intermediate value)(intermediate value)(intermediate value).toFixed is not a function     at eval (webpack-internal:///(app-pages-browser)/./src/components/modules/performance-growth/tabs/employee/my-reviews-tab.tsx:438:183)     at Array.map (<anonymous>)     at MyReviewsTab (webp; module-level crash — ErrorBoundary swallowed the whole module; remaining 2 tab(s) unreachable |
+### Sprint 3 — talent-acquisition, onboarding-offboarding, performance-growth  · 0 to fix (🔴 0 / ⚠️ 0)
+_All green._
 
 ### Sprint 4 — learning-development, compensation-rewards, expense-management  · 15 to fix (🔴 5 / ⚠️ 10)
 | Module | Role | Tab | Status | Notes |
@@ -53,7 +43,7 @@ _All green._
 | learning-development | employee | My Learning Path | ⚠️ EMPTY | empty-text matched: "No learning paths assigned" |
 | compensation-rewards | admin | Compensation Planning | ⚠️ EMPTY | empty-text matched: "No compensation revisions yet" |
 | compensation-rewards | admin | Rewards & Recognition | ⚠️ EMPTY | empty-text matched: "No recognition programs configured yet" |
-| compensation-rewards | manager | Recognition Management | 🔴 ERROR | api: 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard \| 500 GET /api/v1/compensation-rewards/manager/recognition/nominations \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
+| compensation-rewards | manager | Recognition Management | 🔴 ERROR | api: 500 GET /api/v1/compensation-rewards/manager/recognition/nominations \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
 | compensation-rewards | manager | Increment Planning | ⚠️ EMPTY | empty-text matched: "No active revisions available" |
 | compensation-rewards | employee | My Compensation | ⚠️ EMPTY | empty-text matched: "No salary components available" |
 | compensation-rewards | employee | Recognition & Awards | ⚠️ EMPTY | empty-text matched: "No point transactions yet" |
@@ -115,7 +105,7 @@ _All green._
 | demo-company | admin | Tour Builder | ⚠️ EMPTY | empty-text matched: "No tours created yet" |
 | demo-company | manager | Demo Walkthrough | ⚠️ EMPTY | empty-text matched: "No walkthrough steps available" |
 
-## Detail (all 247 tab-views)
+## Detail (all 263 tab-views)
 
 | Module | Role | Tab | Status | Notes | Screenshot |
 |---|---|---|---|---|---|
@@ -223,7 +213,10 @@ _All green._
 | talent-acquisition | admin | Offer Management | OK | — | [png](../apps/web/e2e/screenshots/admin/talent-acquisition/5-Offer_Management.png) |
 | talent-acquisition | manager | My Requisitions | OK | — | [png](../apps/web/e2e/screenshots/manager/talent-acquisition/0-My_Requisitions.png) |
 | talent-acquisition | manager | Interview Management | OK | — | [png](../apps/web/e2e/screenshots/manager/talent-acquisition/1-Interview_Management.png) |
-| talent-acquisition | manager | Candidate Review | 🔴 ERROR | error boundary ("Something went wrong"); console: %o  %s TypeError: Cannot read properties of undefined (reading 'split')     at formatLabel (webpack-internal:///(app-pages-browser)/./src/components/modules/talent-acquisition/tabs/manager/candidate-review-tab.tsx:170:32)     at eval (webpack-internal:///(app-pages-browser)/./src/components/modules/; module-level crash — ErrorBoundary swallowed the whole module; remaining 3 tab(s) unreachable | [png](../apps/web/e2e/screenshots/manager/talent-acquisition/2-Candidate_Review.png) |
+| talent-acquisition | manager | Candidate Review | OK | — | [png](../apps/web/e2e/screenshots/manager/talent-acquisition/2-Candidate_Review.png) |
+| talent-acquisition | manager | Hiring Reports | OK | — | [png](../apps/web/e2e/screenshots/manager/talent-acquisition/3-Hiring_Reports.png) |
+| talent-acquisition | manager | Referrals | OK | — | [png](../apps/web/e2e/screenshots/manager/talent-acquisition/4-Referrals.png) |
+| talent-acquisition | manager | Offer Approval | OK | — | [png](../apps/web/e2e/screenshots/manager/talent-acquisition/5-Offer_Approval.png) |
 | talent-acquisition | employee | Internal Job Board | OK | — | [png](../apps/web/e2e/screenshots/employee/talent-acquisition/0-Internal_Job_Board.png) |
 | talent-acquisition | employee | Employee Referral | OK | — | [png](../apps/web/e2e/screenshots/employee/talent-acquisition/1-Employee_Referral.png) |
 | talent-acquisition | employee | My Applications | OK | — | [png](../apps/web/e2e/screenshots/employee/talent-acquisition/2-My_Applications.png) |
@@ -233,12 +226,18 @@ _All green._
 | onboarding-offboarding | admin | Onboarding Workflows | OK | — | [png](../apps/web/e2e/screenshots/admin/onboarding-offboarding/0-Onboarding_Workflows.png) |
 | onboarding-offboarding | admin | Offboarding Workflows | OK | — | [png](../apps/web/e2e/screenshots/admin/onboarding-offboarding/1-Offboarding_Workflows.png) |
 | onboarding-offboarding | admin | Document Templates | OK | — | [png](../apps/web/e2e/screenshots/admin/onboarding-offboarding/2-Document_Templates.png) |
-| onboarding-offboarding | admin | Onboarding Analytics | 🔴 ERROR | error boundary ("Something went wrong"); console: %o  %s TypeError: Cannot read properties of undefined (reading 'replace')     at eval (webpack-internal:///(app-pages-browser)/./src/components/modules/onboarding-offboarding/tabs/admin/onboarding-analytics-tab.tsx:502:83)     at Array.map (<anonymous>)     at OnboardingAnalyticsTab (webpack-interna; module-level crash — ErrorBoundary swallowed the whole module; remaining 2 tab(s) unreachable | [png](../apps/web/e2e/screenshots/admin/onboarding-offboarding/3-Onboarding_Analytics.png) |
+| onboarding-offboarding | admin | Onboarding Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/onboarding-offboarding/3-Onboarding_Analytics.png) |
+| onboarding-offboarding | admin | Offboarding Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/onboarding-offboarding/4-Offboarding_Analytics.png) |
+| onboarding-offboarding | admin | Compliance & Policy | OK | — | [png](../apps/web/e2e/screenshots/admin/onboarding-offboarding/5-Compliance__Policy.png) |
 | onboarding-offboarding | manager | Team Onboarding | OK | — | [png](../apps/web/e2e/screenshots/manager/onboarding-offboarding/0-Team_Onboarding.png) |
-| onboarding-offboarding | manager | Team Offboarding | 🔴 ERROR | error boundary ("Something went wrong"); console: %o  %s TypeError: member.clearanceStatus.replace is not a function     at eval (webpack-internal:///(app-pages-browser)/./src/components/modules/onboarding-offboarding/tabs/manager/team-offboarding-tab.tsx:292:82)     at Array.map (<anonymous>)     at TeamOffboardingTab (webpack-internal:///(app-pag; module-level crash — ErrorBoundary swallowed the whole module; remaining 4 tab(s) unreachable | [png](../apps/web/e2e/screenshots/manager/onboarding-offboarding/1-Team_Offboarding.png) |
-| onboarding-offboarding | employee | My Onboarding | ⚠️ EMPTY | empty-text matched: "No tasks assigned yet" | [png](../apps/web/e2e/screenshots/employee/onboarding-offboarding/0-My_Onboarding.png) |
+| onboarding-offboarding | manager | Team Offboarding | OK | — | [png](../apps/web/e2e/screenshots/manager/onboarding-offboarding/1-Team_Offboarding.png) |
+| onboarding-offboarding | manager | Buddy Assignment | OK | — | [png](../apps/web/e2e/screenshots/manager/onboarding-offboarding/2-Buddy_Assignment.png) |
+| onboarding-offboarding | manager | Probation Management | OK | — | [png](../apps/web/e2e/screenshots/manager/onboarding-offboarding/3-Probation_Management.png) |
+| onboarding-offboarding | manager | Knowledge Transfer | OK | — | [png](../apps/web/e2e/screenshots/manager/onboarding-offboarding/4-Knowledge_Transfer.png) |
+| onboarding-offboarding | manager | Exit Interviews | OK | — | [png](../apps/web/e2e/screenshots/manager/onboarding-offboarding/5-Exit_Interviews.png) |
+| onboarding-offboarding | employee | My Onboarding | OK | — | [png](../apps/web/e2e/screenshots/employee/onboarding-offboarding/0-My_Onboarding.png) |
 | onboarding-offboarding | employee | Document Submission | OK | — | [png](../apps/web/e2e/screenshots/employee/onboarding-offboarding/1-Document_Submission.png) |
-| onboarding-offboarding | employee | Orientation & Training | ⚠️ EMPTY | empty-text matched: "No training modules assigned yet" | [png](../apps/web/e2e/screenshots/employee/onboarding-offboarding/2-Orientation__Training.png) |
+| onboarding-offboarding | employee | Orientation & Training | OK | — | [png](../apps/web/e2e/screenshots/employee/onboarding-offboarding/2-Orientation__Training.png) |
 | onboarding-offboarding | employee | My Exit Process | OK | — | [png](../apps/web/e2e/screenshots/employee/onboarding-offboarding/3-My_Exit_Process.png) |
 | onboarding-offboarding | employee | Handover Management | OK | — | [png](../apps/web/e2e/screenshots/employee/onboarding-offboarding/4-Handover_Management.png) |
 | onboarding-offboarding | employee | Post-Joining Support | OK | — | [png](../apps/web/e2e/screenshots/employee/onboarding-offboarding/5-Post-Joining_Support.png) |
@@ -246,13 +245,20 @@ _All green._
 | performance-growth | admin | Goal Framework | OK | — | [png](../apps/web/e2e/screenshots/admin/performance-growth/1-Goal_Framework.png) |
 | performance-growth | admin | Competency Library | OK | — | [png](../apps/web/e2e/screenshots/admin/performance-growth/2-Competency_Library.png) |
 | performance-growth | admin | Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/performance-growth/3-Analytics.png) |
-| performance-growth | admin | Calibration | 🔴 ERROR | console: Each child in a list should have a unique "key" prop.%s%s See https://react.dev/link/warning-keys for more information.   Check the render method of `CalibrationTab`. | [png](../apps/web/e2e/screenshots/admin/performance-growth/4-Calibration.png) |
+| performance-growth | admin | Calibration | OK | — | [png](../apps/web/e2e/screenshots/admin/performance-growth/4-Calibration.png) |
 | performance-growth | admin | PIP Management | OK | — | [png](../apps/web/e2e/screenshots/admin/performance-growth/5-PIP_Management.png) |
-| performance-growth | manager | default | 🔴 ERROR | error boundary ("Something went wrong") | [png](../apps/web/e2e/screenshots/manager/performance-growth/0-default.png) |
+| performance-growth | manager | Team Performance | OK | — | [png](../apps/web/e2e/screenshots/manager/performance-growth/0-Team_Performance.png) |
+| performance-growth | manager | Goal Management | OK | — | [png](../apps/web/e2e/screenshots/manager/performance-growth/1-Goal_Management.png) |
+| performance-growth | manager | Reviews & Feedback | OK | — | [png](../apps/web/e2e/screenshots/manager/performance-growth/2-Reviews__Feedback.png) |
+| performance-growth | manager | 1-on-1 Meetings | OK | — | [png](../apps/web/e2e/screenshots/manager/performance-growth/3-1-on-1_Meetings.png) |
+| performance-growth | manager | Team Development | OK | — | [png](../apps/web/e2e/screenshots/manager/performance-growth/4-Team_Development.png) |
+| performance-growth | manager | Talent Assessment | OK | — | [png](../apps/web/e2e/screenshots/manager/performance-growth/5-Talent_Assessment.png) |
 | performance-growth | employee | My Goals | OK | — | [png](../apps/web/e2e/screenshots/employee/performance-growth/0-My_Goals.png) |
 | performance-growth | employee | Self-Review | OK | — | [png](../apps/web/e2e/screenshots/employee/performance-growth/1-Self-Review.png) |
 | performance-growth | employee | Feedback | OK | — | [png](../apps/web/e2e/screenshots/employee/performance-growth/2-Feedback.png) |
-| performance-growth | employee | My Reviews | 🔴 ERROR | error boundary ("Something went wrong"); console: %o  %s TypeError: (intermediate value)(intermediate value)(intermediate value).toFixed is not a function     at eval (webpack-internal:///(app-pages-browser)/./src/components/modules/performance-growth/tabs/employee/my-reviews-tab.tsx:438:183)     at Array.map (<anonymous>)     at MyReviewsTab (webp; module-level crash — ErrorBoundary swallowed the whole module; remaining 2 tab(s) unreachable | [png](../apps/web/e2e/screenshots/employee/performance-growth/3-My_Reviews.png) |
+| performance-growth | employee | My Reviews | OK | — | [png](../apps/web/e2e/screenshots/employee/performance-growth/3-My_Reviews.png) |
+| performance-growth | employee | Development Plan | OK | — | [png](../apps/web/e2e/screenshots/employee/performance-growth/4-Development_Plan.png) |
+| performance-growth | employee | Career Growth | OK | — | [png](../apps/web/e2e/screenshots/employee/performance-growth/5-Career_Growth.png) |
 | learning-development | admin | LMS Configuration | OK | — | [png](../apps/web/e2e/screenshots/admin/learning-development/0-LMS_Configuration.png) |
 | learning-development | admin | Budget Management | OK | — | [png](../apps/web/e2e/screenshots/admin/learning-development/1-Budget_Management.png) |
 | learning-development | admin | Training Calendar | OK | — | [png](../apps/web/e2e/screenshots/admin/learning-development/2-Training_Calendar.png) |
@@ -269,7 +275,7 @@ _All green._
 | compensation-rewards | admin | Rewards & Recognition | ⚠️ EMPTY | empty-text matched: "No recognition programs configured yet" | [png](../apps/web/e2e/screenshots/admin/compensation-rewards/2-Rewards__Recognition.png) |
 | compensation-rewards | admin | Compensation Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/compensation-rewards/3-Compensation_Analytics.png) |
 | compensation-rewards | manager | Team Compensation | OK | — | [png](../apps/web/e2e/screenshots/manager/compensation-rewards/0-Team_Compensation.png) |
-| compensation-rewards | manager | Recognition Management | 🔴 ERROR | api: 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard \| 500 GET /api/v1/compensation-rewards/manager/recognition/nominations \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/compensation-rewards/1-Recognition_Management.png) |
+| compensation-rewards | manager | Recognition Management | 🔴 ERROR | api: 500 GET /api/v1/compensation-rewards/manager/recognition/nominations \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/compensation-rewards/1-Recognition_Management.png) |
 | compensation-rewards | manager | Increment Planning | ⚠️ EMPTY | empty-text matched: "No active revisions available" | [png](../apps/web/e2e/screenshots/manager/compensation-rewards/2-Increment_Planning.png) |
 | compensation-rewards | employee | My Compensation | ⚠️ EMPTY | empty-text matched: "No salary components available" | [png](../apps/web/e2e/screenshots/employee/compensation-rewards/0-My_Compensation.png) |
 | compensation-rewards | employee | Pay Slips & Tax | OK | — | [png](../apps/web/e2e/screenshots/employee/compensation-rewards/1-Pay_Slips__Tax.png) |

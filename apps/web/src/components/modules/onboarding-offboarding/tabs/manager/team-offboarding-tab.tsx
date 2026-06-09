@@ -20,9 +20,30 @@ interface DepartingMember {
   exitType: string;
   lastWorkingDate: string;
   clearanceStatus: string;
-  knowledgeTransferStatus: string;
+  settlementStatus: string;
   handoverStatus: string;
   daysRemaining: number;
+}
+
+// Backend returns clearanceStatus as an object map (e.g. { it: true, finance: false }).
+// Derive a single status string for display.
+function deriveClearanceStatus(raw: unknown): string {
+  if (typeof raw === 'string') return raw;
+  if (raw && typeof raw === 'object') {
+    const values = Object.values(raw as Record<string, unknown>);
+    if (values.length === 0) return 'pending';
+    if (values.every(Boolean)) return 'completed';
+    if (values.some(Boolean)) return 'in_progress';
+    return 'pending';
+  }
+  return 'pending';
+}
+
+function daysUntil(dateStr?: string): number {
+  if (!dateStr) return 0;
+  const target = new Date(dateStr).getTime();
+  if (Number.isNaN(target)) return 0;
+  return Math.ceil((target - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -50,7 +71,21 @@ export default function TeamOffboardingTab() {
     try {
       setIsLoading(true);
       const res = await api.get('/onboarding-offboarding/manager/team-offboarding');
-      setMembers(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const rawMembers: any[] = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      setMembers(
+        rawMembers.map((m) => ({
+          id: m.id,
+          employeeName: m.employeeName ?? [m.firstName, m.lastName].filter(Boolean).join(' ') ?? '--',
+          department: m.department ?? '',
+          designation: m.designation ?? '',
+          exitType: m.exitType ?? 'resignation',
+          lastWorkingDate: m.lastWorkingDate,
+          clearanceStatus: deriveClearanceStatus(m.clearanceStatus),
+          settlementStatus: m.settlementStatus ?? 'pending',
+          handoverStatus: m.handoverStatus ?? 'pending',
+          daysRemaining: typeof m.daysRemaining === 'number' ? m.daysRemaining : daysUntil(m.lastWorkingDate),
+        })),
+      );
     } catch {
       setError('Failed to load team offboarding data.');
     } finally {
@@ -116,10 +151,14 @@ export default function TeamOffboardingTab() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="text-sm font-semibold text-text">{member.employeeName}</h3>
-                  <p className="text-xs text-text-muted">{member.designation} - {member.department}</p>
+                  {(member.designation || member.department) && (
+                    <p className="text-xs text-text-muted">
+                      {[member.designation, member.department].filter(Boolean).join(' - ')}
+                    </p>
+                  )}
                 </div>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${EXIT_TYPE_STYLES[member.exitType] || 'bg-gray-100 text-gray-600'}`}>
-                  {member.exitType.replace(/_/g, ' ')}
+                  {(member.exitType ?? 'resignation').replace(/_/g, ' ')}
                 </span>
               </div>
 
@@ -138,19 +177,19 @@ export default function TeamOffboardingTab() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-muted">Clearance</span>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_STYLES[member.clearanceStatus] || 'bg-gray-100 text-gray-600'}`}>
-                    {member.clearanceStatus.replace(/_/g, ' ')}
+                    {(member.clearanceStatus ?? 'pending').replace(/_/g, ' ')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-text-muted">Knowledge Transfer</span>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_STYLES[member.knowledgeTransferStatus] || 'bg-gray-100 text-gray-600'}`}>
-                    {member.knowledgeTransferStatus.replace(/_/g, ' ')}
+                  <span className="text-xs text-text-muted">Settlement</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_STYLES[member.settlementStatus] || 'bg-gray-100 text-gray-600'}`}>
+                    {(member.settlementStatus ?? 'pending').replace(/_/g, ' ')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-muted">Handover</span>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_STYLES[member.handoverStatus] || 'bg-gray-100 text-gray-600'}`}>
-                    {member.handoverStatus.replace(/_/g, ' ')}
+                    {(member.handoverStatus ?? 'pending').replace(/_/g, ' ')}
                   </span>
                 </div>
               </div>

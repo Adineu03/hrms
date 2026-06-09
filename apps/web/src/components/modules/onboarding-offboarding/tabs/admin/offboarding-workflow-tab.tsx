@@ -213,7 +213,7 @@ export default function OffboardingWorkflowTab() {
             {workflows.map((wf) => (
               <tr key={wf.id} className="bg-card hover:bg-background/50 transition-colors">
                 <td className="px-4 py-3 text-sm text-text font-medium">{wf.name}</td>
-                <td className="px-4 py-3 text-sm text-text-muted capitalize">{wf.exitType.replace(/_/g, ' ')}</td>
+                <td className="px-4 py-3 text-sm text-text-muted capitalize">{(wf.exitType ?? '').replace(/_/g, ' ') || '--'}</td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {(wf.clearanceDepartments || []).slice(0, 3).map((d) => (
@@ -226,7 +226,7 @@ export default function OffboardingWorkflowTab() {
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[wf.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {wf.status}
+                    {(wf.status ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </td>
                 <td className="px-4 py-3">

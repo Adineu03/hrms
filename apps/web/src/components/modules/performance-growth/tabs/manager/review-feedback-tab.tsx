@@ -27,13 +27,17 @@ interface PendingReview {
   employeeId: string;
   cycleName: string;
   status: string;
-  selfAssessment: {
-    rating: number;
+  // Flat fields the API may return directly:
+  selfRating?: number | string | null;
+  selfComments?: string | null;
+  achievements?: string[] | null;
+  selfAssessment?: {
+    rating: number | string;
     comments: string;
     achievements: string[];
   } | null;
-  managerRating: number | null;
-  managerComments: string | null;
+  managerRating?: number | string | null;
+  managerComments?: string | null;
 }
 
 interface FeedbackEntry {
@@ -132,7 +136,26 @@ export default function ReviewFeedbackTab() {
         api.get('/core-hr/manager/team').catch(() => ({ data: [] })),
       ]);
       const reviewRaw = reviewRes.data;
-      setPendingReviews(Array.isArray(reviewRaw) ? reviewRaw : Array.isArray(reviewRaw?.data) ? reviewRaw.data : []);
+      const reviewList: PendingReview[] = Array.isArray(reviewRaw)
+        ? reviewRaw
+        : Array.isArray(reviewRaw?.data)
+          ? reviewRaw.data
+          : [];
+      // The API may return self-assessment as flat fields (selfRating/selfComments/achievements)
+      // instead of a nested selfAssessment object — normalize so the UI renders consistently.
+      const normalizedReviews = reviewList.map((r) => ({
+        ...r,
+        selfAssessment:
+          r.selfAssessment ??
+          (r.selfRating != null || r.selfComments || (Array.isArray(r.achievements) && r.achievements.length)
+            ? {
+                rating: Number(r.selfRating) || 0,
+                comments: r.selfComments ?? '',
+                achievements: Array.isArray(r.achievements) ? r.achievements : [],
+              }
+            : null),
+      }));
+      setPendingReviews(normalizedReviews);
       setFeedbackHistory([]);
       const empRaw = empRes.data;
       setEmployees(Array.isArray(empRaw) ? empRaw : Array.isArray(empRaw?.data) ? empRaw.data : []);
@@ -262,7 +285,7 @@ export default function ReviewFeedbackTab() {
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <Star className="h-3.5 w-3.5 text-yellow-500" />
-                              <span className="text-sm text-text font-medium">Rating: {review.selfAssessment.rating}/5</span>
+                              <span className="text-sm text-text font-medium">Rating: {Number(review.selfAssessment.rating) || 0}/5</span>
                             </div>
                             {review.selfAssessment.comments && (
                               <p className="text-xs text-text-muted">{review.selfAssessment.comments}</p>
@@ -290,7 +313,7 @@ export default function ReviewFeedbackTab() {
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <Star className="h-3.5 w-3.5 text-yellow-500" />
-                              <span className="text-sm text-text font-medium">Rating: {review.managerRating}/5</span>
+                              <span className="text-sm text-text font-medium">Rating: {Number(review.managerRating) || 0}/5</span>
                             </div>
                             {review.managerComments && (
                               <p className="text-xs text-text-muted">{review.managerComments}</p>

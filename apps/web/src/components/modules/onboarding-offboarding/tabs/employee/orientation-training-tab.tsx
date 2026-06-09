@@ -40,6 +40,7 @@ const STATUS_STYLES: Record<string, string> = {
   completed: 'bg-green-100 text-green-700',
   in_progress: 'bg-blue-100 text-blue-700',
   not_started: 'bg-gray-100 text-gray-600',
+  pending: 'bg-yellow-50 text-yellow-700',
   failed: 'bg-red-100 text-red-700',
 };
 
@@ -65,9 +66,40 @@ export default function OrientationTrainingTab() {
         api.get('/onboarding-offboarding/employee/orientation/modules').catch(() => ({ data: [] })),
         api.get('/onboarding-offboarding/employee/orientation/completion-status').catch(() => ({ data: null })),
       ]);
-      const modData = modulesRes.data;
-      setModules(Array.isArray(modData) ? modData : Array.isArray(modData?.data) ? modData.data : []);
-      setProgress(progressRes.data?.data || progressRes.data);
+      const modData = modulesRes.data?.data || modulesRes.data;
+      const rawModules: any[] = Array.isArray(modData)
+        ? modData
+        : Array.isArray(modData?.modules)
+          ? modData.modules
+          : [];
+      setModules(
+        rawModules.map((m, i) => ({
+          id: m.id,
+          title: m.title,
+          description: m.description,
+          type: m.type ?? (m.quizRequired ? 'quiz' : 'document'),
+          duration: m.duration ?? 0,
+          status: m.status,
+          completedAt: m.completedAt ?? null,
+          score: m.score ?? m.quizScore ?? null,
+          passingScore: m.passingScore ?? null,
+          materialUrl: m.materialUrl ?? m.moduleUrl ?? null,
+          order: m.order ?? i,
+        })),
+      );
+
+      const prog = progressRes.data?.data || progressRes.data;
+      setProgress(
+        prog
+          ? {
+              totalModules: prog.totalModules ?? prog.total ?? 0,
+              completedModules: prog.completedModules ?? prog.completed ?? 0,
+              completionPercent: prog.completionPercent ?? prog.completionPercentage ?? 0,
+              totalDuration: prog.totalDuration ?? 0,
+              completedDuration: prog.completedDuration ?? 0,
+            }
+          : null,
+      );
     } catch {
       setError('Failed to load training modules.');
     } finally {
@@ -175,15 +207,17 @@ export default function OrientationTrainingTab() {
                       <span className="text-xs text-text-muted font-medium">#{idx + 1}</span>
                       <span className="text-sm font-semibold text-text">{mod.title}</span>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_STYLES[mod.status] || 'bg-gray-100 text-gray-600'}`}>
-                        {mod.status.replace(/_/g, ' ')}
+                        {(mod.status ?? 'not_started').replace(/_/g, ' ')}
                       </span>
                     </div>
                     {mod.description && <p className="text-xs text-text-muted mt-1">{mod.description}</p>}
                     <div className="flex items-center gap-3 mt-1.5 text-xs text-text-muted">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {mod.duration} min
-                      </span>
+                      {mod.duration > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {mod.duration} min
+                        </span>
+                      )}
                       <span className="capitalize">{mod.type}</span>
                       {mod.score != null && (
                         <span className={mod.score >= (mod.passingScore || 0) ? 'text-green-600' : 'text-red-600'}>
@@ -206,7 +240,7 @@ export default function OrientationTrainingTab() {
                       View
                     </a>
                   )}
-                  {mod.status === 'not_started' && (
+                  {(mod.status === 'not_started' || mod.status === 'pending') && (
                     <button
                       type="button"
                       onClick={() => handleStartModule(mod.id)}

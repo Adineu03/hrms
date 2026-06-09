@@ -20,26 +20,19 @@ interface OnboardingMetrics {
   bottleneckTasks: number;
 }
 
-interface RecentOnboarding {
-  id: string;
-  employeeName: string;
-  department: string;
-  startDate: string;
-  completionPercent: number;
-  status: string;
-  daysElapsed: number;
+interface BottleneckTask {
+  title: string;
+  taskType: string;
+  taskOwner: string;
+  totalAssigned: number;
+  pendingCount: number;
+  completedCount: number;
+  completionRate: number;
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  completed: 'bg-green-100 text-green-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  overdue: 'bg-red-100 text-red-700',
-  pending: 'bg-yellow-50 text-yellow-700',
-};
 
 export default function OnboardingAnalyticsTab() {
   const [metrics, setMetrics] = useState<OnboardingMetrics | null>(null);
-  const [recentOnboardings, setRecentOnboardings] = useState<RecentOnboarding[]>([]);
+  const [bottlenecks, setBottlenecks] = useState<BottleneckTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,12 +44,38 @@ export default function OnboardingAnalyticsTab() {
     setIsLoading(true);
     setError(null);
     try {
-      const [metricsRes, recentRes] = await Promise.all([
+      const [metricsRes, bottleneckRes] = await Promise.all([
         api.get('/onboarding-offboarding/admin/onboarding-analytics/overview').catch(() => ({ data: null })),
         api.get('/onboarding-offboarding/admin/onboarding-analytics/bottlenecks').catch(() => ({ data: [] })),
       ]);
-      setMetrics(metricsRes.data?.data || metricsRes.data);
-      setRecentOnboardings(Array.isArray(recentRes.data) ? recentRes.data : recentRes.data?.data || []);
+
+      const overview = metricsRes.data?.data || metricsRes.data;
+      const rawBottlenecks: any[] = Array.isArray(bottleneckRes.data)
+        ? bottleneckRes.data
+        : bottleneckRes.data?.data || [];
+      const mappedBottlenecks: BottleneckTask[] = rawBottlenecks.map((b) => ({
+        title: b.title,
+        taskType: b.taskType ?? b.task_type ?? '',
+        taskOwner: b.taskOwner ?? b.task_owner ?? '',
+        totalAssigned: Number(b.totalAssigned ?? b.total_assigned ?? 0),
+        pendingCount: Number(b.pendingCount ?? b.pending_count ?? 0),
+        completedCount: Number(b.completedCount ?? b.completed_count ?? 0),
+        completionRate: Number(b.completionRate ?? b.completion_rate ?? 0),
+      }));
+      setBottlenecks(mappedBottlenecks);
+
+      setMetrics(
+        overview
+          ? {
+              avgOnboardingDays: overview.avgOnboardingDays ?? overview.averageCompletionDays ?? 0,
+              activeOnboardings: overview.activeOnboardings ?? 0,
+              completionRate:
+                overview.completionRate ?? overview.averageProgressPercentage ?? 0,
+              bottleneckTasks:
+                overview.bottleneckTasks ?? mappedBottlenecks.filter((b) => b.pendingCount > 0).length,
+            }
+          : null,
+      );
     } catch {
       setError('Failed to load onboarding analytics.');
     } finally {
@@ -132,49 +151,51 @@ export default function OnboardingAnalyticsTab() {
         </div>
       )}
 
-      {/* Recent Onboardings */}
+      {/* Bottleneck Tasks */}
       <div>
-        <h3 className="text-sm font-semibold text-text mb-3">Recent Onboardings</h3>
+        <h3 className="text-sm font-semibold text-text mb-3">Task Bottlenecks</h3>
         <div className="border border-border rounded-xl overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="bg-background border-b border-border">
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Employee</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Department</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Start Date</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Days</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3 w-40">Progress</th>
-                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Status</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Task</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Type</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Owner</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Pending</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">Completed</th>
+                <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3 w-44">Completion</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {recentOnboardings.map((item) => (
-                <tr key={item.id} className="bg-card hover:bg-background/50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-text font-medium">{item.employeeName}</td>
-                  <td className="px-4 py-3 text-sm text-text-muted">{item.department}</td>
-                  <td className="px-4 py-3 text-sm text-text-muted">
-                    {item.startDate ? new Date(item.startDate).toLocaleDateString() : '--'}
+              {bottlenecks.map((item, idx) => (
+                <tr key={`${item.title}-${idx}`} className="bg-card hover:bg-background/50 transition-colors">
+                  <td className="px-4 py-3 text-sm text-text font-medium">{item.title}</td>
+                  <td className="px-4 py-3 text-sm text-text-muted capitalize">
+                    {(item.taskType || '').replace(/_/g, ' ') || '--'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-text-muted">{item.daysElapsed}</td>
+                  <td className="px-4 py-3 text-sm text-text-muted capitalize">
+                    {(item.taskOwner || '').replace(/_/g, ' ') || '--'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-text-muted">
+                    {item.pendingCount} / {item.totalAssigned}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-text-muted">{item.completedCount}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         {renderProgressBar(
-                          item.completionPercent,
-                          item.completionPercent >= 80 ? 'bg-green-500' : item.completionPercent >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                          item.completionRate,
+                          item.completionRate >= 80 ? 'bg-green-500' : item.completionRate >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                         )}
                       </div>
-                      <span className="text-xs font-medium text-text w-10 text-right">{item.completionPercent}%</span>
+                      <span className="text-xs font-medium text-text w-10 text-right">
+                        {Math.round(item.completionRate)}%
+                      </span>
                     </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[item.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {item.status.replace(/_/g, ' ')}
-                    </span>
                   </td>
                 </tr>
               ))}
-              {recentOnboardings.length === 0 && (
+              {bottlenecks.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center">
                     <Inbox className="h-10 w-10 mx-auto mb-3 opacity-40" />

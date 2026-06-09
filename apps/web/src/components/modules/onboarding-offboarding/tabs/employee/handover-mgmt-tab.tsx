@@ -221,7 +221,7 @@ export default function HandoverMgmtTab() {
         <div className="flex items-center gap-3">
           <span className="text-sm text-text-muted">Status:</span>
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[handover.status] || 'bg-gray-100 text-gray-600'}`}>
-            {handover.status}
+            {(handover.status ?? '').replace(/_/g, ' ') || '--'}
           </span>
           {handover.submittedAt && <span className="text-xs text-text-muted">Submitted: {new Date(handover.submittedAt).toLocaleDateString()}</span>}
           {handover.approvedBy && <span className="text-xs text-green-600">Approved by: {handover.approvedBy}</span>}
@@ -246,10 +246,10 @@ export default function HandoverMgmtTab() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-text">{task.title}</span>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${PRIORITY_STYLES[task.priority] || 'bg-gray-100 text-gray-600'}`}>
-                    {task.priority}
+                    {(task.priority ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_STYLES[task.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {task.status}
+                    {(task.status ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </div>
                 {task.description && <p className="text-xs text-text-muted mt-0.5">{task.description}</p>}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -34,12 +34,12 @@ interface DevelopmentPlan {
   employeeId: string;
   title: string;
   type: string;
-  progress: number;
+  progress: number | string;
   status: string;
-  activities: DevelopmentActivity[];
-  skillGaps: string[];
+  activities?: DevelopmentActivity[];
+  skillGaps?: string[];
   startDate: string;
-  endDate: string;
+  endDate?: string;
 }
 
 interface Employee {
@@ -245,8 +245,8 @@ export default function TeamDevelopmentTab() {
           </thead>
           <tbody className="divide-y divide-border">
             {plans.map((plan) => (
-              <>
-                <tr key={plan.id} className="bg-card hover:bg-background/50 transition-colors">
+              <Fragment key={plan.id}>
+                <tr className="bg-card hover:bg-background/50 transition-colors">
                   <td className="px-4 py-3 text-sm text-text font-medium">{plan.employeeName}</td>
                   <td className="px-4 py-3 text-sm text-text">{plan.title}</td>
                   <td className="px-4 py-3 text-sm text-text-muted capitalize">{plan.type?.replace(/_/g, ' ')}</td>
@@ -254,11 +254,11 @@ export default function TeamDevelopmentTab() {
                     <div className="flex items-center gap-2">
                       <div className="w-16 bg-gray-200 rounded-full h-1.5">
                         <div
-                          className={`h-1.5 rounded-full ${plan.progress >= 80 ? 'bg-green-500' : plan.progress >= 50 ? 'bg-yellow-500' : 'bg-blue-500'}`}
-                          style={{ width: `${plan.progress || 0}%` }}
+                          className={`h-1.5 rounded-full ${Number(plan.progress) >= 80 ? 'bg-green-500' : Number(plan.progress) >= 50 ? 'bg-yellow-500' : 'bg-blue-500'}`}
+                          style={{ width: `${Number(plan.progress) || 0}%` }}
                         />
                       </div>
-                      <span className="text-xs text-text-muted">{plan.progress || 0}%</span>
+                      <span className="text-xs text-text-muted">{Math.round(Number(plan.progress) || 0)}%</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -283,14 +283,14 @@ export default function TeamDevelopmentTab() {
                   </td>
                 </tr>
                 {expandedPlan === plan.id && (
-                  <tr key={`${plan.id}-expanded`}>
+                  <tr>
                     <td colSpan={6} className="px-4 py-3 bg-background/30">
                       <div className="space-y-3">
-                        {plan.skillGaps?.length > 0 && (
+                        {(plan.skillGaps?.length ?? 0) > 0 && (
                           <div>
                             <span className="text-[10px] font-semibold text-text-muted uppercase">Skill Gaps:</span>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {plan.skillGaps.map((gap, i) => (
+                              {(plan.skillGaps ?? []).map((gap, i) => (
                                 <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-red-50 text-red-700">{gap}</span>
                               ))}
                             </div>
@@ -298,12 +298,12 @@ export default function TeamDevelopmentTab() {
                         )}
                         <div>
                           <span className="text-[10px] font-semibold text-text-muted uppercase">Activities:</span>
-                          {(plan.activities || []).length === 0 ? (
+                          {(plan.activities ?? []).length === 0 ? (
                             <p className="text-xs text-text-muted italic mt-1">No activities defined yet.</p>
                           ) : (
                             <div className="space-y-1 mt-1">
-                              {plan.activities.map((activity) => (
-                                <div key={activity.id} className="flex items-center gap-3 bg-card border border-border rounded-lg px-3 py-2">
+                              {(plan.activities ?? []).map((activity, ai) => (
+                                <div key={activity.id ?? `${activity.title}-${ai}`} className="flex items-center gap-3 bg-card border border-border rounded-lg px-3 py-2">
                                   <BookOpen className="h-3.5 w-3.5 text-text-muted flex-shrink-0" />
                                   <div className="flex-1">
                                     <span className="text-sm text-text">{activity.title}</span>
@@ -324,7 +324,7 @@ export default function TeamDevelopmentTab() {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
             {plans.length === 0 && (
               <tr>

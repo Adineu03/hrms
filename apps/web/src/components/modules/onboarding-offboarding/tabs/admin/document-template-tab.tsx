@@ -208,12 +208,12 @@ export default function DocumentTemplateTab() {
             {templates.map((tmpl) => (
               <tr key={tmpl.id} className="bg-card hover:bg-background/50 transition-colors">
                 <td className="px-4 py-3 text-sm text-text font-medium">{tmpl.name}</td>
-                <td className="px-4 py-3 text-sm text-text-muted capitalize">{tmpl.type.replace(/_/g, ' ')}</td>
+                <td className="px-4 py-3 text-sm text-text-muted capitalize">{(tmpl.type ?? '').replace(/_/g, ' ') || '--'}</td>
                 <td className="px-4 py-3 text-sm text-text-muted">{tmpl.version || '--'}</td>
                 <td className="px-4 py-3 text-sm text-text-muted">{tmpl.country || 'Global'}</td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[tmpl.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {tmpl.status}
+                    {(tmpl.status ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </td>
                 <td className="px-4 py-3">
@@ -255,7 +255,7 @@ export default function DocumentTemplateTab() {
             </div>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-xs text-text-muted">
-                <span>Type: <strong className="text-text capitalize">{previewTemplate.type.replace(/_/g, ' ')}</strong></span>
+                <span>Type: <strong className="text-text capitalize">{(previewTemplate.type ?? '').replace(/_/g, ' ') || '--'}</strong></span>
                 <span>Version: <strong className="text-text">{previewTemplate.version}</strong></span>
                 <span>Country: <strong className="text-text">{previewTemplate.country || 'Global'}</strong></span>
               </div>

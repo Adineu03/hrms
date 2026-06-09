@@ -27,12 +27,12 @@ interface TeamGoal {
   employeeId: string;
   title: string;
   description: string;
-  progress: number;
+  progress: number | string;
   status: string;
   dueDate: string;
   category: string;
-  parentGoalTitle: string | null;
-  pendingModification: boolean;
+  parentGoalTitle?: string | null;
+  pendingModification?: boolean;
 }
 
 interface Employee {
@@ -275,11 +275,11 @@ export default function GoalManagementTab() {
                     <div className="flex items-center gap-2">
                       <div className="w-16 bg-gray-200 rounded-full h-1.5">
                         <div
-                          className={`h-1.5 rounded-full ${goal.progress >= 80 ? 'bg-green-500' : goal.progress >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                          style={{ width: `${goal.progress || 0}%` }}
+                          className={`h-1.5 rounded-full ${Number(goal.progress) >= 80 ? 'bg-green-500' : Number(goal.progress) >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${Number(goal.progress) || 0}%` }}
                         />
                       </div>
-                      <span className="text-xs text-text-muted">{goal.progress || 0}%</span>
+                      <span className="text-xs text-text-muted">{Math.round(Number(goal.progress) || 0)}%</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -346,9 +346,9 @@ export default function GoalManagementTab() {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <div className="w-14 bg-gray-200 rounded-full h-1.5">
-                          <div className="h-1.5 rounded-full bg-primary" style={{ width: `${goal.progress || 0}%` }} />
+                          <div className="h-1.5 rounded-full bg-primary" style={{ width: `${Number(goal.progress) || 0}%` }} />
                         </div>
-                        <span className="text-xs text-text-muted">{goal.progress || 0}%</span>
+                        <span className="text-xs text-text-muted">{Math.round(Number(goal.progress) || 0)}%</span>
                       </div>
                     </div>
                   ))}

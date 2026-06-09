@@ -55,7 +55,30 @@ export default function ProbationMgmtTab() {
     try {
       setIsLoading(true);
       const res = await api.get('/onboarding-offboarding/manager/probation');
-      setRecords(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const raw: any[] = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const daysUntil = (dateStr?: string): number => {
+        if (!dateStr) return 0;
+        const t = new Date(dateStr).getTime();
+        if (Number.isNaN(t)) return 0;
+        return Math.ceil((t - Date.now()) / (1000 * 60 * 60 * 24));
+      };
+      setRecords(
+        raw.map((r) => {
+          const endDate = r.endDate ?? r.probationEndDate ?? r.probation_end_date ?? '';
+          return {
+            id: r.id ?? r.onboardingId ?? r.onboarding_id ?? '',
+            employeeName: r.employeeName ?? r.employee_name ?? '--',
+            employeeId: r.employeeId ?? r.employee_id ?? '',
+            department: r.department ?? '',
+            startDate: r.startDate ?? r.start_date ?? '',
+            endDate,
+            reviewDate: r.reviewDate ?? r.review_date ?? null,
+            status: r.status ?? r.probationStatus ?? r.probation_status ?? 'active',
+            daysRemaining:
+              typeof r.daysRemaining === 'number' ? r.daysRemaining : daysUntil(endDate),
+          };
+        }),
+      );
     } catch {
       setError('Failed to load probation records.');
     } finally {
@@ -157,8 +180,8 @@ export default function ProbationMgmtTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {records.map((rec) => (
-              <tr key={rec.id} className="bg-card hover:bg-background/50 transition-colors">
+            {records.map((rec, idx) => (
+              <tr key={rec.id || rec.employeeId || idx} className="bg-card hover:bg-background/50 transition-colors">
                 <td className="px-4 py-3">
                   <div className="text-sm text-text font-medium">{rec.employeeName}</div>
                   <div className="text-xs text-text-muted">{rec.department}</div>
@@ -179,7 +202,7 @@ export default function ProbationMgmtTab() {
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[rec.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {rec.status.replace(/_/g, ' ')}
+                    {(rec.status ?? '').replace(/_/g, ' ') || '--'}
                   </span>
                 </td>
                 <td className="px-4 py-3">

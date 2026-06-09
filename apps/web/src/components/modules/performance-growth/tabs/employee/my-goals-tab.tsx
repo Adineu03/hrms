@@ -26,11 +26,11 @@ interface Goal {
   description: string;
   status: string;
   dueDate: string;
-  progress: number;
+  progress: number | string;
   category: string;
-  isPersonal: boolean;
-  parentGoalTitle: string | null;
-  alignmentPath: string[];
+  isPersonal?: boolean;
+  parentGoalTitle?: string | null;
+  alignmentPath?: string[];
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -158,7 +158,7 @@ export default function MyGoalsTab() {
 
   const openProgressModal = (goal: Goal) => {
     setProgressGoalId(goal.id);
-    setProgressValue(goal.progress || 0);
+    setProgressValue(Math.round(Number(goal.progress) || 0));
     setProgressComment('');
     setShowProgressModal(true);
   };
@@ -251,12 +251,12 @@ export default function MyGoalsTab() {
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-text-muted">Progress</span>
-                    <span className="text-xs font-medium text-text">{goal.progress || 0}%</span>
+                    <span className="text-xs font-medium text-text">{Math.round(Number(goal.progress) || 0)}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className={`h-2 rounded-full transition-all ${goal.progress >= 80 ? 'bg-green-500' : goal.progress >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                      style={{ width: `${goal.progress || 0}%` }}
+                      className={`h-2 rounded-full transition-all ${Number(goal.progress) >= 80 ? 'bg-green-500' : Number(goal.progress) >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                      style={{ width: `${Number(goal.progress) || 0}%` }}
                     />
                   </div>
                 </div>
@@ -268,9 +268,9 @@ export default function MyGoalsTab() {
                     Aligned to: {goal.parentGoalTitle}
                   </div>
                 )}
-                {goal.alignmentPath?.length > 0 && (
+                {(goal.alignmentPath?.length ?? 0) > 0 && (
                   <div className="text-[10px] text-text-muted mb-2">
-                    {goal.alignmentPath.join(' > ')}
+                    {(goal.alignmentPath ?? []).join(' > ')}
                   </div>
                 )}
 
@@ -315,10 +315,10 @@ export default function MyGoalsTab() {
                 <div className="mb-2">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-text-muted">Progress</span>
-                    <span className="text-xs font-medium text-text">{goal.progress || 0}%</span>
+                    <span className="text-xs font-medium text-text">{Math.round(Number(goal.progress) || 0)}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${goal.progress || 0}%` }} />
+                    <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${Number(goal.progress) || 0}%` }} />
                   </div>
                 </div>
                 <button

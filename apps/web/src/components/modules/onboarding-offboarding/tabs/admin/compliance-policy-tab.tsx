@@ -30,6 +30,11 @@ interface TrainingCompletion {
   status: string;
 }
 
+function num(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 const STATUS_STYLES: Record<string, string> = {
   acknowledged: 'bg-green-100 text-green-700',
   pending: 'bg-yellow-50 text-yellow-700',
@@ -57,8 +62,45 @@ export default function CompliancePolicyTab() {
         api.get('/onboarding-offboarding/admin/compliance/acknowledgements').catch(() => ({ data: [] })),
         api.get('/onboarding-offboarding/admin/compliance/training-completion').catch(() => ({ data: [] })),
       ]);
-      setPolicyAcks(Array.isArray(policyRes.data) ? policyRes.data : policyRes.data?.data || []);
-      setTrainingCompletions(Array.isArray(trainingRes.data) ? trainingRes.data : trainingRes.data?.data || []);
+      const rawAcks: any[] = Array.isArray(policyRes.data)
+        ? policyRes.data
+        : policyRes.data?.data || [];
+      setPolicyAcks(
+        rawAcks.map((a, i) => ({
+          id: a.id ?? `${a.employeeId ?? a.employee_id ?? 'ack'}-${i}`,
+          employeeName: a.employeeName ?? a.employee_name ?? '--',
+          employeeId: a.employeeId ?? a.employee_id ?? '',
+          policyName: a.policyName ?? a.policy_name ?? '--',
+          acknowledgedDate: a.acknowledgedDate ?? a.acknowledged_date ?? a.acknowledgedAt ?? null,
+          status: a.status ?? 'pending',
+        })),
+      );
+
+      // training-completion returns { summary, byTraining: [...] } — not a flat list.
+      const trainingData = trainingRes.data;
+      const rawTraining: any[] = Array.isArray(trainingData)
+        ? trainingData
+        : Array.isArray(trainingData?.data)
+          ? trainingData.data
+          : Array.isArray(trainingData?.byTraining)
+            ? trainingData.byTraining
+            : [];
+      setTrainingCompletions(
+        rawTraining.map((t, i) => {
+          const rate = num(t.completion_rate ?? t.completionRate);
+          const explicitStatus = t.status as string | undefined;
+          const derivedStatus = rate >= 100 ? 'completed' : rate > 0 ? 'in_progress' : 'not_started';
+          return {
+            id: t.id ?? `${t.training_name ?? t.trainingName ?? 'training'}-${i}`,
+            employeeName: t.employeeName ?? t.employee_name ?? '--',
+            employeeId: t.employeeId ?? t.employee_id ?? '',
+            trainingName: t.trainingName ?? t.training_name ?? '--',
+            completedDate: t.completedDate ?? t.completed_date ?? null,
+            score: t.score != null ? num(t.score) : t.completion_rate != null ? Math.round(rate) : null,
+            status: explicitStatus ?? derivedStatus,
+          };
+        }),
+      );
     } catch {
       setError('Failed to load compliance data.');
     } finally {
@@ -160,7 +202,7 @@ export default function CompliancePolicyTab() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[ack.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {ack.status}
+                      {(ack.status ?? '').replace(/_/g, ' ') || '--'}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -215,7 +257,7 @@ export default function CompliancePolicyTab() {
                   <td className="px-4 py-3 text-sm text-text-muted">{tc.score != null ? `${tc.score}%` : '--'}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[tc.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {tc.status.replace(/_/g, ' ')}
+                      {(tc.status ?? '').replace(/_/g, ' ') || '--'}
                     </span>
                   </td>
                   <td className="px-4 py-3">

@@ -37,9 +37,9 @@ interface Pip {
   startDate: string;
   endDate: string;
   status: string;
-  progress: number;
+  progress: number | string;
   outcome: string;
-  milestones: PipMilestone[];
+  milestones?: PipMilestone[];
   escalationRules: string;
   createdAt: string;
 }
@@ -231,11 +231,11 @@ export default function PipTab() {
                   <div className="flex items-center gap-2">
                     <div className="w-16 bg-gray-200 rounded-full h-1.5">
                       <div
-                        className={`h-1.5 rounded-full ${pip.progress >= 80 ? 'bg-green-500' : pip.progress >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                        style={{ width: `${pip.progress || 0}%` }}
+                        className={`h-1.5 rounded-full ${Number(pip.progress) >= 80 ? 'bg-green-500' : Number(pip.progress) >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ width: `${Number(pip.progress) || 0}%` }}
                       />
                     </div>
-                    <span className="text-xs text-text-muted">{pip.progress || 0}%</span>
+                    <span className="text-xs text-text-muted">{Math.round(Number(pip.progress) || 0)}%</span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -381,12 +381,12 @@ export default function PipTab() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-text-muted">Overall Progress</span>
-                  <span className="text-xs font-medium text-text">{detailPip.progress || 0}%</span>
+                  <span className="text-xs font-medium text-text">{Math.round(Number(detailPip.progress) || 0)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className={`h-2 rounded-full ${detailPip.progress >= 80 ? 'bg-green-500' : detailPip.progress >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                    style={{ width: `${detailPip.progress || 0}%` }}
+                    className={`h-2 rounded-full ${Number(detailPip.progress) >= 80 ? 'bg-green-500' : Number(detailPip.progress) >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                    style={{ width: `${Number(detailPip.progress) || 0}%` }}
                   />
                 </div>
               </div>
@@ -398,8 +398,8 @@ export default function PipTab() {
                   <p className="text-xs text-text-muted italic">No milestones defined.</p>
                 ) : (
                   <div className="space-y-2">
-                    {detailPip.milestones.map((ms) => (
-                      <div key={ms.id} className="flex items-start gap-3 bg-background rounded-lg px-3 py-2">
+                    {(detailPip.milestones ?? []).map((ms, mi) => (
+                      <div key={ms.id ?? `milestone-${mi}`} className="flex items-start gap-3 bg-background rounded-lg px-3 py-2">
                         <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${ms.status === 'completed' ? 'bg-green-500' : ms.status === 'missed' ? 'bg-red-500' : 'bg-yellow-400'}`} />
                         <div className="flex-1">
                           <span className="text-sm text-text font-medium">{ms.title}</span>
