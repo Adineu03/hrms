@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -137,7 +137,7 @@ export class TeamCompensationViewService {
       .from(schema.employeeSalaryAssignments)
       .where(and(
         eq(schema.employeeSalaryAssignments.orgId, orgId),
-        sql`${schema.employeeSalaryAssignments.employeeId} = ANY(${teamMemberIds})`,
+        inArray(schema.employeeSalaryAssignments.employeeId, teamMemberIds),
       ));
 
     return {

@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and, desc, sql, or } from 'drizzle-orm';
+import { eq, and, desc, sql, or, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -36,8 +36,8 @@ export class RecognitionManagementService {
         eq(schema.recognitionNominations.orgId, orgId),
         eq(schema.recognitionNominations.isActive, true),
         or(
-          sql`${schema.recognitionNominations.nomineeId} = ANY(${teamMemberIds})`,
-          sql`${schema.recognitionNominations.nominatorId} = ANY(${teamMemberIds})`,
+          inArray(schema.recognitionNominations.nomineeId, teamMemberIds),
+          inArray(schema.recognitionNominations.nominatorId, teamMemberIds),
         ),
       ))
       .orderBy(desc(schema.recognitionNominations.createdAt));
@@ -166,7 +166,7 @@ export class RecognitionManagementService {
         eq(schema.recognitionNominations.orgId, orgId),
         eq(schema.recognitionNominations.isActive, true),
         eq(schema.recognitionNominations.status, 'approved'),
-        sql`${schema.recognitionNominations.nomineeId} = ANY(${teamMemberIds})`,
+        inArray(schema.recognitionNominations.nomineeId, teamMemberIds),
       ));
 
     // Nominations given by team members
@@ -176,7 +176,7 @@ export class RecognitionManagementService {
       .where(and(
         eq(schema.recognitionNominations.orgId, orgId),
         eq(schema.recognitionNominations.isActive, true),
-        sql`${schema.recognitionNominations.nominatorId} = ANY(${teamMemberIds})`,
+        inArray(schema.recognitionNominations.nominatorId, teamMemberIds),
       ));
 
     // Total points earned by team
@@ -185,7 +185,7 @@ export class RecognitionManagementService {
       .from(schema.recognitionPoints)
       .where(and(
         eq(schema.recognitionPoints.orgId, orgId),
-        sql`${schema.recognitionPoints.employeeId} = ANY(${teamMemberIds})`,
+        inArray(schema.recognitionPoints.employeeId, teamMemberIds),
       ));
 
     return {

@@ -90,6 +90,21 @@ import {
   interviews,
   offerLetters,
   referrals,
+  // Sprint 4 (Demo-Readiness) — Learning, Compensation, Expense gap tables
+  courses,
+  courseEnrollments,
+  learningPaths,
+  learningPathItems,
+  certifications,
+  learningBudgets,
+  trainingSessions,
+  recognitionPrograms,
+  recognitionNominations,
+  recognitionPoints,
+  recognitionPointTransactions,
+  compensationRevisions,
+  compensationRevisionItems,
+  expensePolicies,
 } from './schema';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -820,6 +835,15 @@ async function seed(): Promise<void> {
       ` (${draftCount} draft, ${submittedCount} submitted, ${approvedCount} approved)`,
     );
 
+    // ── Expense Policies (4) — org-wide rules (expense-management) ────────────
+    await db.insert(expensePolicies).values([
+      { orgId: org.id, name: 'Travel Expense Policy', categoryId: expCatRows[0].id, maxAmountPerClaim: '25000.00', maxAmountPerMonth: '60000.00', requiresReceipt: true, receiptMinAmount: '500.00', perDiemRate: '2000.00', approvalLevels: 2, description: 'Covers flights, cabs, trains and lodging for business travel.', isActive: true },
+      { orgId: org.id, name: 'Meals & Entertainment Policy', categoryId: expCatRows[1].id, maxAmountPerClaim: '5000.00', maxAmountPerMonth: '15000.00', requiresReceipt: true, receiptMinAmount: '250.00', perDiemRate: null, approvalLevels: 1, description: 'Client meals and team events. Itemised bill required above the receipt threshold.', isActive: true },
+      { orgId: org.id, name: 'Office Supplies Policy', categoryId: expCatRows[2].id, maxAmountPerClaim: '10000.00', maxAmountPerMonth: '20000.00', requiresReceipt: true, receiptMinAmount: '0.00', perDiemRate: null, approvalLevels: 1, description: 'Stationery, peripherals and consumables for office use.', isActive: true },
+      { orgId: org.id, name: 'Training & Certification Policy', categoryId: expCatRows[3].id, maxAmountPerClaim: '40000.00', maxAmountPerMonth: '40000.00', requiresReceipt: true, receiptMinAmount: '0.00', perDiemRate: null, approvalLevels: 2, description: 'Courses, certifications and conference fees for professional development.', isActive: true },
+    ]);
+    console.log('  ✓ Expense Policies: 4');
+
     // ═════════════════════════════════════════════════════════════════════════
     // ADDITIONAL POPULATED TABLES (recovery — reproduce the live demo DB)
     // ═════════════════════════════════════════════════════════════════════════
@@ -945,6 +969,99 @@ async function seed(): Promise<void> {
       }),
     );
     console.log('  ✓ Salary structures: 3, salary assignments: 20');
+
+    // ── Compensation Revisions + Recognition (compensation-rewards) ──────────
+    const compEmpBasic = (i: number): number => {
+      if (i < 5) return 35000;
+      if (i < 8) return 60000;
+      if (i < 10) return 40000;
+      if (i < 12) return 55000;
+      if (i < 16) return 30000;
+      if (i === 19) return 80000;
+      return 35000;
+    };
+    const ctcOf = (i: number): number => compEmpBasic(i) * 12 * 1.5;
+
+    const [annualRevision] = await db.insert(compensationRevisions).values({
+      orgId: org.id, title: 'FY 2026-27 Annual Increment Cycle', type: 'annual', fiscalYear: '2026-27',
+      status: 'in_progress', effectiveDate: anchorPlusDays(30), totalBudget: '2500000', allocatedBudget: '1530000', spentBudget: '0',
+      meritMatrix: { ratings: [
+        { rating: 5, label: 'Outstanding', incrementMin: 12, incrementMax: 18 },
+        { rating: 4, label: 'Exceeds', incrementMin: 9, incrementMax: 12 },
+        { rating: 3, label: 'Meets', incrementMin: 6, incrementMax: 9 },
+        { rating: 2, label: 'Below', incrementMin: 3, incrementMax: 6 },
+      ] },
+      departments: [], grades: [], createdBy: adminUser.id,
+    }).returning();
+
+    await db.insert(compensationRevisionItems).values(empUsers.map((u, i) => {
+      const current = ctcOf(i);
+      const incrementPct = [6, 9, 12, 15][i % 4];
+      const incrementAmount = Math.round((incrementPct / 100) * current);
+      const proposed = current + incrementAmount;
+      const status = ['proposed', 'proposed', 'approved', 'pending'][i % 4];
+      return {
+        orgId: org.id, revisionId: annualRevision.id, employeeId: u.id,
+        currentCtc: String(current), proposedCtc: String(proposed),
+        incrementPercent: String(incrementPct), incrementAmount: String(incrementAmount),
+        meritScore: (i % 4) + 2, status, proposedBy: managerUser.id,
+        approvedBy: status === 'approved' ? adminUser.id : null,
+        remarks: status === 'approved' ? 'Strong performer; promotion track.' : 'Pending review.',
+      };
+    }));
+
+    const [spotProgram, quarterlyProgram, peerProgram] = await db.insert(recognitionPrograms).values([
+      { orgId: org.id, name: 'Spot Award', type: 'spot', description: 'On-the-spot recognition for exceptional work.', frequency: 'anytime', pointsValue: 100, budget: '200000', spentBudget: '0', createdBy: adminUser.id },
+      { orgId: org.id, name: 'Quarterly Star Performer', type: 'quarterly', description: 'Top performer each quarter.', frequency: 'quarterly', pointsValue: 500, budget: '300000', spentBudget: '0', createdBy: adminUser.id },
+      { orgId: org.id, name: 'Peer Appreciation', type: 'peer', description: 'Peer-to-peer kudos for collaboration.', frequency: 'anytime', pointsValue: 50, budget: '100000', spentBudget: '0', createdBy: adminUser.id },
+    ]).returning();
+
+    const compProgramByIdx = [spotProgram, quarterlyProgram, peerProgram];
+    const compNominationSeed = [
+      { nominee: 0, nominator: 1, prog: 0, category: 'Innovation', reason: 'Shipped the billing integration ahead of schedule.', status: 'approved', points: 100 },
+      { nominee: 2, nominator: 3, prog: 1, category: 'Excellence', reason: 'Best Q2 sales numbers across the team.', status: 'approved', points: 500 },
+      { nominee: 4, nominator: 0, prog: 2, category: 'Teamwork', reason: 'Always available to unblock teammates.', status: 'approved', points: 50 },
+      { nominee: 1, nominator: 2, prog: 0, category: 'Customer Focus', reason: 'Resolved a critical customer escalation overnight.', status: 'approved', points: 100 },
+      { nominee: 5, nominator: 6, prog: 2, category: 'Leadership', reason: 'Mentored two new joiners through onboarding.', status: 'pending', points: 0 },
+      { nominee: 3, nominator: 4, prog: 0, category: 'Innovation', reason: 'Automated the weekly reporting pipeline.', status: 'pending', points: 0 },
+      { nominee: 7, nominator: 1, prog: 1, category: 'Excellence', reason: 'Outstanding code quality this quarter.', status: 'pending', points: 0 },
+      { nominee: 6, nominator: 5, prog: 2, category: 'Teamwork', reason: 'Coordinated the cross-team release smoothly.', status: 'approved', points: 50 },
+    ];
+    const compInsertedNominations = await db.insert(recognitionNominations).values(
+      compNominationSeed.map((n, idx) => ({
+        orgId: org.id, programId: compProgramByIdx[n.prog].id, nomineeId: empUsers[n.nominee].id, nominatorId: empUsers[n.nominator].id,
+        category: n.category, reason: n.reason, status: n.status,
+        approvedBy: n.status === 'approved' ? managerUser.id : null, pointsAwarded: n.points,
+        awardDate: n.status === 'approved' ? anchorPlusDays(-10 + idx) : null,
+      })),
+    ).returning();
+
+    const compEarnedByEmp = new Map<string, number>();
+    compInsertedNominations.forEach((n) => {
+      if (n.status === 'approved' && (n.pointsAwarded ?? 0) > 0) {
+        compEarnedByEmp.set(n.nomineeId, (compEarnedByEmp.get(n.nomineeId) ?? 0) + (n.pointsAwarded ?? 0));
+      }
+    });
+    for (const [employeeId, earned] of compEarnedByEmp.entries()) {
+      const redeemed = employeeId === empUsers[1].id ? 50 : 0;
+      const [account] = await db.insert(recognitionPoints).values({
+        orgId: org.id, employeeId, totalEarned: earned, totalRedeemed: redeemed, balance: earned - redeemed,
+      }).returning();
+      const empNoms = compInsertedNominations.filter((n) => n.nomineeId === employeeId && n.status === 'approved' && (n.pointsAwarded ?? 0) > 0);
+      for (const n of empNoms) {
+        await db.insert(recognitionPointTransactions).values({
+          orgId: org.id, employeeId, pointsAccountId: account.id, type: 'earned', points: n.pointsAwarded ?? 0,
+          reason: `Recognition: ${n.category}`, nominationId: n.id,
+        });
+      }
+      if (redeemed > 0) {
+        await db.insert(recognitionPointTransactions).values({
+          orgId: org.id, employeeId, pointsAccountId: account.id, type: 'redeemed', points: redeemed,
+          reason: 'Redeemed for: Amazon voucher', redeemedItem: 'Amazon voucher',
+        });
+      }
+    }
+    console.log('  ✓ Comp: 1 revision (+20 items), 3 programs, 8 nominations, points/txns');
 
     // ── Benefit Plans (4) + Enrollments (50) ──────────────────────────────────
     const [healthPlan, lifePlan, dentalPlan, wellnessPlan] = await db.insert(benefitPlans).values([
@@ -1518,6 +1635,144 @@ async function seed(): Promise<void> {
       metadata: {}, isActive: true,
     });
     console.log('  ✓ Knowledge transfers: 1');
+
+    // ── Learning & Development (learning-development) ─────────────────────────
+    const courseSeed = [
+      { title: 'TypeScript Fundamentals', type: 'internal', format: 'video', difficulty: 'beginner', duration: 180, provider: null as string | null, skills: ['TypeScript', 'JavaScript'], topics: ['Types', 'Generics', 'Modules'], isMandatory: false, complianceCategory: null as string | null },
+      { title: 'Advanced React Patterns', type: 'internal', format: 'mixed', difficulty: 'advanced', duration: 240, provider: null, skills: ['React', 'Hooks', 'Performance'], topics: ['Render props', 'Suspense', 'Memoization'], isMandatory: false, complianceCategory: null },
+      { title: 'Node.js & Backend Architecture', type: 'internal', format: 'video', difficulty: 'intermediate', duration: 300, provider: null, skills: ['Node.js', 'REST', 'PostgreSQL'], topics: ['Express', 'Auth', 'Caching'], isMandatory: false, complianceCategory: null },
+      { title: 'Effective Communication at Work', type: 'internal', format: 'slides', difficulty: 'beginner', duration: 90, provider: null, skills: ['Communication', 'Collaboration'], topics: ['Active listening', 'Feedback'], isMandatory: false, complianceCategory: null },
+      { title: 'POSH — Prevention of Sexual Harassment', type: 'internal', format: 'interactive', difficulty: 'beginner', duration: 60, provider: null, skills: ['Compliance'], topics: ['Policy', 'Reporting'], isMandatory: true, complianceCategory: 'posh' },
+      { title: 'Data Privacy & GDPR Essentials', type: 'internal', format: 'interactive', difficulty: 'beginner', duration: 75, provider: null, skills: ['Compliance', 'Security'], topics: ['PII', 'Consent', 'Breaches'], isMandatory: true, complianceCategory: 'data_privacy' },
+      { title: 'Leadership for New Managers', type: 'internal', format: 'mixed', difficulty: 'intermediate', duration: 210, provider: null, skills: ['Leadership', 'People Management'], topics: ['1:1s', 'Delegation', 'Coaching'], isMandatory: false, complianceCategory: null },
+      { title: 'Sales Negotiation Masterclass', type: 'external', format: 'video', difficulty: 'advanced', duration: 150, provider: 'udemy', skills: ['Negotiation', 'CRM'], topics: ['Objection handling', 'Closing'], isMandatory: false, complianceCategory: null },
+      { title: 'Financial Modeling with Excel', type: 'external', format: 'video', difficulty: 'intermediate', duration: 200, provider: 'coursera', skills: ['Finance', 'Excel'], topics: ['DCF', 'Forecasting'], isMandatory: false, complianceCategory: null },
+      { title: 'Cloud Fundamentals (AWS)', type: 'external', format: 'mixed', difficulty: 'beginner', duration: 260, provider: 'pluralsight', skills: ['AWS', 'Cloud'], topics: ['EC2', 'S3', 'IAM'], isMandatory: false, complianceCategory: null },
+    ];
+    const seededCourses = await db.insert(courses).values(
+      courseSeed.map((c) => ({
+        orgId: org.id, title: c.title,
+        description: `${c.title}: a ${c.difficulty}-level ${c.format} course covering ${c.topics.join(', ')}.`,
+        type: c.type, format: c.format, provider: c.provider,
+        externalUrl: c.type === 'external' ? `https://learn.example.com/${c.title.toLowerCase().replace(/[^a-z]+/g, '-')}` : null,
+        duration: c.duration, difficulty: c.difficulty, skills: c.skills, topics: c.topics,
+        isMandatory: c.isMandatory, complianceCategory: c.complianceCategory,
+        avgRating: 4, totalEnrollments: 0, createdBy: adminUser.id, isActive: true,
+      })),
+    ).returning();
+
+    type EnrollSpec = { empIdx: number; courseIdx: number; status: string; progress: number; assignmentType: string; timeSpent: number; rating?: number; review?: string; completedOffset?: number; deadlineOffset?: number };
+    const enrollSpecs: EnrollSpec[] = [
+      { empIdx: 0, courseIdx: 0, status: 'completed', progress: 100, assignmentType: 'self', timeSpent: 180, rating: 5, review: 'Excellent intro — clear and practical.', completedOffset: -40 },
+      { empIdx: 0, courseIdx: 4, status: 'completed', progress: 100, assignmentType: 'manager', timeSpent: 60, completedOffset: -20, deadlineOffset: -10 },
+      { empIdx: 0, courseIdx: 1, status: 'in_progress', progress: 45, assignmentType: 'self', timeSpent: 95 },
+      { empIdx: 0, courseIdx: 5, status: 'enrolled', progress: 0, assignmentType: 'manager', timeSpent: 0, deadlineOffset: 14 },
+    ];
+    for (let i = 1; i < 20; i++) {
+      const courseA = i % seededCourses.length;
+      const courseB = (i + 3) % seededCourses.length;
+      const statusCycle = ['completed', 'in_progress', 'enrolled', 'completed'][i % 4];
+      const progress = statusCycle === 'completed' ? 100 : statusCycle === 'in_progress' ? 30 + (i % 5) * 12 : 0;
+      enrollSpecs.push({
+        empIdx: i, courseIdx: courseA, status: statusCycle, progress,
+        assignmentType: i % 3 === 0 ? 'manager' : 'self',
+        timeSpent: statusCycle === 'completed' ? 120 + (i % 4) * 30 : statusCycle === 'in_progress' ? 40 + (i % 6) * 10 : 0,
+        rating: statusCycle === 'completed' ? 3 + (i % 3) : undefined,
+        completedOffset: statusCycle === 'completed' ? -(15 + (i % 20)) : undefined,
+        deadlineOffset: i % 3 === 0 ? (i % 5 === 0 ? -7 : 21) : undefined,
+      });
+      enrollSpecs.push({
+        empIdx: i, courseIdx: 4, status: i % 2 === 0 ? 'completed' : 'in_progress',
+        progress: i % 2 === 0 ? 100 : 50, assignmentType: 'manager',
+        timeSpent: i % 2 === 0 ? 60 : 30, completedOffset: i % 2 === 0 ? -(10 + i) : undefined, deadlineOffset: 30,
+      });
+      if (i % 4 === 0) enrollSpecs.push({ empIdx: i, courseIdx: courseB, status: 'enrolled', progress: 0, assignmentType: 'self', timeSpent: 0 });
+    }
+    await db.insert(courseEnrollments).values(
+      enrollSpecs.map((e) => ({
+        orgId: org.id, courseId: seededCourses[e.courseIdx].id, employeeId: empUsers[e.empIdx].id,
+        assignedBy: e.assignmentType === 'manager' ? managerUser.id : null, assignmentType: e.assignmentType,
+        status: e.status, progress: e.progress, score: e.status === 'completed' ? 80 + (e.empIdx % 20) : null,
+        completedAt: e.completedOffset !== undefined ? anchorPlusDays(e.completedOffset) : null,
+        deadline: e.deadlineOffset !== undefined ? anchorPlusDays(e.deadlineOffset) : null,
+        timeSpent: e.timeSpent, lastAccessedAt: e.status !== 'enrolled' ? anchorPlusDays(-(e.empIdx % 10) - 1) : null,
+        rating: e.rating ?? null, review: e.review ?? null, isActive: true,
+      })),
+    );
+
+    const pathSeed = [
+      { empIdx: 0, title: 'Full-Stack Engineer Track', targetRole: 'Senior Software Engineer', skills: ['TypeScript', 'React', 'Node.js'], items: [0, 1, 2], progress: 40, completed: 1 },
+      { empIdx: 1, title: 'Frontend Specialist Path', targetRole: 'Senior Software Engineer', skills: ['React', 'Performance'], items: [0, 1], progress: 50, completed: 1 },
+      { empIdx: 6, title: 'New Manager Onboarding', targetRole: 'Engineering Manager', skills: ['Leadership'], items: [6, 3], progress: 0, completed: 0 },
+      { empIdx: 8, title: 'Sales Excellence Path', targetRole: 'Senior Sales Executive', skills: ['Negotiation'], items: [7, 3], progress: 100, completed: 2 },
+      { empIdx: 16, title: 'Finance Analyst Growth', targetRole: 'Finance Manager', skills: ['Finance', 'Excel'], items: [8, 3], progress: 25, completed: 0 },
+    ];
+    for (const p of pathSeed) {
+      const [path] = await db.insert(learningPaths).values({
+        orgId: org.id, employeeId: empUsers[p.empIdx].id, title: p.title,
+        description: `Curated path toward ${p.targetRole}.`, type: 'role_based', targetRole: p.targetRole, skills: p.skills,
+        totalItems: p.items.length, completedItems: p.completed, progress: p.progress,
+        estimatedHours: p.items.reduce((s, idx) => s + Math.round((seededCourses[idx].duration ?? 60) / 60), 0),
+        status: p.progress >= 100 ? 'completed' : 'active', completedAt: p.progress >= 100 ? anchorPlusDays(-5) : null,
+        createdBy: managerUser.id, metadata: { createdByManager: true }, isActive: true,
+      }).returning();
+      await db.insert(learningPathItems).values(
+        p.items.map((courseIdx, order) => ({
+          orgId: org.id, learningPathId: path.id, courseId: seededCourses[courseIdx].id, itemType: 'course',
+          title: seededCourses[courseIdx].title, order: order + 1, isRequired: true,
+          status: order < p.completed ? 'completed' : 'pending', completedAt: order < p.completed ? anchorPlusDays(-10) : null, isActive: true,
+        })),
+      );
+    }
+
+    const certSeed = [
+      { empIdx: 0, name: 'AWS Certified Solutions Architect — Associate', issuingBody: 'Amazon Web Services', issueOffset: -400, expiryOffset: 25, cpe: 40, status: 'active' },
+      { empIdx: 0, name: 'Certified Scrum Master (CSM)', issuingBody: 'Scrum Alliance', issueOffset: -300, expiryOffset: 200, cpe: 20, status: 'active' },
+      { empIdx: 1, name: 'Professional Scrum Developer', issuingBody: 'Scrum.org', issueOffset: -200, expiryOffset: 55, cpe: 15, status: 'active' },
+      { empIdx: 2, name: 'MongoDB Associate Developer', issuingBody: 'MongoDB', issueOffset: -500, expiryOffset: -20, cpe: 10, status: 'expired' },
+      { empIdx: 8, name: 'Salesforce Certified Administrator', issuingBody: 'Salesforce', issueOffset: -150, expiryOffset: 320, cpe: 25, status: 'active' },
+      { empIdx: 16, name: 'Financial Modeling & Valuation Analyst (FMVA)', issuingBody: 'CFI', issueOffset: -100, expiryOffset: 85, cpe: 30, status: 'active' },
+    ];
+    await db.insert(certifications).values(
+      certSeed.map((c, i) => ({
+        orgId: org.id, employeeId: empUsers[c.empIdx].id, name: c.name, issuingBody: c.issuingBody,
+        credentialId: `CRED-${String(1000 + i)}`, credentialUrl: `https://verify.example.com/cred/${1000 + i}`,
+        issueDate: fmt(anchorPlusDays(c.issueOffset)), expiryDate: fmt(anchorPlusDays(c.expiryOffset)),
+        cpeCredits: c.cpe, cpeEarned: Math.round(c.cpe / 2), status: c.status,
+        proofUrl: `https://files.example.com/certs/${1000 + i}.pdf`, proofFileName: `certificate-${1000 + i}.pdf`, isActive: true,
+      })),
+    );
+
+    const deptBudgetSeed = [
+      { dept: engDept.id, total: 500000, spent: 180000 },
+      { dept: salesDept.id, total: 250000, spent: 90000 },
+      { dept: hrDept.id, total: 150000, spent: 40000 },
+      { dept: finDept.id, total: 200000, spent: 75000 },
+    ];
+    await db.insert(learningBudgets).values(
+      deptBudgetSeed.map((b) => ({
+        orgId: org.id, type: 'department', departmentId: b.dept, fiscalYear: '2026',
+        totalBudget: b.total.toFixed(2), allocatedAmount: b.total.toFixed(2), spentAmount: b.spent.toFixed(2),
+        remainingAmount: (b.total - b.spent).toFixed(2), currency: 'INR', rolloverEnabled: true, rolloverAmount: '0.00', status: 'active', isActive: true,
+      })),
+    );
+    await db.insert(learningBudgets).values({
+      orgId: org.id, type: 'individual', employeeId: empUsers[0].id, fiscalYear: '2026',
+      totalBudget: '50000.00', allocatedAmount: '50000.00', spentAmount: '18000.00', remainingAmount: '32000.00',
+      currency: 'INR', rolloverEnabled: false, rolloverAmount: '0.00', status: 'active',
+      spendHistory: [
+        { courseName: 'Advanced React Patterns (Frontend Masters)', provider: 'Frontend Masters', cost: 12000, currency: 'INR', status: 'approved', requestedAt: anchorPlusDays(-40).toISOString() },
+        { courseName: 'System Design Interview Prep', provider: 'Educative', cost: 6000, currency: 'INR', status: 'reimbursed', requestedAt: anchorPlusDays(-20).toISOString() },
+        { courseName: 'Kubernetes Deep Dive', provider: 'Udemy', cost: 8000, currency: 'INR', status: 'pending_approval', requestedAt: anchorPlusDays(-3).toISOString() },
+      ], isActive: true,
+    });
+
+    await db.insert(trainingSessions).values([
+      { orgId: org.id, courseId: seededCourses[1].id, title: 'Advanced React Workshop', description: 'Hands-on patterns workshop.', type: 'ilt', instructorName: 'Sarah Mehta', location: 'Bengaluru HQ', roomName: 'Training Room A', startTime: anchorPlusDays(5), endTime: anchorPlusDays(5), maxCapacity: 25, enrolledCount: 12, status: 'scheduled', createdBy: adminUser.id, isActive: true },
+      { orgId: org.id, courseId: seededCourses[6].id, title: 'Leadership Bootcamp (Virtual)', description: 'For new and aspiring managers.', type: 'virtual', instructorName: 'Alex Kumar', virtualLink: 'https://zoom.example.com/leadership', startTime: anchorPlusDays(10), endTime: anchorPlusDays(10), maxCapacity: 40, enrolledCount: 18, status: 'scheduled', createdBy: adminUser.id, isActive: true },
+      { orgId: org.id, courseId: seededCourses[4].id, title: 'Mandatory POSH Refresher', description: 'Annual compliance session.', type: 'ilt', instructorName: 'External Counsel', location: 'Bengaluru HQ', roomName: 'Auditorium', startTime: anchorPlusDays(-7), endTime: anchorPlusDays(-7), maxCapacity: 50, enrolledCount: 48, status: 'completed', createdBy: adminUser.id, isActive: true },
+    ]);
+    console.log('  ✓ L&D: 10 courses, enrollments, 5 paths, 6 certs, 5 budgets, 3 sessions');
 
     // ── Done ─────────────────────────────────────────────────────────────────
     console.log('\n✅ Seed complete!\n');

@@ -101,7 +101,22 @@ export class ExpensePolicyConfigurationService {
       .where(and(eq(schema.expensePolicies.orgId, orgId), eq(schema.expensePolicies.isActive, true)))
       .orderBy(schema.expensePolicies.name);
 
-    return { data: rows, meta: { total: rows.length } };
+    const categories = await this.db
+      .select({ id: schema.expenseCategories.id, name: schema.expenseCategories.name })
+      .from(schema.expenseCategories)
+      .where(eq(schema.expenseCategories.orgId, orgId));
+    const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
+
+    // Enrich with category name + frontend-friendly aliases for the policy table.
+    const data = rows.map((p) => ({
+      ...p,
+      categoryName: p.categoryId ? categoryMap.get(p.categoryId) ?? 'Unknown' : 'All Categories',
+      maxPerClaim: Number(p.maxAmountPerClaim ?? 0),
+      maxPerMonth: Number(p.maxAmountPerMonth ?? 0),
+      receiptRequired: p.requiresReceipt,
+    }));
+
+    return { data, meta: { total: data.length } };
   }
 
   async createPolicy(

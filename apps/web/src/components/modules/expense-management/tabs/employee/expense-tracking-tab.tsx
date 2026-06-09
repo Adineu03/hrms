@@ -55,6 +55,12 @@ const CATEGORY_FILTER_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
+// Coerce drizzle numeric (string) / nullable values to a safe number.
+const num = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export default function ExpenseTrackingTab() {
   const [summary, setSummary] = useState<TrackingSummary | null>(null);
   const [history, setHistory] = useState<ExpenseHistoryItem[]>([]);
@@ -80,15 +86,26 @@ export default function ExpenseTrackingTab() {
       ]);
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};
-      const historyData = Array.isArray(historyRes.data) ? historyRes.data : historyRes.data?.data || [];
+      const rawHistory = Array.isArray(historyRes.data) ? historyRes.data : historyRes.data?.data || [];
 
       setSummary({
-        pendingAmount: summaryData.pendingAmount || 0,
-        approvedAmount: summaryData.approvedAmount || 0,
-        reimbursedAmount: summaryData.reimbursedAmount || 0,
-        rejectedAmount: summaryData.rejectedAmount || 0,
-        totalSubmitted: summaryData.totalSubmitted || 0,
+        pendingAmount: num(summaryData.pendingAmount),
+        approvedAmount: num(summaryData.approvedAmount),
+        reimbursedAmount: num(summaryData.reimbursedAmount),
+        rejectedAmount: num(summaryData.rejectedAmount),
+        totalSubmitted: num(summaryData.totalClaimed ?? summaryData.totalSubmitted),
       });
+
+      // Backend returns raw report rows: { id, title, totalAmount, status, submittedAt, reviewedAt, approvedAt }
+      const historyData: ExpenseHistoryItem[] = (Array.isArray(rawHistory) ? rawHistory : []).map((h: any, idx: number) => ({
+        id: h.id ?? `report-${idx}`,
+        reportTitle: h.reportTitle ?? h.title ?? 'Expense Report',
+        category: h.category ?? '',
+        amount: num(h.totalAmount ?? h.amount),
+        status: h.status ?? '',
+        submittedAt: h.submittedAt ?? '',
+        processedAt: h.reviewedAt ?? h.approvedAt ?? h.processedAt ?? '',
+      }));
       setHistory(historyData);
     } catch {
       setError('Failed to load expense tracking data.');

@@ -58,8 +58,51 @@ export default function MyLearningPathTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/learning-development/employee/learning-paths');
-      setPaths(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const listRes = await api.get('/learning-development/employee/learning-paths');
+      const listRaw = Array.isArray(listRes.data) ? listRes.data : listRes.data?.data || [];
+      // The list endpoint returns path summaries without items. Fetch details (with items)
+      // for each so the expandable view + progress render correctly.
+      const detailed = await Promise.all(
+        (listRaw as Array<Record<string, unknown>>).map(async (p) => {
+          let detail: Record<string, unknown> = p;
+          try {
+            const dRes = await api.get(`/learning-development/employee/learning-paths/${p.id}`);
+            detail = dRes.data?.data ?? dRes.data ?? p;
+          } catch {
+            detail = p;
+          }
+          const rawItems = Array.isArray(detail.items) ? (detail.items as Array<Record<string, unknown>>) : [];
+          const items: LearningPathItem[] = rawItems.map((it) => {
+            const courseInfo = (it.courseInfo as { duration?: number } | null) ?? null;
+            return {
+              id: String(it.id),
+              title: String(it.title ?? ''),
+              type: String(it.itemType ?? it.type ?? 'course'),
+              isCompleted: it.status === 'completed',
+              dueDate: (it.dueDate as string) ?? '',
+              duration: Number(courseInfo?.duration ?? it.duration) || 0,
+            };
+          });
+          const totalDuration = items.reduce((s, it) => s + (Number(it.duration) || 0), 0);
+          const remainingDuration = items
+            .filter((it) => !it.isCompleted)
+            .reduce((s, it) => s + (Number(it.duration) || 0), 0);
+          return {
+            id: String(detail.id),
+            title: String(detail.title ?? ''),
+            description: (detail.description as string) ?? '',
+            completionPercent: Number(detail.progress ?? detail.completionPercent) || 0,
+            totalItems: Number(detail.totalItems) || items.length,
+            completedItems: Number(detail.completedItems) || items.filter((it) => it.isCompleted).length,
+            totalDuration,
+            remainingDuration,
+            isCertificateAvailable: Boolean(detail.certificateUrl),
+            items,
+            status: String(detail.status ?? 'active'),
+          } as LearningPath;
+        }),
+      );
+      setPaths(detailed);
     } catch {
       setError('Failed to load learning paths.');
     } finally {
@@ -73,9 +116,7 @@ export default function MyLearningPathTab() {
 
   const handleMarkItemComplete = async (pathId: string, itemId: string) => {
     try {
-      await api.patch(`/learning-development/employee/learning-paths/${pathId}/items/${itemId}`, {
-        isCompleted: true,
-      });
+      await api.patch(`/learning-development/employee/learning-paths/${pathId}/items/${itemId}/complete`);
       setSuccess('Item marked as complete.');
       loadData();
       setTimeout(() => setSuccess(null), 3000);

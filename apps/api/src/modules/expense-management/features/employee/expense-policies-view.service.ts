@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, inArray, gte } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -49,7 +49,7 @@ export class ExpensePoliciesViewService {
       ? await this.db
           .select()
           .from(schema.expenseCategories)
-          .where(and(eq(schema.expenseCategories.orgId, orgId), sql`${schema.expenseCategories.id} = ANY(${categoryIds})`))
+          .where(and(eq(schema.expenseCategories.orgId, orgId), inArray(schema.expenseCategories.id, categoryIds)))
       : [];
 
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
@@ -89,8 +89,8 @@ export class ExpensePoliciesViewService {
           eq(schema.expenseReports.orgId, orgId),
           eq(schema.expenseReports.employeeId, userId),
           eq(schema.expenseReports.isActive, true),
-          sql`${schema.expenseReports.status} IN ('submitted', 'under_review', 'approved', 'reimbursed')`,
-          sql`${schema.expenseReports.createdAt} >= ${firstDayOfMonth}`,
+          inArray(schema.expenseReports.status, ['submitted', 'under_review', 'approved', 'reimbursed']),
+          gte(schema.expenseReports.createdAt, firstDayOfMonth),
         ),
       );
 

@@ -81,7 +81,24 @@ export default function CourseCatalogTab() {
       setIsLoading(true);
       const res = await api.get('/learning-development/employee/catalog').catch(() => ({ data: [] }));
       const raw = res.data;
-      setCourses(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
+      const rows = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+      // Backend returns avgRating/totalEnrollments/topics; map to the shape this tab renders.
+      const normalized: Course[] = rows.map((c: Record<string, unknown>) => ({
+        ...(c as object),
+        skills: Array.isArray(c.skills) ? (c.skills as string[]) : [],
+        rating: Number(c.avgRating ?? c.rating) || 0,
+        enrollmentCount: Number(c.totalEnrollments ?? c.enrollmentCount) || 0,
+        isBookmarked: Boolean(
+          (c as { metadata?: { bookmarked?: boolean }; isBookmarked?: boolean }).metadata?.bookmarked ??
+            c.isBookmarked,
+        ),
+        whatYouLearn: Array.isArray(c.whatYouLearn)
+          ? (c.whatYouLearn as string[])
+          : Array.isArray(c.topics)
+            ? (c.topics as string[])
+            : [],
+      })) as Course[];
+      setCourses(normalized);
     } catch {
       setError('Failed to load course catalog.');
     } finally {

@@ -52,6 +52,39 @@ export class ReportingAnalyticsService {
       c.rate = c.total > 0 ? Math.round((c.completed / c.total) * 100) : 0;
     }
 
+    // Group by department (resolve each enrollee's department via their profile)
+    const profiles = await this.db
+      .select({
+        userId: schema.employeeProfiles.userId,
+        departmentId: schema.employeeProfiles.departmentId,
+      })
+      .from(schema.employeeProfiles)
+      .where(eq(schema.employeeProfiles.orgId, orgId));
+    const userDept: Record<string, string | null> = {};
+    for (const p of profiles) userDept[p.userId] = p.departmentId;
+
+    const depts = await this.db
+      .select()
+      .from(schema.departments)
+      .where(eq(schema.departments.orgId, orgId));
+    const deptNames: Record<string, string> = {};
+    for (const d of depts) deptNames[d.id] = d.name;
+
+    const byDeptAcc: Record<string, { departmentId: string; total: number; completed: number }> = {};
+    for (const e of enrollments) {
+      const deptId = userDept[e.employeeId];
+      if (!deptId) continue;
+      if (!byDeptAcc[deptId]) byDeptAcc[deptId] = { departmentId: deptId, total: 0, completed: 0 };
+      byDeptAcc[deptId].total++;
+      if (e.status === 'completed') byDeptAcc[deptId].completed++;
+    }
+    const byDepartment = Object.values(byDeptAcc).map((d) => ({
+      departmentId: d.departmentId,
+      department: deptNames[d.departmentId] ?? 'Unknown',
+      enrollments: d.total,
+      completionRate: d.total > 0 ? Math.round((d.completed / d.total) * 100) : 0,
+    }));
+
     return {
       total,
       completed,
@@ -60,6 +93,7 @@ export class ReportingAnalyticsService {
       dropped,
       completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
       byCourse: Object.values(byCourse),
+      byDepartment,
     };
   }
 

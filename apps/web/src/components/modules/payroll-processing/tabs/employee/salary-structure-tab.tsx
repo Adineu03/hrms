@@ -274,7 +274,7 @@ export default function SalaryStructureTab() {
                     <td className="px-4 py-3 text-sm text-text font-semibold">{formatCurrency(r.revisedCtc)}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                        +{(r.incrementPercent ?? 0).toFixed(1)}%
+                        +{(Number(r.incrementPercent) || 0).toFixed(1)}%
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted capitalize">{r.reason?.replace('_', ' ') || '—'}</td>

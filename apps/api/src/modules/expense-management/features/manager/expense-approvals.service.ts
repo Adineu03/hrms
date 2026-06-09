@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -33,8 +33,8 @@ export class ExpenseApprovalsService {
         and(
           eq(schema.expenseReports.orgId, orgId),
           eq(schema.expenseReports.isActive, true),
-          sql`${schema.expenseReports.status} IN ('submitted', 'under_review')`,
-          sql`${schema.expenseReports.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.expenseReports.status, ['submitted', 'under_review']),
+          inArray(schema.expenseReports.employeeId, teamMemberIds),
         ),
       )
       .orderBy(desc(schema.expenseReports.submittedAt));
@@ -45,7 +45,7 @@ export class ExpenseApprovalsService {
       ? await this.db
           .select({ id: schema.users.id, firstName: schema.users.firstName, lastName: schema.users.lastName })
           .from(schema.users)
-          .where(sql`${schema.users.id} = ANY(${employeeIds})`)
+          .where(inArray(schema.users.id, employeeIds))
       : [];
 
     const userMap = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName ?? ''}`.trim()]));
@@ -69,7 +69,7 @@ export class ExpenseApprovalsService {
           eq(schema.expenseReports.id, id),
           eq(schema.expenseReports.orgId, orgId),
           eq(schema.expenseReports.isActive, true),
-          sql`${schema.expenseReports.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.expenseReports.employeeId, teamMemberIds),
         ),
       );
 

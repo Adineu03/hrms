@@ -62,7 +62,19 @@ export default function RewardsRecognitionTab() {
       setLoading(true);
       setError('');
       const res = await api.get('/compensation-rewards/admin/rewards-recognition/programs');
-      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const raw = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      // Backend exposes `isActive`, not a `status` string — derive one for the badge.
+      const data: Program[] = (Array.isArray(raw) ? raw : []).map((p: Record<string, unknown>) => ({
+        id: String(p.id ?? ''),
+        name: String(p.name ?? '—'),
+        type: String(p.type ?? 'spot'),
+        description: String(p.description ?? ''),
+        frequency: String(p.frequency ?? 'anytime'),
+        pointsValue: Number(p.pointsValue ?? 0) || 0,
+        budget: Number(p.budget ?? 0) || 0,
+        status: p.isActive === false ? 'inactive' : 'active',
+        createdAt: String(p.createdAt ?? ''),
+      }));
       setPrograms(data);
     } catch {
       setError('Failed to load recognition programs.');
@@ -146,7 +158,7 @@ export default function RewardsRecognitionTab() {
   }, [success]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(val) || 0);
 
   if (loading) {
     return (

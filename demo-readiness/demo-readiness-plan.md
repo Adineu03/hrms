@@ -165,12 +165,14 @@ Order = demo priority + dependency. For **each module × each role × each tab**
 
 > ⚠️ **Incident (recovered):** during Sprint 3 a sub-agent ran `git checkout seed.ts` to "undo" a temp edit, discarding all uncommitted Sprint 1/2 seed enrichment. The live DB was intact, so seed.ts was rebuilt from the live DB (deterministic + idempotent, faithfully reproducing all data). **All work is now committed on branch `demo-readiness-sprints-0-3`** — future agents must NEVER run `git checkout/restore/stash/reset` (now in every agent prompt). Commit after every sprint.
 
+**Sprint 4 ✅ DONE (2026-06-09)** — cluster `learning-development`, `compensation-rewards`, `expense-management` is 100% green (32/32 tab-views). Fan-out per module; each agent fixed + **proactively hardened every tab** + returned a seed snippet (merged into `seed.ts`). Backend: the `=ANY`→`inArray` bug was rampant here (expense had **13** + 2 raw-`sql` Date-bind bugs → `gte`; comp had 6) — these were the 500s. Most EMPTYs were pure seed gaps (L&D had ALL its tables empty). Seeded: L&D (10 courses, enrollments, 5 paths, 6 certs, 5 budgets, 3 sessions), comp (1 increment cycle +20 items, 3 recognition programs, 8 nominations, reward points/txns), expense (4 policies). Confirmed the numeric-string + field-mismatch + key-prop classes are everywhere — agents now harden whole modules in one pass. Whole-app baseline after Sprint 4: ~**236 OK** (final after full re-survey).
+
 | Sprint | Cluster (module ids) |
 |---|---|
 | 1 ✅ | `cold-start-setup`, `core-hr`, `leave-management` — the foundation (Core HR feeds everything) |
 | 2 ✅ | `attendance`, `daily-work-logging`, `payroll-processing` — the time → pay chain |
 | 3 ✅ | `talent-acquisition`, `onboarding-offboarding`, `performance-growth` — the lifecycle |
-| 4 | `learning-development`, `compensation-rewards`, `expense-management` |
+| 4 ✅ | `learning-development`, `compensation-rewards`, `expense-management` |
 | 5 | `engagement-culture`, `compliance-audit`, `workforce-planning` |
 | 6 | `integrations-api`, `people-analytics`, `platform-experience`, `demo-company` |
 

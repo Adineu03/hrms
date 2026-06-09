@@ -22,6 +22,17 @@ interface PaySlip {
   downloadUrl?: string;
 }
 
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const monthLabel = (m: unknown): string => {
+  const n = Number(m);
+  if (Number.isInteger(n) && n >= 1 && n <= 12) return MONTH_NAMES[n - 1];
+  return m ? String(m) : '—';
+};
+
 interface InvestmentDeclaration {
   id?: string;
   taxRegime: 'old' | 'new';
@@ -55,7 +66,17 @@ export default function PaySlipsTaxTab() {
       setLoading(true);
       setError('');
       const res = await api.get('/compensation-rewards/employee/pay-slips');
-      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const raw = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const data: PaySlip[] = (Array.isArray(raw) ? raw : []).map((p: Record<string, unknown>) => ({
+        id: String(p.id ?? ''),
+        month: monthLabel(p.month),
+        year: String(p.year ?? ''),
+        grossPay: Number(p.grossEarnings ?? p.grossPay ?? 0) || 0,
+        deductions: Number(p.totalDeductions ?? p.deductions ?? 0) || 0,
+        netPay: Number(p.netPay ?? 0) || 0,
+        status: String(p.status ?? 'pending'),
+        downloadUrl: p.downloadUrl ? String(p.downloadUrl) : undefined,
+      }));
       setPaySlips(data);
     } catch {
       setError('Failed to load pay slips.');
@@ -70,15 +91,22 @@ export default function PaySlipsTaxTab() {
       setError('');
       const res = await api.get('/compensation-rewards/employee/pay-slips/investment-declaration');
       const data = res.data?.data || res.data || {};
-      if (data.taxRegime) {
+      // Backend stores these as jsonb objects (e.g. { amount }); coerce to a safe number.
+      const toNum = (v: unknown): number => {
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') return Number(v) || 0;
+        if (v && typeof v === 'object') return Number((v as Record<string, unknown>).amount ?? 0) || 0;
+        return 0;
+      };
+      if (data && data.taxRegime) {
         setDeclaration({
           id: data.id,
-          taxRegime: data.taxRegime || 'new',
-          section80c: data.section80c || 0,
-          section80d: data.section80d || 0,
-          hraExemption: data.hraExemption || 0,
-          otherDeductions: data.otherDeductions || 0,
-          status: data.status || 'draft',
+          taxRegime: data.taxRegime === 'old' ? 'old' : 'new',
+          section80c: toNum(data.section80c),
+          section80d: toNum(data.section80d),
+          hraExemption: toNum(data.hraExemption),
+          otherDeductions: toNum(data.otherDeductions),
+          status: String(data.status || 'draft'),
         });
       }
     } catch {
@@ -130,11 +158,12 @@ export default function PaySlipsTaxTab() {
   }, [success]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(val) || 0);
 
   const statusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'bg-green-100 text-green-700';
+      case 'published': return 'bg-green-100 text-green-700';
       case 'pending': return 'bg-yellow-100 text-yellow-700';
       case 'submitted': return 'bg-blue-100 text-blue-700';
       case 'verified': return 'bg-green-100 text-green-700';

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -41,7 +41,7 @@ export class TeamExpenseReportsService {
         and(
           eq(schema.expenseReports.orgId, orgId),
           eq(schema.expenseReports.isActive, true),
-          sql`${schema.expenseReports.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.expenseReports.employeeId, teamMemberIds),
         ),
       );
 
@@ -80,7 +80,7 @@ export class TeamExpenseReportsService {
         and(
           eq(schema.expenseReports.orgId, orgId),
           eq(schema.expenseReports.isActive, true),
-          sql`${schema.expenseReports.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.expenseReports.employeeId, teamMemberIds),
         ),
       );
 
@@ -98,7 +98,7 @@ export class TeamExpenseReportsService {
         and(
           eq(schema.expenseItems.orgId, orgId),
           eq(schema.expenseItems.isActive, true),
-          sql`${schema.expenseItems.reportId} = ANY(${reportIds})`,
+          inArray(schema.expenseItems.reportId, reportIds),
         ),
       );
 
@@ -142,7 +142,7 @@ export class TeamExpenseReportsService {
     const users = await this.db
       .select({ id: schema.users.id, firstName: schema.users.firstName, lastName: schema.users.lastName, email: schema.users.email })
       .from(schema.users)
-      .where(sql`${schema.users.id} = ANY(${teamMemberIds})`);
+      .where(inArray(schema.users.id, teamMemberIds));
 
     const userMap = new Map(users.map((u) => [u.id, { name: `${u.firstName} ${u.lastName ?? ''}`.trim(), email: u.email }]));
 
@@ -154,7 +154,7 @@ export class TeamExpenseReportsService {
         and(
           eq(schema.expenseReports.orgId, orgId),
           eq(schema.expenseReports.isActive, true),
-          sql`${schema.expenseReports.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.expenseReports.employeeId, teamMemberIds),
         ),
       );
 

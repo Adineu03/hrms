@@ -81,8 +81,30 @@ export default function CertificationTrackerTab() {
       ]);
       const certRaw = certRes.data;
       setCertifications(Array.isArray(certRaw) ? certRaw : Array.isArray(certRaw?.data) ? certRaw.data : []);
-      const alertRaw = alertRes.data;
-      setExpiryAlerts(Array.isArray(alertRaw) ? alertRaw : Array.isArray(alertRaw?.data) ? alertRaw.data : []);
+      // /expiring returns grouped buckets: { expired, expiringIn30Days, expiringIn60Days, expiringIn90Days }
+      const alertRaw = alertRes.data?.data ?? alertRes.data ?? {};
+      const now = Date.now();
+      const daysUntil = (d: string | null | undefined) =>
+        d ? Math.round((new Date(d).getTime() - now) / 86_400_000) : 0;
+      const buckets: Array<{ key: string; urgency: string }> = [
+        { key: 'expired', urgency: 'high' },
+        { key: 'expiringIn30Days', urgency: 'high' },
+        { key: 'expiringIn60Days', urgency: 'medium' },
+        { key: 'expiringIn90Days', urgency: 'low' },
+      ];
+      const flatAlerts: ExpiryAlert[] = Array.isArray(alertRaw)
+        ? alertRaw
+        : buckets.flatMap(({ key, urgency }) => {
+            const rows = (alertRaw?.[key]?.data as Array<Record<string, unknown>>) ?? [];
+            return rows.map((c) => ({
+              id: String(c.id),
+              name: String(c.name ?? ''),
+              expiryDate: String(c.expiryDate ?? ''),
+              daysUntilExpiry: daysUntil(c.expiryDate as string),
+              urgency,
+            }));
+          });
+      setExpiryAlerts(flatAlerts);
     } catch {
       setError('Failed to load certifications.');
     } finally {

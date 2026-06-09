@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray, gte } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -84,7 +84,7 @@ export class ExpenseAnalyticsService {
       ? await this.db
           .select({ userId: schema.employeeProfiles.userId, departmentId: schema.employeeProfiles.departmentId })
           .from(schema.employeeProfiles)
-          .where(and(eq(schema.employeeProfiles.orgId, orgId), sql`${schema.employeeProfiles.userId} = ANY(${employeeIds})`))
+          .where(and(eq(schema.employeeProfiles.orgId, orgId), inArray(schema.employeeProfiles.userId, employeeIds)))
       : [];
 
     const empDeptMap = new Map(profiles.map((p) => [p.userId, p.departmentId]));
@@ -130,7 +130,7 @@ export class ExpenseAnalyticsService {
         and(
           eq(schema.expenseReports.orgId, orgId),
           eq(schema.expenseReports.isActive, true),
-          sql`${schema.expenseReports.createdAt} >= ${cutoffDate}`,
+          gte(schema.expenseReports.createdAt, cutoffDate),
         ),
       )
       .orderBy(schema.expenseReports.createdAt);
@@ -173,7 +173,7 @@ export class ExpenseAnalyticsService {
         and(
           eq(schema.expenseReports.orgId, orgId),
           eq(schema.expenseReports.isActive, true),
-          sql`${schema.expenseReports.status} IN ('submitted', 'under_review', 'approved')`,
+          inArray(schema.expenseReports.status, ['submitted', 'under_review', 'approved']),
         ),
       );
 

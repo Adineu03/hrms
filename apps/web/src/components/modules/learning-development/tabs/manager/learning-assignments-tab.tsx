@@ -83,8 +83,35 @@ export default function LearningAssignmentsTab() {
       ]);
       const aData = aRes?.data?.data ?? aRes?.data;
       const oData = oRes?.data?.data ?? oRes?.data;
-      setAssignments(Array.isArray(aData) ? aData : []);
-      setOverdueItems(Array.isArray(oData) ? oData : []);
+      const aRows = Array.isArray(aData) ? (aData as Array<Record<string, unknown>>) : [];
+      const oRows = Array.isArray(oData) ? (oData as Array<Record<string, unknown>>) : [];
+      const now = Date.now();
+      // Enrollment rows expose `progress` (int), not `completionPercent`.
+      setAssignments(
+        aRows.map((a) => ({
+          id: String(a.id),
+          courseId: String(a.courseId ?? ''),
+          courseTitle: String(a.courseTitle ?? 'Unknown'),
+          employeeId: String(a.employeeId ?? ''),
+          employeeName: String(a.employeeName ?? ''),
+          deadline: (a.deadline as string) ?? '',
+          status: String(a.status ?? 'enrolled'),
+          completionPercent: Number(a.progress ?? a.completionPercent) || 0,
+          assignedAt: (a.createdAt as string) ?? (a.assignedAt as string) ?? '',
+        })),
+      );
+      // Overdue rows don't include daysOverdue; derive from the deadline.
+      setOverdueItems(
+        oRows.map((o) => ({
+          id: String(o.id),
+          courseTitle: String(o.courseTitle ?? 'Unknown'),
+          employeeName: String(o.employeeName ?? ''),
+          deadline: (o.deadline as string) ?? '',
+          daysOverdue: o.deadline
+            ? Math.max(0, Math.round((now - new Date(o.deadline as string).getTime()) / 86_400_000))
+            : 0,
+        })),
+      );
     } catch {
       setError('Failed to load learning assignments.');
     } finally {

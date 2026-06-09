@@ -58,6 +58,17 @@ interface PolicyViolation {
   detectedAt: string;
 }
 
+// Coerce drizzle numeric (string) / nullable values to a safe number.
+const num = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
 export default function ExpenseAnalyticsTab() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [departments, setDepartments] = useState<DepartmentBreakdown[]>([]);
@@ -78,22 +89,75 @@ export default function ExpenseAnalyticsTab() {
       ]);
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};
-      const deptData = Array.isArray(deptRes.data) ? deptRes.data : deptRes.data?.data || [];
-      const trendData = Array.isArray(trendRes.data) ? trendRes.data : trendRes.data?.data || [];
-      const violationData = Array.isArray(violationRes.data) ? violationRes.data : violationRes.data?.data || [];
+      const deptRaw = Array.isArray(deptRes.data) ? deptRes.data : deptRes.data?.data || [];
+      const trendRaw = Array.isArray(trendRes.data) ? trendRes.data : trendRes.data?.data || [];
+      const violationRaw = Array.isArray(violationRes.data) ? violationRes.data : violationRes.data?.data || [];
+
+      // Backend summary shape: { totalReports, overallTotal, byStatus: [{ status, count, totalAmount }] }
+      const byStatus: Array<{ status: string; count: number; totalAmount: string }> = Array.isArray(summaryData.byStatus)
+        ? summaryData.byStatus
+        : [];
+      const statusAgg = (s: string) => byStatus.find((b) => b.status === s) ?? { count: 0, totalAmount: '0' };
+      const pending = byStatus.filter((b) => b.status === 'submitted' || b.status === 'under_review');
+      const pendingCount = pending.reduce((sum, b) => sum + num(b.count), 0);
+      const pendingAmount = pending.reduce((sum, b) => sum + num(b.totalAmount), 0);
 
       setSummary({
-        totalReports: summaryData.totalReports || 0,
-        totalAmount: summaryData.totalAmount || 0,
-        pendingCount: summaryData.pendingCount || 0,
-        pendingAmount: summaryData.pendingAmount || 0,
-        approvedCount: summaryData.approvedCount || 0,
-        approvedAmount: summaryData.approvedAmount || 0,
-        rejectedCount: summaryData.rejectedCount || 0,
-        rejectedAmount: summaryData.rejectedAmount || 0,
-        reimbursedCount: summaryData.reimbursedCount || 0,
-        reimbursedAmount: summaryData.reimbursedAmount || 0,
+        totalReports: num(summaryData.totalReports),
+        totalAmount: num(summaryData.overallTotal ?? summaryData.totalAmount),
+        pendingCount,
+        pendingAmount,
+        approvedCount: num(statusAgg('approved').count),
+        approvedAmount: num(statusAgg('approved').totalAmount),
+        rejectedCount: num(statusAgg('rejected').count),
+        rejectedAmount: num(statusAgg('rejected').totalAmount),
+        reimbursedCount: num(statusAgg('reimbursed').count),
+        reimbursedAmount: num(statusAgg('reimbursed').totalAmount),
       });
+
+      // Backend dept shape: { departmentId, departmentName, reportCount, totalAmount, uniqueEmployees }
+      const deptData: DepartmentBreakdown[] = (Array.isArray(deptRaw) ? deptRaw : []).map((d: any, idx: number) => {
+        const reportCount = num(d.reportCount);
+        const totalAmount = num(d.totalAmount);
+        return {
+          id: d.departmentId ?? `dept-${idx}`,
+          department: d.departmentName ?? 'Unknown',
+          reportCount,
+          totalAmount,
+          averageAmount: reportCount > 0 ? totalAmount / reportCount : 0,
+          pendingCount: num(d.pendingCount),
+        };
+      });
+
+      // Backend trend shape: { period: "YYYY-MM", reportCount, totalAmount } (sorted asc)
+      const trendData: MonthlyTrend[] = (Array.isArray(trendRaw) ? trendRaw : []).map((t: any, idx: number, arr: any[]) => {
+        const [yearStr, monthStr] = String(t.period ?? '').split('-');
+        const year = num(yearStr);
+        const monthIdx = num(monthStr) - 1;
+        const totalAmount = num(t.totalAmount);
+        const prev = idx > 0 ? num(arr[idx - 1].totalAmount) : 0;
+        const change = prev > 0 ? ((totalAmount - prev) / prev) * 100 : 0;
+        return {
+          id: t.period ?? `trend-${idx}`,
+          month: MONTH_NAMES[monthIdx] ?? t.period ?? '',
+          year,
+          totalAmount,
+          reportCount: num(t.reportCount),
+          change,
+        };
+      });
+
+      // Backend violation shape: { reportId, reportTitle, employeeId, totalAmount, violationType, policyName, limit }
+      const violationData: PolicyViolation[] = (Array.isArray(violationRaw) ? violationRaw : []).map((v: any, idx: number) => ({
+        id: v.reportId ?? `violation-${idx}`,
+        employeeName: v.employeeName ?? v.policyName ?? '—',
+        reportTitle: v.reportTitle ?? '—',
+        violationType: v.violationType ?? '',
+        amount: num(v.totalAmount ?? v.amount),
+        limit: num(v.limit),
+        detectedAt: v.detectedAt ?? '',
+      }));
+
       setDepartments(deptData);
       setTrends(trendData);
       setViolations(violationData);
@@ -217,8 +281,8 @@ export default function ExpenseAnalyticsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {departments.map((d) => (
-                  <tr key={d.id} className="hover:bg-background/50">
+                {departments.map((d, i) => (
+                  <tr key={`${d.id ?? 'dept'}-${i}`} className="hover:bg-background/50">
                     <td className="px-4 py-3 text-sm text-text font-medium">{d.department}</td>
                     <td className="px-4 py-3 text-sm text-text-muted">{d.reportCount}</td>
                     <td className="px-4 py-3 text-sm text-text font-semibold">{formatCurrency(d.totalAmount)}</td>
@@ -248,8 +312,8 @@ export default function ExpenseAnalyticsTab() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {trends.map((t) => (
-              <div key={t.id} className="bg-background rounded-xl border border-border p-5">
+            {trends.map((t, i) => (
+              <div key={`${t.id ?? 'trend'}-${i}`} className="bg-background rounded-xl border border-border p-5">
                 <p className="text-sm text-text-muted mb-2">{t.month} {t.year}</p>
                 <div className="flex items-end gap-3">
                   <p className="text-xl font-bold text-text">{formatCurrency(t.totalAmount)}</p>
@@ -295,8 +359,8 @@ export default function ExpenseAnalyticsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {violations.map((v) => (
-                  <tr key={v.id} className="hover:bg-background/50">
+                {violations.map((v, i) => (
+                  <tr key={`${v.id ?? 'viol'}-${i}`} className="hover:bg-background/50">
                     <td className="px-4 py-3 text-sm text-text font-medium">{v.employeeName}</td>
                     <td className="px-4 py-3 text-sm text-text-muted max-w-[150px] truncate">{v.reportTitle}</td>
                     <td className="px-4 py-3">

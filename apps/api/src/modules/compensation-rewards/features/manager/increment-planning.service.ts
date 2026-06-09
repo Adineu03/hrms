@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and, desc, sql, or } from 'drizzle-orm';
+import { eq, and, desc, or, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -54,7 +54,7 @@ export class IncrementPlanningService {
         eq(schema.compensationRevisionItems.revisionId, revisionId),
         eq(schema.compensationRevisionItems.orgId, orgId),
         eq(schema.compensationRevisionItems.isActive, true),
-        sql`${schema.compensationRevisionItems.employeeId} = ANY(${teamMemberIds})`,
+        inArray(schema.compensationRevisionItems.employeeId, teamMemberIds),
       ))
       .orderBy(desc(schema.compensationRevisionItems.createdAt));
 

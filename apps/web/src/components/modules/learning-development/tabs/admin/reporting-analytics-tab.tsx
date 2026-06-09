@@ -24,6 +24,25 @@ interface AnalyticsData {
   budgetUtilization: { department: string; allocated: number; spent: number; utilization: number }[];
 }
 
+interface PopularCourseRaw {
+  courseId?: string;
+  title?: string;
+  courseTitle?: string;
+  enrollments?: number;
+  completionRate?: number;
+  avgRating?: number | string | null;
+}
+
+interface BudgetDeptRaw {
+  departmentId?: string;
+  departmentName?: string;
+  department?: string;
+  totalBudget?: number | string;
+  allocated?: number | string;
+  spent?: number | string;
+  utilization?: number;
+}
+
 export default function ReportingAnalyticsTab() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,16 +59,52 @@ export default function ReportingAnalyticsTab() {
       ]);
       const completion = completionRes.data?.data || completionRes.data || {};
       const engagement = engagementRes.data?.data || engagementRes.data || {};
-      const popular = Array.isArray(popularRes.data) ? popularRes.data : popularRes.data?.data || [];
-      const budget = Array.isArray(budgetRes.data) ? budgetRes.data : budgetRes.data?.data || [];
+      const popularRaw: PopularCourseRaw[] = Array.isArray(popularRes.data)
+        ? popularRes.data
+        : popularRes.data?.data || [];
+      // budget-utilization returns an OBJECT { totalBudget, byDepartment: [...] }, not an array
+      const budgetBody = budgetRes.data?.data ?? budgetRes.data ?? {};
+      const budgetDeptRaw: BudgetDeptRaw[] = Array.isArray(budgetBody)
+        ? budgetBody
+        : Array.isArray(budgetBody?.byDepartment)
+          ? budgetBody.byDepartment
+          : [];
+
+      // Normalize popular courses: backend uses `title` and a string `avgRating`
+      const popularCourses = popularRaw.map((c) => ({
+        courseTitle: c.courseTitle || c.title || 'Untitled Course',
+        enrollments: Number(c.enrollments) || 0,
+        completionRate: Number(c.completionRate) || 0,
+        avgRating: Number(c.avgRating) || 0,
+      }));
+
+      // Normalize budget utilization: backend uses `departmentName`, `totalBudget`, `spent`
+      const budgetUtilization = budgetDeptRaw.map((d) => {
+        const allocated = Number(d.allocated ?? d.totalBudget) || 0;
+        const spent = Number(d.spent) || 0;
+        return {
+          department: d.department || d.departmentName || 'Unknown',
+          allocated,
+          spent,
+          utilization: Number(d.utilization) || (allocated > 0 ? Math.round((spent / allocated) * 100) : 0),
+        };
+      });
+
+      // Build "completion by department" from popular-course byCourse data is not available;
+      // derive it from budget departments + completion when present, else fall back to budget depts.
+      const completionByDept: { department: string; completionRate: number; enrollments: number }[] =
+        Array.isArray(completion.byDepartment) ? completion.byDepartment : [];
+
       setData({
-        totalCourses: engagement.totalCourses || completion.totalCourses || 0,
-        totalEnrollments: engagement.totalEnrollments || completion.totalEnrollments || 0,
-        avgCompletionRate: completion.avgCompletionRate || completion.average || 0,
-        totalHoursLogged: engagement.totalHoursLogged || 0,
-        completionByDepartment: completion.byDepartment || completion.completionByDepartment || [],
-        popularCourses: popular,
-        budgetUtilization: budget,
+        totalCourses: Number(engagement.totalCourses ?? completion.totalCourses ?? popularCourses.length) || 0,
+        totalEnrollments: Number(engagement.totalEnrollments ?? completion.total ?? 0) || 0,
+        avgCompletionRate: Number(completion.completionRate ?? completion.avgCompletionRate ?? completion.average) || 0,
+        totalHoursLogged: Number(
+          engagement.totalHoursLogged ?? Math.round((Number(engagement.totalTimeSpentMinutes) || 0) / 60),
+        ) || 0,
+        completionByDepartment: completionByDept,
+        popularCourses,
+        budgetUtilization,
       });
     } catch {
       setError('Failed to load analytics data.');
@@ -173,7 +228,7 @@ export default function ReportingAnalyticsTab() {
           ) : (
             <div className="space-y-2">
               {analytics.popularCourses.map((course, idx) => (
-                <div key={course.courseTitle} className="flex items-center justify-between bg-card border border-border rounded-lg px-4 py-3">
+                <div key={`${course.courseTitle}-${idx}`} className="flex items-center justify-between bg-card border border-border rounded-lg px-4 py-3">
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-text-muted w-5 text-center font-medium">#{idx + 1}</span>
                     <div>
@@ -184,7 +239,7 @@ export default function ReportingAnalyticsTab() {
                   <div className="text-right">
                     <p className="text-xs text-text font-medium">{course.completionRate}%</p>
                     <p className="text-[10px] text-text-muted">
-                      {course.avgRating > 0 ? `${course.avgRating.toFixed(1)} rating` : '--'}
+                      {(Number(course.avgRating) || 0) > 0 ? `${(Number(course.avgRating) || 0).toFixed(1)} rating` : '--'}
                     </p>
                   </div>
                 </div>
@@ -213,11 +268,11 @@ export default function ReportingAnalyticsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {analytics.budgetUtilization.map((dept) => (
-                    <tr key={dept.department} className="bg-card hover:bg-background/50 transition-colors">
+                  {analytics.budgetUtilization.map((dept, idx) => (
+                    <tr key={`${dept.department}-${idx}`} className="bg-card hover:bg-background/50 transition-colors">
                       <td className="px-4 py-2 text-sm text-text">{dept.department}</td>
-                      <td className="px-4 py-2 text-sm text-text-muted">${dept.allocated.toLocaleString()}</td>
-                      <td className="px-4 py-2 text-sm text-text-muted">${dept.spent.toLocaleString()}</td>
+                      <td className="px-4 py-2 text-sm text-text-muted">${(Number(dept.allocated) || 0).toLocaleString()}</td>
+                      <td className="px-4 py-2 text-sm text-text-muted">${(Number(dept.spent) || 0).toLocaleString()}</td>
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2">
                           <div className="w-20 bg-gray-200 rounded-full h-1.5">

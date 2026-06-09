@@ -23,7 +23,20 @@ export class BudgetManagementService {
       .where(and(...conditions))
       .orderBy(desc(schema.learningBudgets.createdAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    // Enrich with department names so the admin UI can show them.
+    const depts = await this.db
+      .select()
+      .from(schema.departments)
+      .where(eq(schema.departments.orgId, orgId));
+    const deptNames: Record<string, string> = {};
+    for (const d of depts) deptNames[d.id] = d.name;
+
+    const enriched = rows.map((r) => ({
+      ...r,
+      departmentName: r.departmentId ? (deptNames[r.departmentId] ?? null) : null,
+    }));
+
+    return { data: enriched, meta: { total: enriched.length } };
   }
 
   async createBudget(orgId: string, data: Record<string, any>) {

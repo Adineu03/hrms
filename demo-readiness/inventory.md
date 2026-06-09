@@ -12,10 +12,10 @@ _Last survey run: 2026-06-09 · 263 tab-views across 57 module×role views._
 ## Summary
 | | OK | EMPTY | ERROR | Total |
 |---|---|---|---|---|
-| admin | 82 | 23 | 1 | 106 |
-| manager | 57 | 13 | 6 | 76 |
-| employee | 65 | 15 | 1 | 81 |
-| **All** | **204** | **51** | **8** | **263** |
+| admin | 86 | 20 | 0 | 106 |
+| manager | 63 | 10 | 3 | 76 |
+| employee | 70 | 11 | 0 | 81 |
+| **All** | **219** | **41** | **3** | **263** |
 
 <details><summary>⚠️ Module×role views with no tab bar / special screen (1)</summary>
 
@@ -23,7 +23,7 @@ _Last survey run: 2026-06-09 · 263 tab-views across 57 module×role views._
 
 </details>
 
-## Triaged backlog — EMPTY / ERROR by sprint cluster (59 of 263)
+## Triaged backlog — EMPTY / ERROR by sprint cluster (44 of 263)
 
 ### Sprint 1 — cold-start-setup, core-hr, leave-management  · 0 to fix (🔴 0 / ⚠️ 0)
 _All green._
@@ -34,24 +34,8 @@ _All green._
 ### Sprint 3 — talent-acquisition, onboarding-offboarding, performance-growth  · 0 to fix (🔴 0 / ⚠️ 0)
 _All green._
 
-### Sprint 4 — learning-development, compensation-rewards, expense-management  · 15 to fix (🔴 5 / ⚠️ 10)
-| Module | Role | Tab | Status | Notes |
-|---|---|---|---|---|
-| learning-development | admin | Reporting & Analytics | ⚠️ EMPTY | empty-text matched: "No department data available" |
-| learning-development | manager | Development Planning | ⚠️ EMPTY | empty-text matched: "No development plans yet" |
-| learning-development | employee | Course Catalog | ⚠️ EMPTY | empty-text matched: "No courses found" |
-| learning-development | employee | My Learning Path | ⚠️ EMPTY | empty-text matched: "No learning paths assigned" |
-| compensation-rewards | admin | Compensation Planning | ⚠️ EMPTY | empty-text matched: "No compensation revisions yet" |
-| compensation-rewards | admin | Rewards & Recognition | ⚠️ EMPTY | empty-text matched: "No recognition programs configured yet" |
-| compensation-rewards | manager | Recognition Management | 🔴 ERROR | api: 500 GET /api/v1/compensation-rewards/manager/recognition/nominations \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
-| compensation-rewards | manager | Increment Planning | ⚠️ EMPTY | empty-text matched: "No active revisions available" |
-| compensation-rewards | employee | My Compensation | ⚠️ EMPTY | empty-text matched: "No salary components available" |
-| compensation-rewards | employee | Recognition & Awards | ⚠️ EMPTY | empty-text matched: "No point transactions yet" |
-| expense-management | admin | Reports & Analytics | 🔴 ERROR | api: 500 GET /api/v1/expense-management/admin/analytics/trends \| 500 GET /api/v1/expense-management/admin/analytics/trends \| 500 GET /api/v1/expense-management/admin/analytics/department-breakdown; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
-| expense-management | manager | Team Expense Overview | ⚠️ EMPTY | empty-text matched: "No team member expense data" |
-| expense-management | manager | Expense Approvals | 🔴 ERROR | api: 500 GET /api/v1/expense-management/manager/approvals \| 500 GET /api/v1/expense-management/manager/approvals \| 500 GET /api/v1/expense-management/manager/approvals; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
-| expense-management | manager | Team Expense Reports | 🔴 ERROR | api: 500 GET /api/v1/expense-management/manager/team-reports/category-breakdown \| 500 GET /api/v1/expense-management/manager/team-reports/top-spenders \| 500 GET /api/v1/expense-management/manager/team-reports/summary; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
-| expense-management | employee | Expense Policies | 🔴 ERROR | api: 500 GET /api/v1/expense-management/employee/policies/limits \| 500 GET /api/v1/expense-management/employee/policies/limits; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
+### Sprint 4 — learning-development, compensation-rewards, expense-management  · 0 to fix (🔴 0 / ⚠️ 0)
+_All green._
 
 ### Sprint 5 — engagement-culture, compliance-audit, workforce-planning  · 31 to fix (🔴 2 / ⚠️ 29)
 | Module | Role | Tab | Status | Notes |
@@ -262,35 +246,35 @@ _All green._
 | learning-development | admin | LMS Configuration | OK | — | [png](../apps/web/e2e/screenshots/admin/learning-development/0-LMS_Configuration.png) |
 | learning-development | admin | Budget Management | OK | — | [png](../apps/web/e2e/screenshots/admin/learning-development/1-Budget_Management.png) |
 | learning-development | admin | Training Calendar | OK | — | [png](../apps/web/e2e/screenshots/admin/learning-development/2-Training_Calendar.png) |
-| learning-development | admin | Reporting & Analytics | ⚠️ EMPTY | empty-text matched: "No department data available" | [png](../apps/web/e2e/screenshots/admin/learning-development/3-Reporting__Analytics.png) |
+| learning-development | admin | Reporting & Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/learning-development/3-Reporting__Analytics.png) |
 | learning-development | manager | Team Learning | OK | — | [png](../apps/web/e2e/screenshots/manager/learning-development/0-Team_Learning.png) |
 | learning-development | manager | Learning Assignments | OK | — | [png](../apps/web/e2e/screenshots/manager/learning-development/1-Learning_Assignments.png) |
-| learning-development | manager | Development Planning | ⚠️ EMPTY | empty-text matched: "No development plans yet" | [png](../apps/web/e2e/screenshots/manager/learning-development/2-Development_Planning.png) |
-| learning-development | employee | Course Catalog | ⚠️ EMPTY | empty-text matched: "No courses found" | [png](../apps/web/e2e/screenshots/employee/learning-development/0-Course_Catalog.png) |
-| learning-development | employee | My Learning Path | ⚠️ EMPTY | empty-text matched: "No learning paths assigned" | [png](../apps/web/e2e/screenshots/employee/learning-development/1-My_Learning_Path.png) |
+| learning-development | manager | Development Planning | OK | — | [png](../apps/web/e2e/screenshots/manager/learning-development/2-Development_Planning.png) |
+| learning-development | employee | Course Catalog | OK | — | [png](../apps/web/e2e/screenshots/employee/learning-development/0-Course_Catalog.png) |
+| learning-development | employee | My Learning Path | OK | — | [png](../apps/web/e2e/screenshots/employee/learning-development/1-My_Learning_Path.png) |
 | learning-development | employee | Certification Tracker | OK | — | [png](../apps/web/e2e/screenshots/employee/learning-development/2-Certification_Tracker.png) |
 | learning-development | employee | Learning Budget | OK | — | [png](../apps/web/e2e/screenshots/employee/learning-development/3-Learning_Budget.png) |
 | compensation-rewards | admin | Salary Structure | OK | — | [png](../apps/web/e2e/screenshots/admin/compensation-rewards/0-Salary_Structure.png) |
-| compensation-rewards | admin | Compensation Planning | ⚠️ EMPTY | empty-text matched: "No compensation revisions yet" | [png](../apps/web/e2e/screenshots/admin/compensation-rewards/1-Compensation_Planning.png) |
-| compensation-rewards | admin | Rewards & Recognition | ⚠️ EMPTY | empty-text matched: "No recognition programs configured yet" | [png](../apps/web/e2e/screenshots/admin/compensation-rewards/2-Rewards__Recognition.png) |
+| compensation-rewards | admin | Compensation Planning | OK | — | [png](../apps/web/e2e/screenshots/admin/compensation-rewards/1-Compensation_Planning.png) |
+| compensation-rewards | admin | Rewards & Recognition | OK | — | [png](../apps/web/e2e/screenshots/admin/compensation-rewards/2-Rewards__Recognition.png) |
 | compensation-rewards | admin | Compensation Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/compensation-rewards/3-Compensation_Analytics.png) |
 | compensation-rewards | manager | Team Compensation | OK | — | [png](../apps/web/e2e/screenshots/manager/compensation-rewards/0-Team_Compensation.png) |
-| compensation-rewards | manager | Recognition Management | 🔴 ERROR | api: 500 GET /api/v1/compensation-rewards/manager/recognition/nominations \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard \| 500 GET /api/v1/compensation-rewards/manager/recognition/dashboard; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/compensation-rewards/1-Recognition_Management.png) |
-| compensation-rewards | manager | Increment Planning | ⚠️ EMPTY | empty-text matched: "No active revisions available" | [png](../apps/web/e2e/screenshots/manager/compensation-rewards/2-Increment_Planning.png) |
-| compensation-rewards | employee | My Compensation | ⚠️ EMPTY | empty-text matched: "No salary components available" | [png](../apps/web/e2e/screenshots/employee/compensation-rewards/0-My_Compensation.png) |
+| compensation-rewards | manager | Recognition Management | OK | — | [png](../apps/web/e2e/screenshots/manager/compensation-rewards/1-Recognition_Management.png) |
+| compensation-rewards | manager | Increment Planning | OK | — | [png](../apps/web/e2e/screenshots/manager/compensation-rewards/2-Increment_Planning.png) |
+| compensation-rewards | employee | My Compensation | OK | — | [png](../apps/web/e2e/screenshots/employee/compensation-rewards/0-My_Compensation.png) |
 | compensation-rewards | employee | Pay Slips & Tax | OK | — | [png](../apps/web/e2e/screenshots/employee/compensation-rewards/1-Pay_Slips__Tax.png) |
-| compensation-rewards | employee | Recognition & Awards | ⚠️ EMPTY | empty-text matched: "No point transactions yet" | [png](../apps/web/e2e/screenshots/employee/compensation-rewards/2-Recognition__Awards.png) |
+| compensation-rewards | employee | Recognition & Awards | OK | — | [png](../apps/web/e2e/screenshots/employee/compensation-rewards/2-Recognition__Awards.png) |
 | compensation-rewards | employee | Benefits Enrollment | OK | — | [png](../apps/web/e2e/screenshots/employee/compensation-rewards/3-Benefits_Enrollment.png) |
 | expense-management | admin | Expense Policy Configuration | OK | — | [png](../apps/web/e2e/screenshots/admin/expense-management/0-Expense_Policy_Configuration.png) |
 | expense-management | admin | Expense Report Management | OK | — | [png](../apps/web/e2e/screenshots/admin/expense-management/1-Expense_Report_Management.png) |
-| expense-management | admin | Reports & Analytics | 🔴 ERROR | api: 500 GET /api/v1/expense-management/admin/analytics/trends \| 500 GET /api/v1/expense-management/admin/analytics/trends \| 500 GET /api/v1/expense-management/admin/analytics/department-breakdown; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/admin/expense-management/2-Reports__Analytics.png) |
+| expense-management | admin | Reports & Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/expense-management/2-Reports__Analytics.png) |
 | expense-management | admin | Anomaly Detection | OK | — | [png](../apps/web/e2e/screenshots/admin/expense-management/3-Anomaly_Detection.png) |
-| expense-management | manager | Team Expense Overview | ⚠️ EMPTY | empty-text matched: "No team member expense data" | [png](../apps/web/e2e/screenshots/manager/expense-management/0-Team_Expense_Overview.png) |
-| expense-management | manager | Expense Approvals | 🔴 ERROR | api: 500 GET /api/v1/expense-management/manager/approvals \| 500 GET /api/v1/expense-management/manager/approvals \| 500 GET /api/v1/expense-management/manager/approvals; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/expense-management/1-Expense_Approvals.png) |
-| expense-management | manager | Team Expense Reports | 🔴 ERROR | api: 500 GET /api/v1/expense-management/manager/team-reports/category-breakdown \| 500 GET /api/v1/expense-management/manager/team-reports/top-spenders \| 500 GET /api/v1/expense-management/manager/team-reports/summary; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/expense-management/2-Team_Expense_Reports.png) |
+| expense-management | manager | Team Expense Overview | OK | — | [png](../apps/web/e2e/screenshots/manager/expense-management/0-Team_Expense_Overview.png) |
+| expense-management | manager | Expense Approvals | OK | — | [png](../apps/web/e2e/screenshots/manager/expense-management/1-Expense_Approvals.png) |
+| expense-management | manager | Team Expense Reports | OK | — | [png](../apps/web/e2e/screenshots/manager/expense-management/2-Team_Expense_Reports.png) |
 | expense-management | employee | My Expenses | OK | — | [png](../apps/web/e2e/screenshots/employee/expense-management/0-My_Expenses.png) |
 | expense-management | employee | Expense Tracking | OK | — | [png](../apps/web/e2e/screenshots/employee/expense-management/1-Expense_Tracking.png) |
-| expense-management | employee | Expense Policies | 🔴 ERROR | api: 500 GET /api/v1/expense-management/employee/policies/limits \| 500 GET /api/v1/expense-management/employee/policies/limits; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/employee/expense-management/2-Expense_Policies.png) |
+| expense-management | employee | Expense Policies | OK | — | [png](../apps/web/e2e/screenshots/employee/expense-management/2-Expense_Policies.png) |
 | engagement-culture | admin | Survey & Pulse | ⚠️ EMPTY | empty-text matched: "No surveys created yet" | [png](../apps/web/e2e/screenshots/admin/engagement-culture/0-Survey__Pulse.png) |
 | engagement-culture | admin | Culture & Values | ⚠️ EMPTY | empty-text matched: "No culture values configured yet" | [png](../apps/web/e2e/screenshots/admin/engagement-culture/1-Culture__Values.png) |
 | engagement-culture | admin | Wellness Programs | ⚠️ EMPTY | empty-text matched: "No wellness programs configured yet" | [png](../apps/web/e2e/screenshots/admin/engagement-culture/2-Wellness_Programs.png) |

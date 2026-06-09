@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -21,7 +21,22 @@ export class MyExpensesService {
       )
       .orderBy(desc(schema.expenseReports.createdAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    // Enrich with per-report item counts.
+    const reportIds = rows.map((r) => r.id);
+    const items = reportIds.length
+      ? await this.db
+          .select({ reportId: schema.expenseItems.reportId })
+          .from(schema.expenseItems)
+          .where(and(eq(schema.expenseItems.orgId, orgId), eq(schema.expenseItems.isActive, true), inArray(schema.expenseItems.reportId, reportIds)))
+      : [];
+    const itemCountMap = new Map<string, number>();
+    for (const it of items) {
+      itemCountMap.set(it.reportId, (itemCountMap.get(it.reportId) ?? 0) + 1);
+    }
+
+    const data = rows.map((r) => ({ ...r, itemCount: itemCountMap.get(r.id) ?? 0 }));
+
+    return { data, meta: { total: data.length } };
   }
 
   async createReport(orgId: string, userId: string, dto: { title: string; description?: string }) {

@@ -39,6 +39,12 @@ interface SpendingLimit {
   utilizationPercent: number;
 }
 
+// Coerce drizzle numeric (string) / nullable values to a safe number.
+const num = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export default function ExpensePoliciesViewTab() {
   const [categories, setCategories] = useState<ExpenseCategoryInfo[]>([]);
   const [policies, setPolicies] = useState<PolicyInfo[]>([]);
@@ -57,10 +63,39 @@ export default function ExpensePoliciesViewTab() {
       ]);
 
       const catData = Array.isArray(catRes.data) ? catRes.data : catRes.data?.data || [];
-      const polData = Array.isArray(polRes.data) ? polRes.data : polRes.data?.data || [];
-      const limitsData = Array.isArray(limitsRes.data) ? limitsRes.data : limitsRes.data?.data || [];
+      const polRaw = Array.isArray(polRes.data) ? polRes.data : polRes.data?.data || [];
+      // /policies/limits returns { data: { currentMonth, totalMonthlySpent, limits: [...] } }
+      const limitsPayload = Array.isArray(limitsRes.data) ? null : limitsRes.data?.data;
+      const limitsRaw = Array.isArray(limitsPayload?.limits) ? limitsPayload.limits : [];
 
-      setCategories(catData);
+      // Map backend policy rows (drizzle numeric => strings) to the view model.
+      const polData: PolicyInfo[] = (Array.isArray(polRaw) ? polRaw : []).map((p: any) => ({
+        id: p.id,
+        name: p.name ?? 'Policy',
+        categoryName: p.categoryName ?? 'All Categories',
+        maxPerClaim: num(p.maxAmountPerClaim),
+        maxPerMonth: num(p.maxAmountPerMonth),
+        receiptRequired: !!p.requiresReceipt,
+        perDiemRate: num(p.perDiemRate),
+        approvalLevels: num(p.approvalLevels) || 1,
+      }));
+
+      // Map limits view: monthlySpent is shared across the employee for the month.
+      const limitsData: SpendingLimit[] = limitsRaw.map((l: any, idx: number) => {
+        const monthlyLimit = num(l.maxAmountPerMonth);
+        const usedThisMonth = num(l.monthlySpent);
+        const remainingThisMonth = monthlyLimit > 0 ? Math.max(0, monthlyLimit - usedThisMonth) : 0;
+        return {
+          id: l.policyId ?? `limit-${idx}`,
+          categoryName: l.policyName ?? l.categoryName ?? 'Policy',
+          monthlyLimit,
+          usedThisMonth,
+          remainingThisMonth,
+          utilizationPercent: monthlyLimit > 0 ? (usedThisMonth / monthlyLimit) * 100 : 0,
+        };
+      });
+
+      setCategories(Array.isArray(catData) ? catData : []);
       setPolicies(polData);
       setSpendingLimits(limitsData);
     } catch {
@@ -210,7 +245,7 @@ export default function ExpensePoliciesViewTab() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-text-muted">Monthly Limit</span>
-                    <span className="text-text font-medium">{formatCurrency(sl.monthlyLimit)}</span>
+                    <span className="text-text font-medium">{sl.monthlyLimit > 0 ? formatCurrency(sl.monthlyLimit) : 'No limit'}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-text-muted">Used</span>
@@ -232,7 +267,7 @@ export default function ExpensePoliciesViewTab() {
                         style={{ width: `${Math.min(sl.utilizationPercent, 100)}%` }}
                       />
                     </div>
-                    <p className="text-xs text-text-muted mt-1 text-right">{sl.utilizationPercent.toFixed(1)}% used</p>
+                    <p className="text-xs text-text-muted mt-1 text-right">{num(sl.utilizationPercent).toFixed(1)}% used</p>
                   </div>
                 </div>
               </div>

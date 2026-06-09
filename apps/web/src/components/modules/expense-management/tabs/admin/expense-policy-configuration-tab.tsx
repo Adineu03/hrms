@@ -197,10 +197,11 @@ export default function ExpensePolicyConfigurationTab() {
       setError('');
       const payload = {
         name: polName.trim(),
-        categoryId: polCategoryId,
-        maxPerClaim: polMaxPerClaim,
-        maxPerMonth: polMaxPerMonth,
-        receiptRequired: polReceiptRequired,
+        categoryId: polCategoryId || undefined,
+        // Backend stores numeric columns as strings; send empty as undefined ("no limit").
+        maxAmountPerClaim: polMaxPerClaim > 0 ? String(polMaxPerClaim) : undefined,
+        maxAmountPerMonth: polMaxPerMonth > 0 ? String(polMaxPerMonth) : undefined,
+        requiresReceipt: polReceiptRequired,
         approvalLevels: polApprovalLevels,
       };
       if (editingPolicy) {

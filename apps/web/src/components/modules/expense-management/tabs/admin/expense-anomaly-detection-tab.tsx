@@ -112,7 +112,7 @@ export default function ExpenseAnomalyDetectionTab() {
           <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
           <span className="ml-2 text-sm text-text-muted">Scanning expenses...</span>
         </div>
-      ) : data && data.summary.total > 0 ? (
+      ) : data && (data.summary?.total ?? 0) > 0 ? (
         <>
           {/* Summary */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -143,8 +143,8 @@ export default function ExpenseAnomalyDetectionTab() {
 
           {/* Anomaly list */}
           <div className="space-y-3">
-            {data.anomalies.map((a) => {
-              const meta = TYPE_META[a.type];
+            {(data.anomalies ?? []).map((a) => {
+              const meta = TYPE_META[a.type] ?? { label: 'Anomaly', icon: ShieldAlert };
               const Icon = meta.icon;
               return (
                 <div key={a.id} className="border border-border rounded-xl p-4 bg-card">

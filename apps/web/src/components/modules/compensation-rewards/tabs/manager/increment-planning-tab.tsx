@@ -109,9 +109,15 @@ export default function IncrementPlanningTab() {
     try {
       setSaving(true);
       setError('');
+      const proposed = parseFloat(formProposedCtc) || 0;
+      const current = Number(selectedEmployee.currentCtc) || 0;
+      const incrementAmount = proposed - current;
+      const incrementPercent = current > 0 ? Math.round((incrementAmount / current) * 1000) / 10 : 0;
       await api.post(`/compensation-rewards/manager/increment-planning/revisions/${selectedRevision}/propose`, {
         employeeId: selectedEmployee.id,
-        proposedCtc: parseFloat(formProposedCtc) || 0,
+        proposedCtc: String(proposed),
+        incrementAmount: String(incrementAmount),
+        incrementPercent: String(incrementPercent),
         meritScore: parseFloat(formMeritScore) || 0,
         remarks: formRemarks.trim(),
       });

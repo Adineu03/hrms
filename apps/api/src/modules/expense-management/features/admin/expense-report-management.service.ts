@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -24,7 +24,36 @@ export class ExpenseReportManagementService {
       .where(and(...conditions))
       .orderBy(desc(schema.expenseReports.createdAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    // Enrich with employee names and per-report item counts.
+    const employeeIds = [...new Set(rows.map((r) => r.employeeId))];
+    const reportIds = rows.map((r) => r.id);
+
+    const users = employeeIds.length
+      ? await this.db
+          .select({ id: schema.users.id, firstName: schema.users.firstName, lastName: schema.users.lastName })
+          .from(schema.users)
+          .where(inArray(schema.users.id, employeeIds))
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName ?? ''}`.trim()]));
+
+    const items = reportIds.length
+      ? await this.db
+          .select({ reportId: schema.expenseItems.reportId })
+          .from(schema.expenseItems)
+          .where(and(eq(schema.expenseItems.orgId, orgId), eq(schema.expenseItems.isActive, true), inArray(schema.expenseItems.reportId, reportIds)))
+      : [];
+    const itemCountMap = new Map<string, number>();
+    for (const it of items) {
+      itemCountMap.set(it.reportId, (itemCountMap.get(it.reportId) ?? 0) + 1);
+    }
+
+    const data = rows.map((r) => ({
+      ...r,
+      employeeName: userMap.get(r.employeeId) ?? 'Unknown',
+      itemCount: itemCountMap.get(r.id) ?? 0,
+    }));
+
+    return { data, meta: { total: data.length } };
   }
 
   async getReportDetail(orgId: string, id: string) {

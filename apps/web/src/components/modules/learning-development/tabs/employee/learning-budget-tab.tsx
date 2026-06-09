@@ -83,10 +83,48 @@ export default function LearningBudgetTab() {
         api.get('/learning-development/employee/budget').catch(() => ({ data: null })),
         api.get('/learning-development/employee/budget/history').catch(() => ({ data: [] })),
       ]);
-      const budgetRaw = budgetRes.data;
-      setBudget(budgetRaw?.data || budgetRaw);
+      // Backend returns { data: <learningBudgets row>, type } with numeric-STRING amounts.
+      const budgetRow = (budgetRes.data?.data ?? budgetRes.data) as Record<string, unknown> | null;
+      if (budgetRow && typeof budgetRow === 'object') {
+        const total = Number(budgetRow.totalBudget ?? budgetRow.totalAllocation) || 0;
+        const spent = Number(budgetRow.spentAmount ?? budgetRow.spent) || 0;
+        const remaining = Number(budgetRow.remainingAmount ?? budgetRow.remaining ?? total - spent) || 0;
+        const history = Array.isArray(budgetRow.spendHistory)
+          ? (budgetRow.spendHistory as Array<Record<string, unknown>>)
+          : [];
+        const pending = history
+          .filter((h) => h.status === 'pending_approval' || h.status === 'pending')
+          .reduce((s, h) => s + (Number(h.cost ?? h.amount) || 0), 0);
+        setBudget({
+          totalAllocation: total,
+          spent,
+          remaining,
+          pendingReimbursements: pending,
+          currency: String(budgetRow.currency ?? 'INR'),
+          rolloverEnabled: Boolean(budgetRow.rolloverEnabled),
+          rolloverAmount: Number(budgetRow.rolloverAmount) || 0,
+          fiscalYearEnd: String(budgetRow.fiscalYearEnd ?? ''),
+        });
+      } else {
+        setBudget(null);
+      }
+      // History endpoint returns { data: <spendHistory array> }; items use cost/requestedAt.
       const spendRaw = spendRes.data;
-      setSpendHistory(Array.isArray(spendRaw) ? spendRaw : Array.isArray(spendRaw?.data) ? spendRaw.data : []);
+      const spendRows = Array.isArray(spendRaw)
+        ? spendRaw
+        : Array.isArray(spendRaw?.data)
+          ? spendRaw.data
+          : [];
+      const normalizedSpend: SpendItem[] = (spendRows as Array<Record<string, unknown>>).map((h, i) => ({
+        id: String(h.id ?? `${h.courseName ?? 'item'}-${i}`),
+        courseName: String(h.courseName ?? '--'),
+        provider: String(h.provider ?? ''),
+        amount: Number(h.cost ?? h.amount) || 0,
+        currency: String(h.currency ?? 'INR'),
+        date: String(h.requestedAt ?? h.date ?? ''),
+        status: String(h.status ?? 'pending'),
+      }));
+      setSpendHistory(normalizedSpend);
       setReimbursements([]);
     } catch {
       setError('Failed to load budget data.');

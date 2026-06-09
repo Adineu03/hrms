@@ -70,23 +70,44 @@ export default function BudgetManagementTab() {
     try {
       setIsLoading(true);
       const res = await api.get('/learning-development/admin/budgets');
-      const responseData = res.data?.data || res.data;
-      if (responseData && typeof responseData === 'object' && !Array.isArray(responseData)) {
-        setData(responseData);
-      } else {
-        const allocations = Array.isArray(responseData) ? responseData : [];
-        const totalBudget = allocations.reduce((s: number, a: BudgetAllocation) => s + (a.totalBudget || 0), 0);
-        const totalAllocated = allocations.reduce((s: number, a: BudgetAllocation) => s + (a.allocated || 0), 0);
-        const totalSpent = allocations.reduce((s: number, a: BudgetAllocation) => s + (a.spent || 0), 0);
-        setData({
+      const responseData = res.data?.data ?? res.data;
+      // Backend returns { data: [rows] } where amounts are numeric STRINGS ("50000.00").
+      const rows = Array.isArray(responseData)
+        ? responseData
+        : Array.isArray(responseData?.data)
+          ? responseData.data
+          : [];
+      const allocations: BudgetAllocation[] = (rows as Array<Record<string, unknown>>).map((a) => {
+        const totalBudget = Number(a.totalBudget) || 0;
+        const allocated = Number(a.allocatedAmount ?? a.allocated) || 0;
+        const spent = Number(a.spentAmount ?? a.spent) || 0;
+        const remaining = Number(a.remainingAmount ?? a.remaining ?? totalBudget - spent) || 0;
+        return {
+          id: String(a.id),
+          type: String(a.type ?? 'department'),
+          departmentId: String(a.departmentId ?? ''),
+          departmentName: String(a.departmentName ?? ''),
+          fiscalYear: String(a.fiscalYear ?? ''),
           totalBudget,
-          totalAllocated,
-          totalSpent,
-          totalRemaining: totalBudget - totalSpent,
-          currency: allocations[0]?.currency || 'USD',
-          allocations,
-        });
-      }
+          allocated,
+          spent,
+          remaining,
+          currency: String(a.currency ?? 'INR'),
+          rolloverEnabled: Boolean(a.rolloverEnabled),
+          createdAt: String(a.createdAt ?? ''),
+        };
+      });
+      const totalBudget = allocations.reduce((s, a) => s + (Number(a.totalBudget) || 0), 0);
+      const totalAllocated = allocations.reduce((s, a) => s + (Number(a.allocated) || 0), 0);
+      const totalSpent = allocations.reduce((s, a) => s + (Number(a.spent) || 0), 0);
+      setData({
+        totalBudget,
+        totalAllocated,
+        totalSpent,
+        totalRemaining: totalBudget - totalSpent,
+        currency: allocations[0]?.currency || 'INR',
+        allocations,
+      });
     } catch {
       setError('Failed to load budget data.');
     } finally {

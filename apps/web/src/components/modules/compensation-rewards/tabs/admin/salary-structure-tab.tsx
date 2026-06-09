@@ -57,7 +57,16 @@ export default function SalaryStructureTab() {
       setLoading(true);
       setError('');
       const res = await api.get('/compensation-rewards/admin/salary-structure');
-      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const raw = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      // Backend exposes `isActive`, not a `status` string — derive one for the badge.
+      const data: SalaryStructure[] = (Array.isArray(raw) ? raw : []).map((s: Record<string, unknown>) => ({
+        id: String(s.id ?? ''),
+        name: String(s.name ?? '—'),
+        description: String(s.description ?? ''),
+        components: Array.isArray(s.components) ? (s.components as SalaryComponent[]) : [],
+        status: s.isActive === false ? 'inactive' : 'active',
+        createdAt: String(s.createdAt ?? ''),
+      }));
       setStructures(data);
     } catch {
       setError('Failed to load salary structures.');

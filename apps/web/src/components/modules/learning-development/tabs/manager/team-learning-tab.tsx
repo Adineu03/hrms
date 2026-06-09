@@ -51,7 +51,35 @@ export default function TeamLearningTab() {
       if (res) {
         const d = res.data?.data || res.data;
         if (d && typeof d === 'object') {
-          setData({ ...d, members: Array.isArray(d.members) ? d.members : [] });
+          const rawMembers = Array.isArray(d.members) ? (d.members as Array<Record<string, unknown>>) : [];
+          const members: TeamMember[] = rawMembers.map((m) => {
+            const enrolled = Number(m.totalEnrollments) || 0;
+            const completed = Number(m.completedCourses ?? m.coursesCompleted) || 0;
+            return {
+              id: String(m.id),
+              name: String(m.name ?? ''),
+              designation: String(m.designation ?? m.email ?? ''),
+              coursesCompleted: completed,
+              certificationsCount: Number(m.certifications ?? m.certificationsCount) || 0,
+              learningHours: Number(m.hoursSpent ?? m.learningHours) || 0,
+              complianceStatus: String(m.complianceStatus ?? 'compliant'),
+              completionPercent: enrolled > 0 ? Math.round((completed / enrolled) * 100) : 0,
+            };
+          });
+          const compliance = (d.complianceStatus as { compliant?: number; nonCompliant?: number }) ?? {};
+          const teamSize = Number(d.teamSize) || members.length;
+          const avgCompletion =
+            members.length > 0
+              ? Math.round(members.reduce((s, m) => s + m.completionPercent, 0) / members.length)
+              : Number(d.completionRate) || 0;
+          const compliantCount = Number(compliance.compliant) || 0;
+          setData({
+            teamSize,
+            avgCompletionPercent: avgCompletion,
+            complianceCompletionPercent: teamSize > 0 ? Math.round((compliantCount / teamSize) * 100) : 0,
+            totalHours: Number(d.totalHoursSpent ?? d.totalHours) || 0,
+            members,
+          });
         }
       }
     } catch {

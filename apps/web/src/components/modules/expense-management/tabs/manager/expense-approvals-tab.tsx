@@ -56,6 +56,12 @@ interface ApprovalHistoryItem {
   remarks: string;
 }
 
+// Coerce drizzle numeric (string) / nullable values to a safe number.
+const num = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export default function ExpenseApprovalsTab() {
   const [pending, setPending] = useState<PendingExpenseReport[]>([]);
   const [history, setHistory] = useState<ApprovalHistoryItem[]>([]);
@@ -80,9 +86,29 @@ export default function ExpenseApprovalsTab() {
       ]);
 
       const rawPending = pendingRes.data?.data ?? pendingRes.data;
-      const pendingData = Array.isArray(rawPending) ? rawPending : [];
+      const pendingArr = Array.isArray(rawPending) ? rawPending : [];
       const rawHistory = historyRes.data?.data ?? historyRes.data;
-      const historyData = Array.isArray(rawHistory) ? rawHistory : [];
+      const historyArr = Array.isArray(rawHistory) ? rawHistory : [];
+
+      const pendingData: PendingExpenseReport[] = pendingArr.map((p: any, idx: number) => ({
+        id: p.id ?? `report-${idx}`,
+        employeeName: p.employeeName ?? 'Unknown',
+        employeeId: p.employeeId ?? '',
+        title: p.title ?? 'Expense Report',
+        totalAmount: num(p.totalAmount),
+        itemCount: num(p.itemCount),
+        submittedAt: p.submittedAt ?? '',
+      }));
+
+      const historyData: ApprovalHistoryItem[] = historyArr.map((h: any, idx: number) => ({
+        id: h.id ?? `history-${idx}`,
+        employeeName: h.employeeName ?? 'Unknown',
+        title: h.title ?? 'Expense Report',
+        totalAmount: num(h.totalAmount),
+        status: h.status ?? '',
+        actionAt: h.reviewedAt ?? h.actionAt ?? h.submittedAt ?? '',
+        remarks: h.rejectionReason ?? h.remarks ?? '',
+      }));
 
       setPending(pendingData);
       setHistory(historyData);

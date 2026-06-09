@@ -36,6 +36,12 @@ interface TopSpender {
   averagePerReport: number;
 }
 
+// Coerce drizzle numeric (string) / nullable values to a safe number.
+const num = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export default function TeamExpenseReportsTab() {
   const [summary, setSummary] = useState<TeamSpendingSummary | null>(null);
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdown[]>([]);
@@ -55,16 +61,47 @@ export default function TeamExpenseReportsTab() {
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};
       const rawCategory = categoryRes.data?.data ?? categoryRes.data;
-      const categoryData = Array.isArray(rawCategory) ? rawCategory : [];
+      const categoryArr = Array.isArray(rawCategory) ? rawCategory : [];
       const rawTop = topRes.data?.data ?? topRes.data;
-      const topData = Array.isArray(rawTop) ? rawTop : [];
+      const topArr = Array.isArray(rawTop) ? rawTop : [];
+
+      // Backend top-spenders rows give us the highest single report total.
+      const highestSingleExpense = topArr.reduce((max: number, s: any) => Math.max(max, num(s.totalAmount)), 0);
 
       setSummary({
-        totalSpend: summaryData.totalSpend || 0,
-        averagePerEmployee: summaryData.averagePerEmployee || 0,
-        highestSingleExpense: summaryData.highestSingleExpense || 0,
-        reportCount: summaryData.reportCount || 0,
+        totalSpend: num(summaryData.totalSpend),
+        averagePerEmployee: num(summaryData.averagePerEmployee),
+        highestSingleExpense,
+        reportCount: num(summaryData.totalReports ?? summaryData.reportCount),
       });
+
+      // Backend category rows: { categoryId, categoryName, itemCount, totalAmount }
+      const categoryTotal = categoryArr.reduce((sum: number, c: any) => sum + num(c.totalAmount), 0);
+      const categoryData: CategoryBreakdown[] = categoryArr.map((c: any, idx: number) => {
+        const totalAmount = num(c.totalAmount);
+        return {
+          id: c.categoryId ?? `cat-${idx}`,
+          category: c.categoryName ?? 'Uncategorized',
+          totalAmount,
+          reportCount: num(c.itemCount ?? c.reportCount),
+          percentage: categoryTotal > 0 ? (totalAmount / categoryTotal) * 100 : 0,
+        };
+      });
+
+      // Backend top-spender rows: { employeeId, employeeName, employeeEmail, totalAmount, reportCount }
+      const topData: TopSpender[] = topArr.map((s: any, idx: number) => {
+        const totalAmount = num(s.totalAmount);
+        const reportCount = num(s.reportCount);
+        return {
+          id: s.employeeId ?? `spender-${idx}`,
+          employeeName: s.employeeName ?? 'Unknown',
+          employeeId: s.employeeEmail ?? s.employeeId ?? '',
+          totalAmount,
+          reportCount,
+          averagePerReport: reportCount > 0 ? totalAmount / reportCount : 0,
+        };
+      });
+
       setCategoryBreakdown(categoryData);
       setTopSpenders(topData);
     } catch {

@@ -8,6 +8,7 @@ interface SalaryComponent {
   name: string;
   amount: number;
   type: string;
+  detail: string;
 }
 
 interface CompensationHistory {
@@ -28,6 +29,9 @@ interface CompensationData {
   };
 }
 
+const formatCurrency = (val: number) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(val) || 0);
+
 export default function MyCompensationTab() {
   const [data, setData] = useState<CompensationData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,13 +41,61 @@ export default function MyCompensationTab() {
     try {
       setLoading(true);
       setError('');
-      const res = await api.get('/compensation-rewards/employee/my-compensation');
-      const result = res.data?.data || res.data || {};
+      const [currentRes, historyRes, rewardsRes] = await Promise.all([
+        api.get('/compensation-rewards/employee/my-compensation').catch(() => null),
+        api.get('/compensation-rewards/employee/my-compensation/history').catch(() => null),
+        api.get('/compensation-rewards/employee/my-compensation/total-rewards').catch(() => null),
+      ]);
+
+      const current = currentRes?.data?.data ?? currentRes?.data ?? {};
+      const ctc = Number(current?.ctc ?? 0) || 0;
+
+      // Backend returns salaryStructure.components as { name, type, calculationType, value }.
+      // Derive a displayable amount: percentage → value% of CTC; fixed → monthly value × 12.
+      const rawComponents = Array.isArray(current?.salaryStructure?.components)
+        ? current.salaryStructure.components
+        : [];
+      const components: SalaryComponent[] = rawComponents.map((c: Record<string, unknown>) => {
+        const value = Number(c?.value ?? 0) || 0;
+        const calcType = String(c?.calculationType ?? 'fixed');
+        const isPct = calcType === 'percentage';
+        const amount = isPct ? Math.round((value / 100) * ctc) : value * 12;
+        return {
+          name: String(c?.name ?? '—'),
+          type: String(c?.type ?? 'earning'),
+          amount,
+          detail: isPct ? `${value}% of CTC` : `${formatCurrency(value)}/mo`,
+        };
+      });
+
+      const rawHistory = historyRes?.data?.data ?? historyRes?.data ?? [];
+      const historyArr = Array.isArray(rawHistory) ? rawHistory : [];
+      const history: CompensationHistory[] = historyArr.map((h: Record<string, unknown>, idx: number) => {
+        const eff = h?.effectiveFrom ? new Date(String(h.effectiveFrom)) : null;
+        const ctcVal = Number(h?.ctc ?? 0) || 0;
+        const next = historyArr[idx + 1] as Record<string, unknown> | undefined;
+        const prevCtc = next ? Number(next?.ctc ?? 0) || 0 : 0;
+        const incrementPct = prevCtc > 0 ? Math.round(((ctcVal - prevCtc) / prevCtc) * 1000) / 10 : 0;
+        return {
+          year: eff ? String(eff.getFullYear()) : '—',
+          ctc: ctcVal,
+          incrementPct,
+          effectiveDate: h?.effectiveFrom ? String(h.effectiveFrom) : '',
+        };
+      });
+
+      const rewards = rewardsRes?.data?.data ?? rewardsRes?.data ?? {};
+      const benefitsCount = Array.isArray(rewards?.benefits) ? rewards.benefits.length : 0;
+
       setData({
-        currentCtc: result.currentCtc || 0,
-        components: Array.isArray(result.components) ? result.components : [],
-        history: Array.isArray(result.history) ? result.history : [],
-        totalRewards: result.totalRewards || { salary: 0, benefits: 0, recognitionPoints: 0 },
+        currentCtc: ctc,
+        components,
+        history,
+        totalRewards: {
+          salary: Number(rewards?.salary?.currentCtc ?? ctc) || 0,
+          benefits: benefitsCount,
+          recognitionPoints: Number(rewards?.recognition?.pointsBalance ?? 0) || 0,
+        },
       });
     } catch {
       setError('Failed to load compensation data.');
@@ -55,9 +107,6 @@ export default function MyCompensationTab() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
   if (loading) {
     return (
@@ -115,8 +164,9 @@ export default function MyCompensationTab() {
                   }`}>
                     {comp.type}
                   </span>
+                  <span className="text-xs text-text-muted">{comp.detail}</span>
                 </div>
-                <span className="text-sm font-medium text-text">{formatCurrency(comp.amount)}</span>
+                <span className="text-sm font-medium text-text">{formatCurrency(comp.amount)}/yr</span>
               </div>
             ))}
           </div>
@@ -163,16 +213,16 @@ export default function MyCompensationTab() {
         <h3 className="text-sm font-semibold text-text uppercase tracking-wider mb-3">Total Rewards Summary</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-background rounded-xl border border-border p-5">
-            <p className="text-sm text-text-muted mb-1">Salary</p>
+            <p className="text-sm text-text-muted mb-1">Salary (CTC)</p>
             <p className="text-xl font-bold text-text">{formatCurrency(data.totalRewards.salary)}</p>
           </div>
           <div className="bg-background rounded-xl border border-border p-5">
-            <p className="text-sm text-text-muted mb-1">Benefits</p>
-            <p className="text-xl font-bold text-text">{formatCurrency(data.totalRewards.benefits)}</p>
+            <p className="text-sm text-text-muted mb-1">Benefits Enrolled</p>
+            <p className="text-xl font-bold text-text">{data.totalRewards.benefits} plan{data.totalRewards.benefits === 1 ? '' : 's'}</p>
           </div>
           <div className="bg-background rounded-xl border border-border p-5">
-            <p className="text-sm text-text-muted mb-1">Recognition Points Value</p>
-            <p className="text-xl font-bold text-text">{formatCurrency(data.totalRewards.recognitionPoints)}</p>
+            <p className="text-sm text-text-muted mb-1">Recognition Points</p>
+            <p className="text-xl font-bold text-text">{data.totalRewards.recognitionPoints} pts</p>
           </div>
         </div>
       </div>

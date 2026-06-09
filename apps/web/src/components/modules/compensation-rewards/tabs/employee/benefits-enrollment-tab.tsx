@@ -17,9 +17,8 @@ interface BenefitPlan {
   name: string;
   type: string;
   provider: string;
-  employerContribution: number;
-  employeeContribution: number;
-  enrollmentPeriod: string;
+  employerContribution: string;
+  employeeContribution: string;
   description?: string;
 }
 
@@ -39,6 +38,13 @@ interface Reimbursement {
   status: string;
   date: string;
 }
+
+const contribLabel = (value: string, type?: string): string => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  if (type === 'percentage') return `${n}%`;
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+};
 
 const REIMBURSEMENT_TYPES = [
   { value: 'medical', label: 'Medical' },
@@ -68,14 +74,50 @@ export default function BenefitsEnrollmentTab() {
       setLoading(true);
       setError('');
       const [plansRes, enrollmentsRes, reimbursementsRes] = await Promise.all([
-        api.get('/compensation-rewards/employee/benefits/plans'),
-        api.get('/compensation-rewards/employee/benefits/enrollments'),
-        api.get('/compensation-rewards/employee/benefits/reimbursements'),
+        api.get('/compensation-rewards/employee/benefits/plans').catch(() => null),
+        api.get('/compensation-rewards/employee/benefits/enrollments').catch(() => null),
+        api.get('/compensation-rewards/employee/benefits/reimbursements').catch(() => null),
       ]);
 
-      setPlans(Array.isArray(plansRes.data) ? plansRes.data : plansRes.data?.data || []);
-      setEnrollments(Array.isArray(enrollmentsRes.data) ? enrollmentsRes.data : enrollmentsRes.data?.data || []);
-      setReimbursements(Array.isArray(reimbursementsRes.data) ? reimbursementsRes.data : reimbursementsRes.data?.data || []);
+      const rawPlans = plansRes?.data?.data ?? plansRes?.data ?? [];
+      const enrolledPlanIds = new Set<string>();
+      const rawEnrollments = enrollmentsRes?.data?.data ?? enrollmentsRes?.data ?? [];
+      const enrollments: Enrollment[] = (Array.isArray(rawEnrollments) ? rawEnrollments : []).map((e: Record<string, unknown>) => {
+        if (e.planId) enrolledPlanIds.add(String(e.planId));
+        return {
+          id: String(e.id ?? ''),
+          planName: String(e.planName ?? '—'),
+          type: String(e.planType ?? e.type ?? '—'),
+          status: String(e.status ?? 'active'),
+          enrolledDate: String(e.enrolledAt ?? e.effectiveFrom ?? e.createdAt ?? ''),
+        };
+      });
+
+      const plans: BenefitPlan[] = (Array.isArray(rawPlans) ? rawPlans : []).map((p: Record<string, unknown>) => ({
+        id: String(p.id ?? ''),
+        name: String(p.name ?? '—'),
+        type: String(p.type ?? '—'),
+        provider: p.provider ? String(p.provider) : '',
+        employerContribution: `${p.employerContribution ?? 0}|${p.employerContributionType ?? 'fixed'}`,
+        employeeContribution: `${p.employeeContribution ?? 0}|${p.employeeContributionType ?? 'fixed'}`,
+        description: p.description ? String(p.description) : undefined,
+      }));
+
+      const rawReimbursements = reimbursementsRes?.data?.data ?? reimbursementsRes?.data ?? [];
+      const reimbursements: Reimbursement[] = (Array.isArray(rawReimbursements) ? rawReimbursements : []).map((r: Record<string, unknown>) => ({
+        id: String(r.id ?? ''),
+        type: String(r.type ?? '—'),
+        amount: Number(r.amount ?? 0) || 0,
+        description: String(r.description ?? ''),
+        status: String(r.status ?? 'pending'),
+        date: String(r.submittedAt ?? r.createdAt ?? ''),
+      }));
+
+      setPlans(plans);
+      setEnrollments(enrollments);
+      setReimbursements(reimbursements);
+      // Hide already-enrolled plans handled in render via enrolledPlanIds is optional; keep all for demo.
+      void enrolledPlanIds;
     } catch {
       setError('Failed to load benefits data.');
     } finally {
@@ -102,7 +144,7 @@ export default function BenefitsEnrollmentTab() {
     if (!confirm('Are you sure you want to opt out of this plan?')) return;
     try {
       setError('');
-      await api.patch(`/compensation-rewards/employee/benefits/enrollments/${enrollmentId}`, { status: 'opted_out' });
+      await api.delete(`/compensation-rewards/employee/benefits/enrollments/${enrollmentId}`);
       setSuccess('Successfully opted out of plan.');
       loadData();
     } catch {
@@ -141,7 +183,7 @@ export default function BenefitsEnrollmentTab() {
   }, [success]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(val) || 0);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -151,6 +193,7 @@ export default function BenefitsEnrollmentTab() {
       case 'approved': return 'bg-green-100 text-green-700';
       case 'rejected': return 'bg-red-100 text-red-700';
       case 'opted_out': return 'bg-gray-100 text-gray-700';
+      case 'cancelled': return 'bg-gray-100 text-gray-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -209,15 +252,15 @@ export default function BenefitsEnrollmentTab() {
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-text-muted">Employer Contribution</span>
-                    <span className="text-text font-medium">{formatCurrency(plan.employerContribution || 0)}</span>
+                    <span className="text-text font-medium">
+                      {contribLabel(plan.employerContribution.split('|')[0], plan.employerContribution.split('|')[1])}
+                    </span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-text-muted">Employee Contribution</span>
-                    <span className="text-text font-medium">{formatCurrency(plan.employeeContribution || 0)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-text-muted">Enrollment Period</span>
-                    <span className="text-text font-medium">{plan.enrollmentPeriod || '—'}</span>
+                    <span className="text-text font-medium">
+                      {contribLabel(plan.employeeContribution.split('|')[0], plan.employeeContribution.split('|')[1])}
+                    </span>
                   </div>
                 </div>
                 <button

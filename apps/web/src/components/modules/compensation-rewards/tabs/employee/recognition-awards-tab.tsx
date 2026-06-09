@@ -55,23 +55,58 @@ export default function RecognitionAwardsTab() {
     try {
       setLoading(true);
       setError('');
-      const [receivedRes, wallRes, pointsRes] = await Promise.all([
-        api.get('/compensation-rewards/employee/recognition/received'),
-        api.get('/compensation-rewards/employee/recognition/wall'),
-        api.get('/compensation-rewards/employee/recognition/points'),
+      const [receivedRes, wallRes, pointsRes, txRes] = await Promise.all([
+        api.get('/compensation-rewards/employee/recognition/received').catch(() => null),
+        api.get('/compensation-rewards/employee/recognition/wall').catch(() => null),
+        api.get('/compensation-rewards/employee/recognition/points').catch(() => null),
+        api.get('/compensation-rewards/employee/recognition/points/transactions').catch(() => null),
       ]);
 
-      const received = Array.isArray(receivedRes.data) ? receivedRes.data : receivedRes.data?.data || [];
-      const wall = Array.isArray(wallRes.data) ? wallRes.data : wallRes.data?.data || [];
-      const pointsData = pointsRes.data?.data || pointsRes.data || {};
+      const rawReceived = receivedRes?.data?.data ?? receivedRes?.data ?? [];
+      const rawWall = wallRes?.data?.data ?? wallRes?.data ?? [];
+      const pointsData = pointsRes?.data?.data ?? pointsRes?.data ?? {};
+      const rawTx = txRes?.data?.data ?? txRes?.data ?? [];
+
+      const received: Recognition[] = (Array.isArray(rawReceived) ? rawReceived : []).map((n: Record<string, unknown>) => ({
+        id: String(n.id ?? ''),
+        nomineeName: String(n.nomineeName ?? 'You'),
+        nominatorName: String(n.nominatorName ?? '—'),
+        programName: String(n.programName ?? '—'),
+        reason: String(n.reason ?? ''),
+        date: String(n.awardDate ?? n.createdAt ?? ''),
+      }));
+
+      const wall: Recognition[] = (Array.isArray(rawWall) ? rawWall : []).map((n: Record<string, unknown>) => ({
+        id: String(n.id ?? ''),
+        nomineeName: String(n.nomineeName ?? '—'),
+        nominatorName: String(n.nominatorName ?? '—'),
+        programName: String(n.programName ?? '—'),
+        reason: String(n.reason ?? ''),
+        date: String(n.awardDate ?? n.createdAt ?? ''),
+      }));
+
+      const transactions: PointTransaction[] = (Array.isArray(rawTx) ? rawTx : []).map((t: Record<string, unknown>) => {
+        const type = String(t.type ?? '');
+        const pts = Number(t.points ?? 0) || 0;
+        // 'redeemed'/'expired' reduce balance — show as negative
+        const signed = type === 'redeemed' || type === 'expired' ? -Math.abs(pts) : pts;
+        return {
+          id: String(t.id ?? ''),
+          type,
+          points: signed,
+          description: String(t.reason ?? t.redeemedItem ?? ''),
+          date: String(t.createdAt ?? ''),
+        };
+      });
 
       setData({
-        pointsBalance: pointsData.balance || 0,
-        recognitionsReceived: pointsData.recognitionsReceived || received.length || 0,
-        recognitionsGiven: pointsData.recognitionsGiven || 0,
+        pointsBalance: Number(pointsData.balance ?? 0) || 0,
+        recognitionsReceived: received.length,
+        // Points earned events double as an "awards earned" proxy for the summary.
+        recognitionsGiven: transactions.filter((t) => t.type === 'earned').length,
         wall,
         received,
-        transactions: Array.isArray(pointsData.transactions) ? pointsData.transactions : [],
+        transactions,
       });
     } catch {
       setError('Failed to load recognition data.');
@@ -174,7 +209,7 @@ export default function RecognitionAwardsTab() {
           <p className="text-2xl font-bold text-text">{data?.recognitionsReceived || 0}</p>
         </div>
         <div className="bg-background rounded-xl border border-border p-5">
-          <p className="text-sm text-text-muted mb-1">Recognitions Given</p>
+          <p className="text-sm text-text-muted mb-1">Awards Earned</p>
           <p className="text-2xl font-bold text-text">{data?.recognitionsGiven || 0}</p>
         </div>
       </div>

@@ -60,7 +60,17 @@ export default function CompensationPlanningTab() {
       setLoading(true);
       setError('');
       const res = await api.get('/compensation-rewards/admin/compensation-planning/revisions');
-      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const raw = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const data: Revision[] = (Array.isArray(raw) ? raw : []).map((r: Record<string, unknown>) => ({
+        id: String(r.id ?? ''),
+        title: String(r.title ?? '—'),
+        type: String(r.type ?? 'annual'),
+        fiscalYear: String(r.fiscalYear ?? '—'),
+        effectiveDate: r.effectiveDate ? String(r.effectiveDate) : '',
+        totalBudget: Number(r.totalBudget ?? 0) || 0,
+        status: String(r.status ?? 'draft'),
+        createdAt: String(r.createdAt ?? ''),
+      }));
       setRevisions(data);
     } catch {
       setError('Failed to load compensation revisions.');
@@ -141,7 +151,7 @@ export default function CompensationPlanningTab() {
   }, [success]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(val) || 0);
 
   if (loading) {
     return (

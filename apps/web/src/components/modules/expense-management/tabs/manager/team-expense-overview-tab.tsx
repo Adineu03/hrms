@@ -31,6 +31,12 @@ interface TeamMemberExpense {
   lastSubmittedAt: string;
 }
 
+// Coerce drizzle numeric (string) / nullable values to a safe number.
+const num = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export default function TeamExpenseOverviewTab() {
   const [summary, setSummary] = useState<TeamExpenseSummary | null>(null);
   const [members, setMembers] = useState<TeamMemberExpense[]>([]);
@@ -48,16 +54,31 @@ export default function TeamExpenseOverviewTab() {
 
       const summaryData = summaryRes.data?.data || summaryRes.data || {};
       const rawMembers = membersRes.data?.data ?? membersRes.data;
-      const membersData = Array.isArray(rawMembers) ? rawMembers : [];
+      const membersRaw = Array.isArray(rawMembers) ? rawMembers : [];
 
+      // Backend summary: { teamSize, totalExpenses, pendingCount, pendingAmount, approvedAmount, reimbursedAmount }
+      const totalExpenses = num(summaryData.totalExpenses);
+      const approvedAmount = num(summaryData.approvedAmount) + num(summaryData.reimbursedAmount);
       setSummary({
-        totalExpenses: summaryData.totalExpenses || 0,
-        pendingApprovals: summaryData.pendingApprovals || 0,
-        budgetAllocated: summaryData.budgetAllocated || 0,
-        budgetUsed: summaryData.budgetUsed || 0,
-        budgetUtilization: summaryData.budgetUtilization || 0,
-        teamSize: summaryData.teamSize || 0,
+        totalExpenses,
+        pendingApprovals: num(summaryData.pendingCount ?? summaryData.pendingApprovals),
+        // No dedicated budget table — present total spend vs approved as a utilization view.
+        budgetAllocated: totalExpenses,
+        budgetUsed: approvedAmount,
+        budgetUtilization: totalExpenses > 0 ? (approvedAmount / totalExpenses) * 100 : 0,
+        teamSize: num(summaryData.teamSize),
       });
+
+      // Backend member rows: { employeeId, employeeName, totalReports, totalAmount, pendingCount, approvedAmount }
+      const membersData: TeamMemberExpense[] = membersRaw.map((m: any, idx: number) => ({
+        id: m.employeeId ?? `member-${idx}`,
+        employeeName: m.employeeName ?? 'Unknown',
+        employeeId: m.employeeEmail ?? m.employeeId ?? '',
+        totalSubmitted: num(m.totalAmount ?? m.totalSubmitted),
+        totalApproved: num(m.approvedAmount ?? m.totalApproved),
+        pendingCount: num(m.pendingCount),
+        lastSubmittedAt: m.lastSubmittedAt ?? '',
+      }));
       setMembers(membersData);
     } catch {
       setError('Failed to load team expense overview.');
