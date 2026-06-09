@@ -277,17 +277,17 @@ export default function RegulatoryComplianceTab() {
                         <td className="py-3 px-2 font-medium text-[#2c2c2c]">{item.title}</td>
                         <td className="py-3 px-2">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${jurisdictionColors[item.jurisdiction] || 'bg-gray-100 text-gray-700'}`}>
-                            {item.jurisdiction.toUpperCase()}
+                            {(item.jurisdiction ?? '').toUpperCase()}
                           </span>
                         </td>
                         <td className="py-3 px-2 text-gray-600">{item.category || '—'}</td>
                         <td className="py-3 px-2 text-gray-600 text-xs">
                           {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '—'}
                         </td>
-                        <td className="py-3 px-2 text-gray-600 text-xs capitalize">{item.frequency.replace('_', ' ')}</td>
+                        <td className="py-3 px-2 text-gray-600 text-xs capitalize">{(item.frequency ?? '').replace('_', ' ')}</td>
                         <td className="py-3 px-2">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[item.status]}`}>
-                            {statusLabels[item.status]}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[item.status] || 'bg-gray-100 text-gray-600'}`}>
+                            {statusLabels[item.status] || item.status}
                           </span>
                         </td>
                         <td className="py-3 px-2 text-gray-600">{item.assignedTo || '—'}</td>
@@ -337,7 +337,7 @@ export default function RegulatoryComplianceTab() {
                       </div>
                       <div>
                         <p className="font-medium text-[#2c2c2c] text-sm">{item.title}</p>
-                        <p className="text-xs text-gray-500">{item.category} — {item.jurisdiction.toUpperCase()}</p>
+                        <p className="text-xs text-gray-500">{item.category} — {(item.jurisdiction ?? '').toUpperCase()}</p>
                       </div>
                     </div>
                     <div className="text-right">

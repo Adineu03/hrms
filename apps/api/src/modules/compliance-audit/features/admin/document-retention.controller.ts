@@ -27,7 +27,8 @@ export class DocumentRetentionController {
   async createRetentionConfig(
     @Body()
     dto: {
-      entity: string;
+      entity?: string;
+      entityType?: string;
       retentionDays?: number;
       isTracked?: boolean;
       trackCreate?: boolean;

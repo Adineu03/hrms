@@ -105,6 +105,30 @@ import {
   compensationRevisions,
   compensationRevisionItems,
   expensePolicies,
+  // Sprint 5 (Demo-Readiness) — Engagement & Culture gap tables
+  surveys,
+  surveyResponses,
+  cultureValues,
+  wellnessPrograms,
+  wellnessParticipations,
+  socialPosts,
+  socialGroups,
+  engagementScores,
+  // Sprint 5 (Demo-Readiness) — Workforce Planning gap tables
+  workforceHeadcountPlans,
+  workforceBudgets,
+  successionPlans,
+  successionCandidates,
+  internalTransferRequests,
+  roleGradeDefinitions,
+  // Sprint 5 (Demo-Readiness) — Compliance & Audit gap tables
+  compliancePolicies,
+  policyAcknowledgments,
+  complianceTrainings,
+  trainingCompletions,
+  ethicsComplaints,
+  auditTrailConfigs,
+  complianceChecklists,
 } from './schema';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1773,6 +1797,440 @@ async function seed(): Promise<void> {
       { orgId: org.id, courseId: seededCourses[4].id, title: 'Mandatory POSH Refresher', description: 'Annual compliance session.', type: 'ilt', instructorName: 'External Counsel', location: 'Bengaluru HQ', roomName: 'Auditorium', startTime: anchorPlusDays(-7), endTime: anchorPlusDays(-7), maxCapacity: 50, enrolledCount: 48, status: 'completed', createdBy: adminUser.id, isActive: true },
     ]);
     console.log('  ✓ L&D: 10 courses, enrollments, 5 paths, 6 certs, 5 budgets, 3 sessions');
+
+    // ── Engagement & Culture ─────────────────────────────────────────────────
+    // All 20 empUsers report to managerUser; emp01–08 Eng, 09–12 Sales, 13–16 HR, 17–20 Fin.
+    {
+      // ---- Culture Values ----
+      const cultureValueRows = [
+        { name: 'Customer Obsession', description: 'We start with the customer and work backwards.', icon: '🎯', sortOrder: 1, recognitionCount: 14 },
+        { name: 'Ownership', description: 'We act on behalf of the whole company, never "that’s not my job".', icon: '🛠️', sortOrder: 2, recognitionCount: 11 },
+        { name: 'Innovation', description: 'We seek new ideas and embrace experimentation.', icon: '💡', sortOrder: 3, recognitionCount: 9 },
+        { name: 'Integrity', description: 'We are honest, transparent, and do the right thing.', icon: '🤝', sortOrder: 4, recognitionCount: 7 },
+        { name: 'Teamwork', description: 'We win together and support each other.', icon: '🌟', sortOrder: 5, recognitionCount: 12 },
+      ];
+      await db.insert(cultureValues).values(
+        cultureValueRows.map((c) => ({ orgId: org.id, ...c, isActive: true })),
+      );
+
+      // ---- Surveys (1 active engagement, 2 active pulse, 1 feedback, 1 closed) ----
+      const ratingQ = (id: string, text: string) => ({ id, text, type: 'rating' as const });
+      const textQ = (id: string, text: string) => ({ id, text, type: 'text' as const });
+      const surveyRows = await db.insert(surveys).values([
+        {
+          orgId: org.id, title: 'Q2 2026 Employee Engagement Survey', type: 'engagement', status: 'active',
+          description: 'Help us understand how engaged and supported you feel at Acme Corp.',
+          questions: [
+            ratingQ('q1', 'How satisfied are you with your role overall?'),
+            ratingQ('q2', 'How likely are you to recommend Acme as a place to work?'),
+            textQ('q3', 'What is one thing we could do to improve your experience?'),
+          ],
+          targetAudience: { all: true }, isAnonymous: false, responseCount: 0,
+          closesAt: anchorPlusDays(14), createdBy: adminUser.id,
+        },
+        {
+          orgId: org.id, title: 'Weekly Pulse — How are you feeling?', type: 'pulse', status: 'active',
+          description: 'A quick 2-question pulse check.',
+          questions: [ratingQ('p1', 'How was your week?'), textQ('p2', 'Anything on your mind?')],
+          targetAudience: { all: true }, isAnonymous: false, responseCount: 0,
+          closesAt: anchorPlusDays(3), createdBy: adminUser.id,
+        },
+        {
+          orgId: org.id, title: 'Pulse — Workload & Balance', type: 'pulse', status: 'active',
+          description: 'Tell us about your current workload.',
+          questions: [ratingQ('p3', 'Is your workload manageable?'), textQ('p4', 'What would help most?')],
+          targetAudience: { all: true }, isAnonymous: false, responseCount: 0,
+          closesAt: anchorPlusDays(2), createdBy: adminUser.id,
+        },
+        {
+          orgId: org.id, title: 'Manager Feedback — Q1', type: 'feedback', status: 'active',
+          description: 'Share feedback for your manager and team.',
+          questions: [textQ('f1', 'What is going well?'), textQ('f2', 'What could be better?')],
+          targetAudience: { all: true }, isAnonymous: false, responseCount: 0,
+          closesAt: anchorPlusDays(10), createdBy: managerUser.id,
+        },
+        {
+          orgId: org.id, title: 'Q1 2026 Engagement Survey (Closed)', type: 'engagement', status: 'closed',
+          description: 'Previous quarter engagement survey.',
+          questions: [ratingQ('cq1', 'Overall satisfaction?')],
+          targetAudience: { all: true }, isAnonymous: false, responseCount: 0,
+          closesAt: anchorPlusDays(-30), createdBy: adminUser.id,
+        },
+      ]).returning();
+      const [engSurvey, pulse1, pulse2, fbSurvey] = surveyRows;
+
+      // ---- Survey Responses (free-text + sentiment, from team members) ----
+      const sentiments = ['positive', 'neutral', 'negative'] as const;
+      const posComments = ['Love the team culture and flexibility.', 'Great support from my manager.', 'Exciting projects and good growth.'];
+      const neuComments = ['Things are fine, no major complaints.', 'Workload is okay most weeks.', 'Neutral about the new process.'];
+      const negComments = ['Workload has been too high lately.', 'Communication could be clearer.', 'Feeling a bit burned out this sprint.'];
+      const responseInserts: any[] = [];
+      // 16 of 20 respond to the engagement survey
+      empUsers.slice(0, 16).forEach((u, i) => {
+        const sentiment = sentiments[i % 3];
+        const comment = sentiment === 'positive' ? posComments[i % 3] : sentiment === 'neutral' ? neuComments[i % 3] : negComments[i % 3];
+        responseInserts.push({
+          orgId: org.id, surveyId: engSurvey.id, respondentId: u.id,
+          answers: [{ questionId: 'q1', value: 3 + (i % 3) }, { questionId: 'q3', value: comment }],
+          sentiment, submittedAt: anchorPlusDays(-2 - (i % 5)), isActive: true,
+        });
+      });
+      // 12 respond to pulse1, 10 to pulse2
+      empUsers.slice(0, 12).forEach((u, i) => {
+        const sentiment = sentiments[i % 3];
+        responseInserts.push({
+          orgId: org.id, surveyId: pulse1.id, respondentId: u.id,
+          answers: [{ questionId: 'p1', value: 3 + (i % 3) }, { questionId: 'p2', value: sentiment === 'negative' ? negComments[i % 3] : posComments[i % 3] }],
+          sentiment, submittedAt: anchorPlusDays(-1 - (i % 3)), isActive: true,
+        });
+      });
+      empUsers.slice(0, 10).forEach((u, i) => {
+        responseInserts.push({
+          orgId: org.id, surveyId: pulse2.id, respondentId: u.id,
+          answers: [{ questionId: 'p3', value: 2 + (i % 4) }, { questionId: 'p4', value: neuComments[i % 3] }],
+          sentiment: sentiments[(i + 1) % 3], submittedAt: anchorPlusDays(-1 - (i % 2)), isActive: true,
+        });
+      });
+      // 8 respond to feedback survey
+      empUsers.slice(0, 8).forEach((u, i) => {
+        responseInserts.push({
+          orgId: org.id, surveyId: fbSurvey.id, respondentId: u.id,
+          answers: [{ questionId: 'f1', value: posComments[i % 3] }, { questionId: 'f2', value: negComments[i % 3] }],
+          sentiment: sentiments[i % 3], submittedAt: anchorPlusDays(-3 - (i % 4)), isActive: true,
+        });
+      });
+      await db.insert(surveyResponses).values(responseInserts);
+      // sync responseCount
+      await db.update(surveys).set({ responseCount: 16 }).where(eq(surveys.id, engSurvey.id));
+      await db.update(surveys).set({ responseCount: 12 }).where(eq(surveys.id, pulse1.id));
+      await db.update(surveys).set({ responseCount: 10 }).where(eq(surveys.id, pulse2.id));
+      await db.update(surveys).set({ responseCount: 8 }).where(eq(surveys.id, fbSurvey.id));
+
+      // ---- Wellness Programs (active) ----
+      const programRows = await db.insert(wellnessPrograms).values([
+        { orgId: org.id, name: 'Step Up Challenge 2026', type: 'fitness', status: 'active', description: 'Hit 10k steps a day for 30 days and earn points.', startDate: anchorPlusDays(-10), endDate: anchorPlusDays(20), budget: '150000', spentBudget: '40000', maxParticipants: 50, currentParticipants: 0, isActive: true, createdBy: adminUser.id },
+        { orgId: org.id, name: 'Mindfulness & Meditation', type: 'mental_health', status: 'active', description: 'Weekly guided meditation sessions for stress relief.', startDate: anchorPlusDays(-20), endDate: anchorPlusDays(40), budget: '90000', spentBudget: '25000', maxParticipants: 40, currentParticipants: 0, isActive: true, createdBy: adminUser.id },
+        { orgId: org.id, name: 'Healthy Eating Workshop', type: 'nutrition', status: 'active', description: 'Nutritionist-led sessions on balanced diets.', startDate: anchorPlusDays(-5), endDate: anchorPlusDays(25), budget: '60000', spentBudget: '10000', maxParticipants: 30, currentParticipants: 0, isActive: true, createdBy: adminUser.id },
+        { orgId: org.id, name: 'Financial Wellness 101', type: 'financial', status: 'active', description: 'Personal finance and investment basics.', startDate: anchorPlusDays(-2), endDate: anchorPlusDays(30), budget: '50000', spentBudget: '0', maxParticipants: 60, currentParticipants: 0, isActive: true, createdBy: adminUser.id },
+      ]).returning();
+
+      // ---- Wellness Participations (emp01..emp14 across programs) ----
+      const partInserts: any[] = [];
+      const partCounts: Record<string, number> = {};
+      empUsers.slice(0, 14).forEach((u, i) => {
+        const program = programRows[i % programRows.length];
+        const done = i % 4 === 0;
+        partCounts[program.id] = (partCounts[program.id] ?? 0) + 1;
+        partInserts.push({
+          orgId: org.id, programId: program.id, employeeId: u.id,
+          status: done ? 'completed' : (i % 3 === 0 ? 'in_progress' : 'enrolled'),
+          progress: done ? 100 : (i % 3 === 0 ? 40 + (i % 30) : 0),
+          pointsEarned: done ? 100 : (i % 3 === 0 ? 40 : 0),
+          enrolledAt: anchorPlusDays(-8 - (i % 6)),
+          completedAt: done ? anchorPlusDays(-1) : null,
+          isActive: true,
+        });
+      });
+      await db.insert(wellnessParticipations).values(partInserts);
+      for (const [pid, count] of Object.entries(partCounts)) {
+        await db.update(wellnessPrograms).set({ currentParticipants: count }).where(eq(wellnessPrograms.id, pid));
+      }
+
+      // ---- Social Groups ----
+      await db.insert(socialGroups).values([
+        { orgId: org.id, name: 'Running Club', description: 'For everyone who loves to run.', type: 'interest', memberCount: 12, isActive: true, createdBy: empUsers[0].id },
+        { orgId: org.id, name: 'Book Club', description: 'Monthly book discussions.', type: 'interest', memberCount: 8, isActive: true, createdBy: empUsers[3].id },
+        { orgId: org.id, name: 'Engineering Guild', description: 'Tech talks and knowledge sharing.', type: 'department', memberCount: 8, isActive: true, createdBy: empUsers[1].id },
+      ]);
+
+      // ---- Social Posts (general + shoutouts + announcements from team members) ----
+      await db.insert(socialPosts).values([
+        { orgId: org.id, authorId: empUsers[0].id, type: 'post', content: 'Had a great sprint demo today — proud of the team! 🚀', likesCount: 9, commentsCount: 3, isActive: true },
+        { orgId: org.id, authorId: empUsers[2].id, type: 'shoutout', content: 'Big shoutout to Priya for stepping up on the release — true Ownership!', likesCount: 15, commentsCount: 2, isActive: true },
+        { orgId: org.id, authorId: empUsers[4].id, type: 'shoutout', content: 'Thanks to the design team for the amazing new dashboard — Customer Obsession in action!', likesCount: 11, commentsCount: 1, isActive: true },
+        { orgId: org.id, authorId: empUsers[6].id, type: 'announcement', content: 'Suggestion: can we add standing desks to the 3rd floor? Would help a lot.', likesCount: 7, commentsCount: 4, isActive: true },
+        { orgId: org.id, authorId: empUsers[1].id, type: 'event', content: 'Friday team lunch at 1pm — everyone welcome! 🍕', likesCount: 18, commentsCount: 6, isActive: true },
+        { orgId: org.id, authorId: empUsers[8].id, type: 'post', content: 'Just finished the Mindfulness program — highly recommend it.', likesCount: 6, commentsCount: 1, isActive: true },
+        { orgId: org.id, authorId: empUsers[10].id, type: 'shoutout', content: 'Kudos to the sales team for crushing the quarter — Teamwork wins!', likesCount: 13, commentsCount: 2, isActive: true },
+      ]);
+
+      // ---- Engagement Scores (current period, all 20 across 4 depts, with breakdown array) ----
+      const period = '2026-Q2';
+      const mkBreakdown = (overall: number) => ([
+        { category: 'Job Satisfaction', score: Math.min(100, overall + 5), maxScore: 100 },
+        { category: 'Culture Fit', score: Math.max(0, overall - 4), maxScore: 100 },
+        { category: 'Participation', score: Math.max(0, overall - 8), maxScore: 100 },
+        { category: 'Recognition', score: Math.min(100, overall + 2), maxScore: 100 },
+      ]);
+      const scoreInserts: any[] = [];
+      empUsers.forEach((u, i) => {
+        // deterministic spread 22..88, a few low (<50, <40, <30) to drive action items/attrition risk.
+        // emp01 (the demo employee persona) gets a healthy score so "My Engagement" shows a badge + breakdown.
+        const overall = i === 0 ? 82 : 22 + ((i * 17) % 67); // 22..88
+        const badges = overall >= 75
+          ? [{ id: 'top-engager', name: 'Top Engager', icon: '🏆', description: 'Top-tier engagement this quarter', earnedAt: fmt(anchorPlusDays(-7)) }]
+          : overall >= 60
+            ? [{ id: 'active-participant', name: 'Active Participant', icon: '⭐', description: 'Consistently engaged in pulses & programs', earnedAt: fmt(anchorPlusDays(-14)) }]
+            : [];
+        scoreInserts.push({
+          orgId: org.id, employeeId: u.id, overallScore: overall,
+          enpsScore: Math.max(-100, Math.min(100, (overall - 50) * 2)),
+          cultureFitScore: Math.max(0, overall - 4),
+          participationScore: Math.max(0, overall - 8),
+          period, breakdown: mkBreakdown(overall), badges, isActive: true,
+        });
+      });
+      // also seed a prior period so analytics trend lines have >1 point
+      empUsers.slice(0, 12).forEach((u, i) => {
+        const overall = 30 + ((i * 13) % 55);
+        scoreInserts.push({
+          orgId: org.id, employeeId: u.id, overallScore: overall,
+          enpsScore: Math.max(-100, Math.min(100, (overall - 50) * 2)),
+          cultureFitScore: Math.max(0, overall - 6), participationScore: Math.max(0, overall - 10),
+          period: '2026-Q1', breakdown: mkBreakdown(overall), badges: [], isActive: true,
+        });
+      });
+      await db.insert(engagementScores).values(scoreInserts);
+    }
+    console.log('  ✓ engagement-culture: 5 culture values, 5 surveys + 46 responses, 4 wellness programs + 14 enrollments, 3 groups + 7 posts, 32 engagement scores');
+
+    // ─── Workforce Planning (Demo-Readiness Sprint 5) ──────────────────────────
+    // Role & grade architecture — drives Career Path Explorer + Grade Distribution
+    await db.insert(roleGradeDefinitions).values([
+      { orgId: org.id, roleTitle: 'Software Engineer', jobFamily: 'Engineering', jobFunction: 'Backend', gradeCode: 'IC2', gradeLevel: 2, salaryRangeMin: '800000', salaryRangeMax: '1200000', salaryRangeMid: '1000000', currency: 'INR', roleDescription: 'Builds and maintains backend services and APIs.', keyResponsibilities: ['Ship features', 'Write tests', 'Code review'], competencyRequirements: ['JavaScript', 'SQL', 'REST APIs'], typicalExperienceYears: '2-4 years', isManagerialRole: false, reportingToGradeCode: 'M1', progressionPaths: ['IC3', 'M1'] },
+      { orgId: org.id, roleTitle: 'Senior Software Engineer', jobFamily: 'Engineering', jobFunction: 'Backend', gradeCode: 'IC3', gradeLevel: 3, salaryRangeMin: '1400000', salaryRangeMax: '2000000', salaryRangeMid: '1700000', currency: 'INR', roleDescription: 'Leads technical design and mentors engineers.', keyResponsibilities: ['System design', 'Mentoring', 'Tech leadership'], competencyRequirements: ['System Design', 'TypeScript', 'PostgreSQL'], typicalExperienceYears: '4-7 years', isManagerialRole: false, reportingToGradeCode: 'M1', progressionPaths: ['IC4', 'M1'] },
+      { orgId: org.id, roleTitle: 'Engineering Manager', jobFamily: 'Engineering', jobFunction: 'Management', gradeCode: 'M1', gradeLevel: 4, salaryRangeMin: '2400000', salaryRangeMax: '3200000', salaryRangeMid: '2800000', currency: 'INR', roleDescription: 'Manages an engineering team and delivery.', keyResponsibilities: ['People management', 'Delivery', 'Hiring'], competencyRequirements: ['Leadership', 'Planning', 'Coaching'], typicalExperienceYears: '7-10 years', isManagerialRole: true, reportingToGradeCode: 'M2', progressionPaths: ['M2'] },
+      { orgId: org.id, roleTitle: 'Sales Executive', jobFamily: 'Sales', jobFunction: 'Field Sales', gradeCode: 'S1', gradeLevel: 2, salaryRangeMin: '500000', salaryRangeMax: '800000', salaryRangeMid: '650000', currency: 'INR', roleDescription: 'Drives new business and closes deals.', keyResponsibilities: ['Prospecting', 'Closing', 'Account growth'], competencyRequirements: ['Negotiation', 'CRM', 'Communication'], typicalExperienceYears: '1-3 years', isManagerialRole: false, reportingToGradeCode: 'S3', progressionPaths: ['S2', 'S3'] },
+      { orgId: org.id, roleTitle: 'Senior Sales Executive', jobFamily: 'Sales', jobFunction: 'Field Sales', gradeCode: 'S2', gradeLevel: 3, salaryRangeMin: '900000', salaryRangeMax: '1400000', salaryRangeMid: '1150000', currency: 'INR', roleDescription: 'Owns key accounts and mentors reps.', keyResponsibilities: ['Key accounts', 'Mentoring', 'Forecasting'], competencyRequirements: ['Enterprise Sales', 'Forecasting'], typicalExperienceYears: '3-6 years', isManagerialRole: false, reportingToGradeCode: 'S3', progressionPaths: ['S3'] },
+      { orgId: org.id, roleTitle: 'HR Executive', jobFamily: 'HR', jobFunction: 'People Ops', gradeCode: 'H1', gradeLevel: 2, salaryRangeMin: '450000', salaryRangeMax: '700000', salaryRangeMid: '575000', currency: 'INR', roleDescription: 'Supports recruitment and employee operations.', keyResponsibilities: ['Recruitment', 'Onboarding', 'Records'], competencyRequirements: ['Recruitment', 'HRIS'], typicalExperienceYears: '1-3 years', isManagerialRole: false, reportingToGradeCode: 'H2', progressionPaths: ['H2'] },
+      { orgId: org.id, roleTitle: 'Financial Analyst', jobFamily: 'Finance', jobFunction: 'FP&A', gradeCode: 'F1', gradeLevel: 2, salaryRangeMin: '600000', salaryRangeMax: '950000', salaryRangeMid: '775000', currency: 'INR', roleDescription: 'Builds models and analyzes performance.', keyResponsibilities: ['Modeling', 'Reporting', 'Budgeting'], competencyRequirements: ['Excel', 'Financial Modeling'], typicalExperienceYears: '2-4 years', isManagerialRole: false, reportingToGradeCode: 'F2', progressionPaths: ['F2'] },
+    ]);
+
+    // Headcount plans — one per department (drives Org Design summary, Job Board openings, Team Headcount)
+    await db.insert(workforceHeadcountPlans).values([
+      { orgId: org.id, planName: 'FY2026 Engineering Plan', planYear: 2026, departmentId: engDept.id, currentHeadcount: 8, approvedHeadcount: 11, targetHeadcount: 12, openRequisitions: 3, hiringFreezeActive: false, status: 'approved', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-20), notes: 'Scaling backend and platform teams.' },
+      { orgId: org.id, planName: 'FY2026 Sales Plan', planYear: 2026, departmentId: salesDept.id, currentHeadcount: 5, approvedHeadcount: 7, targetHeadcount: 8, openRequisitions: 2, hiringFreezeActive: false, status: 'active', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-18), notes: 'Expanding into new regions.' },
+      { orgId: org.id, planName: 'FY2026 HR Plan', planYear: 2026, departmentId: hrDept.id, currentHeadcount: 2, approvedHeadcount: 3, targetHeadcount: 3, openRequisitions: 1, hiringFreezeActive: false, status: 'approved', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-15), notes: 'One HR generalist opening.' },
+      { orgId: org.id, planName: 'FY2026 Finance Plan', planYear: 2026, departmentId: finDept.id, currentHeadcount: 4, approvedHeadcount: 4, targetHeadcount: 5, openRequisitions: 0, hiringFreezeActive: true, hiringFreezeReason: 'Cost optimization for H1', status: 'draft', notes: 'On hold pending budget review.' },
+      { orgId: org.id, planName: 'FY2025 Engineering Plan', planYear: 2025, departmentId: engDept.id, currentHeadcount: 6, approvedHeadcount: 8, targetHeadcount: 8, openRequisitions: 0, hiringFreezeActive: false, status: 'active', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-365), notes: 'Prior-year baseline for trend.' },
+    ]);
+
+    // Workforce budgets — one per department (decimals as STRINGS); drives Budget Management
+    await db.insert(workforceBudgets).values([
+      { orgId: org.id, budgetName: 'FY2026 Engineering Comp Budget', budgetYear: 2026, departmentId: engDept.id, costCenter: 'CC-ENG-01', allocatedAmount: '12000000', actualSpend: '7400000', projectedSpend: '11200000', salaryIncreasePool: '900000', benefitsCostProjected: '1300000', fteCount: 11, currency: 'INR', status: 'approved', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-25), notes: 'Includes annual merit pool.' },
+      { orgId: org.id, budgetName: 'FY2026 Sales Comp Budget', budgetYear: 2026, departmentId: salesDept.id, costCenter: 'CC-SAL-01', allocatedAmount: '6500000', actualSpend: '6900000', projectedSpend: '7100000', salaryIncreasePool: '400000', benefitsCostProjected: '600000', fteCount: 7, currency: 'INR', status: 'active', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-22), notes: 'Over budget due to incentive payouts.' },
+      { orgId: org.id, budgetName: 'FY2026 HR Comp Budget', budgetYear: 2026, departmentId: hrDept.id, costCenter: 'CC-HR-01', allocatedAmount: '2200000', actualSpend: '1450000', projectedSpend: '2050000', salaryIncreasePool: '120000', benefitsCostProjected: '240000', fteCount: 3, currency: 'INR', status: 'approved', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-20), notes: 'Within plan.' },
+      { orgId: org.id, budgetName: 'FY2026 Finance Comp Budget', budgetYear: 2026, departmentId: finDept.id, costCenter: 'CC-FIN-01', allocatedAmount: '3800000', actualSpend: '2600000', projectedSpend: '3500000', salaryIncreasePool: '200000', benefitsCostProjected: '420000', fteCount: 4, currency: 'INR', status: 'draft', notes: 'Pending approval.' },
+    ]);
+
+    // Succession plans + candidates — drives Succession Planning + Succession Dashboard
+    const wfSuccessionPlans = await db
+      .insert(successionPlans)
+      .values([
+        { orgId: org.id, positionTitle: 'VP Engineering', departmentId: engDept.id, currentHolderId: managerUser.id, isKeyPosition: true, criticalityLevel: 'critical', benchStrength: 'adequate', successionCoveragePercent: 60, notes: 'Two candidates in development.', lastReviewedAt: anchorPlusDays(-30), reviewedBy: adminUser.id, status: 'active' },
+        { orgId: org.id, positionTitle: 'Head of Sales', departmentId: salesDept.id, currentHolderId: managerUser.id, isKeyPosition: true, criticalityLevel: 'critical', benchStrength: 'strong', successionCoveragePercent: 80, notes: 'Strong internal pipeline.', lastReviewedAt: anchorPlusDays(-25), reviewedBy: adminUser.id, status: 'active' },
+        { orgId: org.id, positionTitle: 'HR Business Partner Lead', departmentId: hrDept.id, currentHolderId: null, isKeyPosition: true, criticalityLevel: 'high', benchStrength: 'weak', successionCoveragePercent: 25, notes: 'Single point of failure — needs development.', lastReviewedAt: anchorPlusDays(-40), reviewedBy: adminUser.id, status: 'active' },
+        { orgId: org.id, positionTitle: 'Finance Controller', departmentId: finDept.id, currentHolderId: null, isKeyPosition: true, criticalityLevel: 'high', benchStrength: 'weak', successionCoveragePercent: 15, notes: 'Single early-stage successor in development — retention risk.', lastReviewedAt: anchorPlusDays(-50), reviewedBy: adminUser.id, status: 'active' },
+      ])
+      .returning();
+
+    await db.insert(successionCandidates).values([
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[0].id, candidateEmployeeId: empUsers[0].id, readinessLevel: 'ready_now', performanceRating: 'exceptional', potentialRating: 'high', flightRisk: 'low', developmentNotes: 'Leadership program completed; ready for VP role.', nominatedBy: managerUser.id, approvedBy: adminUser.id, approvedAt: anchorPlusDays(-15), status: 'approved' },
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[0].id, candidateEmployeeId: empUsers[1].id, readinessLevel: '1yr', performanceRating: 'meets', potentialRating: 'high', flightRisk: 'medium', developmentNotes: 'Needs more cross-functional exposure.', nominatedBy: managerUser.id, status: 'nominated' },
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[1].id, candidateEmployeeId: empUsers[10].id, readinessLevel: 'ready_now', performanceRating: 'exceptional', potentialRating: 'high', flightRisk: 'low', developmentNotes: 'Top performer, strong leadership.', nominatedBy: managerUser.id, approvedBy: adminUser.id, approvedAt: anchorPlusDays(-12), status: 'approved' },
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[1].id, candidateEmployeeId: empUsers[11].id, readinessLevel: '2yr', performanceRating: 'meets', potentialRating: 'medium', flightRisk: 'low', developmentNotes: 'Developing account management skills.', nominatedBy: managerUser.id, status: 'nominated' },
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[2].id, candidateEmployeeId: empUsers[16].id, readinessLevel: '2yr', performanceRating: 'meets', potentialRating: 'medium', flightRisk: 'high', developmentNotes: 'Flight risk — retention plan needed.', nominatedBy: managerUser.id, status: 'nominated' },
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[3].id, candidateEmployeeId: empUsers[18].id, readinessLevel: '2yr', performanceRating: 'meets', potentialRating: 'medium', flightRisk: 'medium', developmentNotes: 'Early-stage successor; needs controller-track development.', nominatedBy: managerUser.id, status: 'nominated' },
+    ]);
+
+    // Internal transfer / mobility requests — drives Internal Mobility (admin), Transfer Requests (manager),
+    // My Transfer Request (employee = emp01 → empUsers[0]). Mixed types/statuses.
+    await db.insert(internalTransferRequests).values([
+      { orgId: org.id, employeeId: empUsers[0].id, requestType: 'transfer', fromDepartmentId: engDept.id, toDepartmentId: salesDept.id, effectiveDate: anchorPlusDays(21), reason: 'Seeking a customer-facing role for career growth.', managerInitiated: false, initiatedBy: empUsers[0].id, currentApproverId: managerUser.id, backfillRequired: true, backfillStatus: 'not_started', status: 'pending' },
+      { orgId: org.id, employeeId: empUsers[2].id, requestType: 'location_change', fromLocationId: null, toLocationId: null, fromDepartmentId: engDept.id, toDepartmentId: engDept.id, effectiveDate: anchorPlusDays(30), reason: 'Relocating to the Bengaluru office.', managerInitiated: false, initiatedBy: empUsers[2].id, currentApproverId: managerUser.id, backfillRequired: false, status: 'pending' },
+      { orgId: org.id, employeeId: empUsers[1].id, requestType: 'promotion', fromDepartmentId: engDept.id, toDepartmentId: engDept.id, fromDesignationId: swe.id, toDesignationId: sse.id, effectiveDate: anchorPlusDays(-10), reason: 'Promotion to Senior Software Engineer for strong performance.', managerInitiated: true, initiatedBy: managerUser.id, backfillRequired: false, status: 'completed', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-14), completedAt: anchorPlusDays(-10) },
+      { orgId: org.id, employeeId: empUsers[10].id, requestType: 'promotion', fromDepartmentId: salesDept.id, toDepartmentId: salesDept.id, fromDesignationId: salesExec.id, toDesignationId: snrSales.id, effectiveDate: anchorPlusDays(-5), reason: 'Promotion to Senior Sales Executive.', managerInitiated: true, initiatedBy: managerUser.id, backfillRequired: true, backfillStatus: 'in_progress', status: 'approved', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-7) },
+      { orgId: org.id, employeeId: empUsers[4].id, requestType: 'lateral_move', fromDepartmentId: engDept.id, toDepartmentId: engDept.id, effectiveDate: anchorPlusDays(45), reason: 'Move from frontend to platform team.', managerInitiated: false, initiatedBy: empUsers[4].id, currentApproverId: managerUser.id, backfillRequired: false, status: 'pending' },
+      { orgId: org.id, employeeId: empUsers[6].id, requestType: 'transfer', fromDepartmentId: salesDept.id, toDepartmentId: hrDept.id, effectiveDate: anchorPlusDays(15), reason: 'Interest in people operations.', managerInitiated: false, initiatedBy: empUsers[6].id, backfillRequired: false, status: 'rejected', rejectionReason: 'No current opening in HR; revisit next quarter.' },
+    ]);
+
+    console.log('  ✓ workforce-planning: 7 role/grade defs, 5 headcount plans, 4 budgets, 4 succession plans (+5 candidates), 6 transfer/mobility requests');
+
+    // ════════════════════════════════════════════════════════════════════
+    // Compliance & Audit — policies, acks, trainings, completions,
+    // checklists, retention configs, ethics complaints, DSAR requests
+    // ════════════════════════════════════════════════════════════════════
+
+    // ── Compliance Policies (5; all published; 4 mandatory) ──
+    const caPolicySeed = [
+      { code: 'HR-POL-001', title: 'Code of Conduct', category: 'hr', mandatory: true, dept: null as string | null, description: 'Standards of professional and ethical behavior expected of all employees.' },
+      { code: 'IT-POL-002', title: 'Information Security & Acceptable Use', category: 'it', mandatory: true, dept: null, description: 'Rules governing the use of company IT systems, data handling and password hygiene.' },
+      { code: 'DP-POL-003', title: 'Data Privacy Policy', category: 'data-privacy', mandatory: true, dept: null, description: 'How the company collects, processes and protects personal data under GDPR/DPDP.' },
+      { code: 'SF-POL-004', title: 'Workplace Health & Safety', category: 'safety', mandatory: true, dept: null, description: 'Occupational health and safety guidelines for all work locations.' },
+      { code: 'ENG-POL-005', title: 'Engineering Change Management', category: 'other', mandatory: false, dept: engDept.id, description: 'Process for managing production changes within the Engineering organization.' },
+    ];
+    const caPolicies = await db
+      .insert(compliancePolicies)
+      .values(
+        caPolicySeed.map((p, i) => ({
+          orgId: org.id,
+          title: p.title,
+          policyCode: p.code,
+          category: p.category,
+          description: p.description,
+          content: `${p.title}\n\n${p.description}\n\nAll employees are required to read, understand and comply with this policy. Violations may result in disciplinary action up to and including termination.`,
+          version: '1.0',
+          effectiveDate: anchorPlusDays(-120 + i * 5),
+          status: 'published',
+          approvedBy: adminUser.id,
+          approvedAt: anchorPlusDays(-125 + i * 5),
+          mandatoryAcknowledgment: p.mandatory,
+          reminderCadenceDays: 30,
+          appliesToDepartment: p.dept,
+          jurisdiction: 'IN',
+          language: 'en',
+        })),
+      )
+      .returning();
+
+    // ── Policy Acknowledgments — for the 4 mandatory policies; deterministic mix (some pending) ──
+    const caMandatoryPolicies = caPolicies.filter((p) => p.mandatoryAcknowledgment);
+    const caAckInserts: Array<typeof policyAcknowledgments.$inferInsert> = [];
+    empUsers.forEach((u, idx) => {
+      caMandatoryPolicies.forEach((p, pIdx) => {
+        const acknowledged = (idx + pIdx) % 4 !== 0; // ~75% acknowledged
+        if (acknowledged) {
+          caAckInserts.push({
+            orgId: org.id,
+            policyId: p.id,
+            employeeId: u.id,
+            policyVersion: p.version,
+            acknowledgedAt: anchorPlusDays(-90 + (idx % 30)),
+            ipAddress: `10.0.${idx}.${pIdx + 1}`,
+          });
+        }
+      });
+    });
+    if (caAckInserts.length) await db.insert(policyAcknowledgments).values(caAckInserts);
+
+    // ── Compliance Trainings catalog (5) ──
+    const caTrainingSeed = [
+      { title: 'Anti-Harassment & POSH', category: 'harassment', duration: 45 },
+      { title: 'Data Privacy & GDPR Fundamentals', category: 'data-privacy', duration: 60 },
+      { title: 'Workplace Safety Essentials', category: 'safety', duration: 30 },
+      { title: 'Anti-Bribery & Corruption', category: 'anti-bribery', duration: 40 },
+      { title: 'Information Security Awareness', category: 'other', duration: 50 },
+    ];
+    const caTrainings = await db
+      .insert(complianceTrainings)
+      .values(
+        caTrainingSeed.map((t) => ({
+          orgId: org.id,
+          title: t.title,
+          category: t.category,
+          description: `Mandatory ${t.title} training for all employees. Renews annually.`,
+          durationMinutes: t.duration,
+          passingScore: 80,
+          validityMonths: 12,
+          isMandatory: true,
+          deadlineDays: 30,
+        })),
+      )
+      .returning();
+
+    // ── Training Completions — every employee × 3 core trainings (varied status) ──
+    const caCoreTrainings = caTrainings.slice(0, 3);
+    const caTcInserts: Array<typeof trainingCompletions.$inferInsert> = [];
+    empUsers.forEach((u, idx) => {
+      caCoreTrainings.forEach((t, tIdx) => {
+        const bucket = (idx + tIdx) % 5;
+        let status: string;
+        let completedAt: Date | null = null;
+        let score: number | null = null;
+        let passed: boolean | null = null;
+        let renewalDue: Date | null = null;
+        const assignedAt = anchorPlusDays(-100 + idx);
+        let dueDate: Date | null = anchorPlusDays(-70 + idx);
+        if (bucket === 0) {
+          status = 'overdue';
+          dueDate = anchorPlusDays(-10 - tIdx);
+        } else if (bucket === 1) {
+          status = 'in_progress';
+          dueDate = anchorPlusDays(15 + tIdx);
+        } else if (bucket === 2) {
+          status = 'assigned';
+          dueDate = anchorPlusDays(20 + tIdx);
+        } else {
+          status = 'completed';
+          completedAt = anchorPlusDays(-40 + idx);
+          score = 80 + ((idx + tIdx) % 20);
+          passed = true;
+          renewalDue = anchorPlusDays(320 + idx);
+        }
+        caTcInserts.push({ orgId: org.id, trainingId: t.id, employeeId: u.id, assignedAt, dueDate, completedAt, score, passed, renewalDue, status });
+      });
+    });
+    if (caTcInserts.length) await db.insert(trainingCompletions).values(caTcInserts);
+
+    // ── Compliance Checklists (regulatory) — 6, mixed statuses + due dates ──
+    await db.insert(complianceChecklists).values([
+      { orgId: org.id, title: 'Monthly PF Filing (EPFO)', jurisdiction: 'india', category: 'statutory-filing', description: 'Provident Fund monthly ECR filing.', dueDate: anchorPlusDays(10), frequency: 'monthly', status: 'pending', assignedTo: adminUser.id },
+      { orgId: org.id, title: 'Monthly ESI Return', jurisdiction: 'india', category: 'statutory-filing', description: 'Employee State Insurance monthly contribution return.', dueDate: anchorPlusDays(5), frequency: 'monthly', status: 'in_progress', assignedTo: adminUser.id },
+      { orgId: org.id, title: 'Professional Tax Payment', jurisdiction: 'india', category: 'statutory-filing', description: 'State professional tax monthly remittance.', dueDate: anchorPlusDays(-3), frequency: 'monthly', status: 'overdue', assignedTo: adminUser.id },
+      { orgId: org.id, title: 'Annual POSH Committee Report', jurisdiction: 'india', category: 'labor-law', description: 'Annual report of the Internal Complaints Committee under POSH Act.', dueDate: anchorPlusDays(45), frequency: 'annual', status: 'pending', assignedTo: adminUser.id },
+      { orgId: org.id, title: 'GDPR Data Processing Audit', jurisdiction: 'eu', category: 'data-protection', description: 'Annual review of data processing activities and records.', dueDate: anchorPlusDays(-40), frequency: 'annual', status: 'completed', assignedTo: adminUser.id, completedAt: anchorPlusDays(-42), evidenceNotes: 'Audit completed; ROPA updated and signed off.' },
+      { orgId: org.id, title: 'Fire Safety & Evacuation Drill', jurisdiction: 'india', category: 'safety', description: 'Quarterly fire safety inspection and evacuation drill.', dueDate: anchorPlusDays(20), frequency: 'quarterly', status: 'pending', assignedTo: managerUser.id },
+    ]);
+
+    // ── Document Retention configs (audit_trail_configs) — 6 entities ──
+    await db.insert(auditTrailConfigs).values([
+      { orgId: org.id, entity: 'Employee Records', retentionDays: 2555, isTracked: true, trackCreate: true, trackUpdate: true, trackDelete: true, trackView: false, trackExport: true },
+      { orgId: org.id, entity: 'Payroll Records', retentionDays: 2920, isTracked: true, trackCreate: true, trackUpdate: true, trackDelete: true, trackView: true, trackExport: true },
+      { orgId: org.id, entity: 'Leave Records', retentionDays: 1095, isTracked: true, trackCreate: true, trackUpdate: true, trackDelete: true, trackView: false, trackExport: false },
+      { orgId: org.id, entity: 'Attendance Records', retentionDays: 730, isTracked: true, trackCreate: true, trackUpdate: true, trackDelete: false, trackView: false, trackExport: false },
+      { orgId: org.id, entity: 'Tax Documents', retentionDays: 2920, isTracked: true, trackCreate: true, trackUpdate: true, trackDelete: true, trackView: true, trackExport: true },
+      { orgId: org.id, entity: 'Recruitment Records', retentionDays: 365, isTracked: true, trackCreate: true, trackUpdate: false, trackDelete: true, trackView: false, trackExport: true },
+    ]);
+
+    // ── Ethics / Whistleblower complaints (5; one data-breach feeds the GDPR breach panel) ──
+    await db.insert(ethicsComplaints).values([
+      { orgId: org.id, referenceCode: 'WB-2026-0001', category: 'harassment', description: 'Reported inappropriate comments by a team lead during sprint meetings.', incidentDate: anchorPlusDays(-30), location: 'Bengaluru HQ', status: 'in_progress', investigatorId: adminUser.id, investigationNotes: 'Initial statements collected from reporter and two witnesses.', isAnonymous: true },
+      { orgId: org.id, referenceCode: 'WB-2026-0002', category: 'fraud', description: 'Suspected duplicate expense reimbursement claims submitted last quarter.', incidentDate: anchorPlusDays(-55), location: 'Finance Dept', status: 'findings', investigatorId: adminUser.id, investigationNotes: 'Expense logs under review; finance audit requested.', isAnonymous: false, reporterEmployeeId: managerUser.id },
+      { orgId: org.id, referenceCode: 'WB-2026-0003', category: 'safety', description: 'Emergency exit on the 3rd floor was blocked by storage boxes.', incidentDate: anchorPlusDays(-12), location: 'Bengaluru HQ — 3rd Floor', status: 'closed', investigatorId: managerUser.id, investigationNotes: 'Obstruction cleared; facilities notified.', outcome: 'Resolved — exit cleared and monthly inspection scheduled.', closedAt: anchorPlusDays(-5), isAnonymous: true },
+      { orgId: org.id, referenceCode: 'WB-2026-0004', category: 'discrimination', description: 'Concern raised about biased shift allocation.', incidentDate: anchorPlusDays(-20), location: 'Operations', status: 'received', isAnonymous: true },
+      { orgId: org.id, referenceCode: 'WB-2026-0005', category: 'data-breach', description: 'A laptop containing employee records was reported lost while travelling.', incidentDate: anchorPlusDays(-8), location: 'Remote', status: 'in_progress', investigatorId: adminUser.id, investigationNotes: JSON.stringify({ title: 'Lost device with PII', severity: 'high', affectedRecords: 45, reportedBy: 'IT Security' }), isAnonymous: false, reporterEmployeeId: empUsers[0].id },
+    ]);
+
+    // ── DSAR requests (stored as audit_logs with action='data_request'; detail in newValue) ──
+    const caDsarSeed = [
+      { emp: 0, type: 'access', status: 'completed', req: -40, due: -10, done: -15 as number | null },
+      { emp: 3, type: 'erasure', status: 'in_progress', req: -10, due: 20, done: null as number | null },
+      { emp: 7, type: 'portability', status: 'pending', req: -3, due: 27, done: null as number | null },
+      { emp: 11, type: 'rectification', status: 'pending', req: -1, due: 29, done: null as number | null },
+    ];
+    await db.insert(auditLogs).values(
+      caDsarSeed.map((d) => {
+        const emp = empUsers[d.emp];
+        return {
+          orgId: org.id,
+          userId: adminUser.id,
+          action: 'data_request',
+          entity: 'employee',
+          entityId: emp.id,
+          description: `DSAR (${d.type}) request from ${emp.firstName} ${emp.lastName}`,
+          newValue: {
+            employeeName: `${emp.firstName} ${emp.lastName}`,
+            requestType: d.type,
+            status: d.status,
+            requestDate: fmt(anchorPlusDays(d.req)),
+            dueDate: fmt(anchorPlusDays(d.due)),
+            completedDate: d.done != null ? fmt(anchorPlusDays(d.done)) : undefined,
+          },
+        };
+      }),
+    );
+
+    console.log('  ✓ compliance-audit: 5 policies + acks, 5 trainings + 60 completions, 6 checklists, 6 retention configs, 5 ethics, 4 DSAR');
 
     // ── Done ─────────────────────────────────────────────────────────────────
     console.log('\n✅ Seed complete!\n');

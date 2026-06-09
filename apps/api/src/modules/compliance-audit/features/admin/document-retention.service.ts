@@ -15,13 +15,17 @@ export class DocumentRetentionService {
       .where(and(eq(schema.auditTrailConfigs.orgId, orgId), eq(schema.auditTrailConfigs.isActive, true)))
       .orderBy(schema.auditTrailConfigs.entity);
 
-    return { data: rows, meta: { total: rows.length } };
+    // Frontend column reads `entityType`; the DB column is `entity`. Expose both.
+    const mapped = rows.map((r) => ({ ...r, entityType: r.entity }));
+
+    return { data: mapped, meta: { total: mapped.length } };
   }
 
   async createRetentionConfig(
     orgId: string,
     dto: {
-      entity: string;
+      entity?: string;
+      entityType?: string;
       retentionDays?: number;
       isTracked?: boolean;
       trackCreate?: boolean;
@@ -35,7 +39,7 @@ export class DocumentRetentionService {
       .insert(schema.auditTrailConfigs)
       .values({
         orgId,
-        entity: dto.entity,
+        entity: dto.entity ?? dto.entityType ?? 'unknown',
         retentionDays: dto.retentionDays ?? 365,
         isTracked: dto.isTracked ?? true,
         trackCreate: dto.trackCreate ?? true,

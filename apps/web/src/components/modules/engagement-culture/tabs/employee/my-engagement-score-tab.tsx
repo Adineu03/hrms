@@ -49,12 +49,16 @@ export default function MyEngagementScoreTab() {
       ]);
 
       const engagement = engagementRes.data?.data || engagementRes.data || {};
+      // backend nests the latest score under `current`; fall back to a flat shape too
+      const current = engagement.current || engagement || {};
       const history = Array.isArray(historyRes.data) ? historyRes.data : Array.isArray(historyRes.data?.data) ? historyRes.data.data : [];
       const badges = Array.isArray(badgesRes.data) ? badgesRes.data : Array.isArray(badgesRes.data?.data) ? badgesRes.data.data : [];
 
+      const rawBreakdown = current.breakdown ?? engagement.breakdown;
+
       setData({
-        overallScore: engagement.overallScore || engagement.score || 0,
-        breakdown: Array.isArray(engagement.breakdown) ? engagement.breakdown : [],
+        overallScore: Number(current.overallScore ?? engagement.overallScore ?? engagement.score ?? 0) || 0,
+        breakdown: Array.isArray(rawBreakdown) ? rawBreakdown : [],
         badges,
         history,
       });
@@ -172,8 +176,8 @@ export default function MyEngagementScoreTab() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {data.badges.map((badge) => (
-              <div key={badge.id} className="bg-background rounded-xl border border-border p-4 text-center">
+            {data.badges.map((badge, idx) => (
+              <div key={badge.id ?? badge.name ?? idx} className="bg-background rounded-xl border border-border p-4 text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary text-xl mx-auto mb-2">
                   {badge.icon || '★'}
                 </div>

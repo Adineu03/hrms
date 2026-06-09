@@ -91,35 +91,46 @@ export class MyEngagementScoreService {
   }
 
   async getParticipationHistory(orgId: string, userId: string) {
-    // Survey participation
-    const surveyCount = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(schema.surveyResponses)
-      .where(and(
-        eq(schema.surveyResponses.orgId, orgId),
-        eq(schema.surveyResponses.respondentId, userId),
-        eq(schema.surveyResponses.isActive, true),
-      ));
-
-    // Wellness participation
-    const wellnessParticipation = await this.db
+    // Wellness participation (program name + points)
+    const wellness = await this.db
       .select({
-        count: sql<number>`count(*)`,
-        completed: sql<number>`count(case when ${schema.wellnessParticipations.status} = 'completed' then 1 end)`,
-        totalPoints: sql<number>`coalesce(sum(${schema.wellnessParticipations.pointsEarned}), 0)`,
+        id: schema.wellnessParticipations.id,
+        points: schema.wellnessParticipations.pointsEarned,
+        status: schema.wellnessParticipations.status,
+        enrolledAt: schema.wellnessParticipations.enrolledAt,
+        completedAt: schema.wellnessParticipations.completedAt,
+        programName: schema.wellnessPrograms.name,
       })
       .from(schema.wellnessParticipations)
+      .innerJoin(schema.wellnessPrograms, eq(schema.wellnessParticipations.programId, schema.wellnessPrograms.id))
       .where(and(
         eq(schema.wellnessParticipations.orgId, orgId),
         eq(schema.wellnessParticipations.employeeId, userId),
         eq(schema.wellnessParticipations.isActive, true),
       ));
 
-    // Social participation
-    const socialActivity = await this.db
+    // Survey responses (survey title)
+    const surveyRows = await this.db
       .select({
-        postCount: sql<number>`count(*)`,
-        totalLikes: sql<number>`coalesce(sum(${schema.socialPosts.likesCount}), 0)`,
+        id: schema.surveyResponses.id,
+        submittedAt: schema.surveyResponses.submittedAt,
+        title: schema.surveys.title,
+      })
+      .from(schema.surveyResponses)
+      .innerJoin(schema.surveys, eq(schema.surveyResponses.surveyId, schema.surveys.id))
+      .where(and(
+        eq(schema.surveyResponses.orgId, orgId),
+        eq(schema.surveyResponses.respondentId, userId),
+        eq(schema.surveyResponses.isActive, true),
+      ));
+
+    // Social posts authored
+    const posts = await this.db
+      .select({
+        id: schema.socialPosts.id,
+        content: schema.socialPosts.content,
+        type: schema.socialPosts.type,
+        createdAt: schema.socialPosts.createdAt,
       })
       .from(schema.socialPosts)
       .where(and(
@@ -128,21 +139,30 @@ export class MyEngagementScoreService {
         eq(schema.socialPosts.isActive, true),
       ));
 
-    return {
-      data: {
-        surveys: {
-          totalResponded: Number(surveyCount[0]?.count ?? 0),
-        },
-        wellness: {
-          totalEnrolled: Number(wellnessParticipation[0]?.count ?? 0),
-          completed: Number(wellnessParticipation[0]?.completed ?? 0),
-          pointsEarned: Number(wellnessParticipation[0]?.totalPoints ?? 0),
-        },
-        social: {
-          postsCreated: Number(socialActivity[0]?.postCount ?? 0),
-          likesReceived: Number(socialActivity[0]?.totalLikes ?? 0),
-        },
-      },
-    };
+    const entries = [
+      ...wellness.map((w) => ({
+        id: `w-${w.id}`,
+        activity: w.status === 'completed' ? `Completed "${w.programName}"` : `Enrolled in "${w.programName}"`,
+        type: 'wellness',
+        pointsEarned: Number(w.points) || 0,
+        date: (w.completedAt ?? w.enrolledAt) as Date | null,
+      })),
+      ...surveyRows.map((s) => ({
+        id: `s-${s.id}`,
+        activity: `Responded to "${s.title}"`,
+        type: 'survey',
+        pointsEarned: 10,
+        date: s.submittedAt as Date | null,
+      })),
+      ...posts.map((p) => ({
+        id: `p-${p.id}`,
+        activity: (p.content ?? '').length > 50 ? `${(p.content ?? '').slice(0, 50)}…` : (p.content ?? 'Shared a post'),
+        type: p.type === 'shoutout' ? 'recognition' : 'social',
+        pointsEarned: 5,
+        date: p.createdAt as Date | null,
+      })),
+    ].sort((a, b) => (b.date ? new Date(b.date).getTime() : 0) - (a.date ? new Date(a.date).getTime() : 0));
+
+    return { data: entries };
   }
 }

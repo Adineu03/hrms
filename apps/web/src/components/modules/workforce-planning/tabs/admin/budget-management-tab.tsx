@@ -8,9 +8,10 @@ interface Budget {
   budgetName: string;
   budgetYear: number;
   departmentId: string;
-  allocatedAmount: number;
-  actualAmount: number;
-  projectedAmount: number;
+  // numeric/decimal columns arrive as strings from drizzle
+  allocatedAmount: number | string;
+  actualSpend: number | string;
+  projectedSpend: number | string;
   currency: string;
   status: 'draft' | 'pending_approval' | 'approved' | 'active';
 }
@@ -87,9 +88,10 @@ export default function BudgetManagementTab() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    if (currency === 'INR') return `₹${amount.toLocaleString('en-IN')}`;
-    return `${currency} ${amount.toLocaleString()}`;
+  const formatCurrency = (amount: number | string, currency: string) => {
+    const n = Number(amount) || 0;
+    if (currency === 'INR') return `₹${n.toLocaleString('en-IN')}`;
+    return `${currency} ${n.toLocaleString()}`;
   };
 
   if (loading) {
@@ -228,7 +230,7 @@ export default function BudgetManagementTab() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {budgets.map((budget) => {
-                  const variance = budget.allocatedAmount - (budget.actualAmount || 0);
+                  const variance = (Number(budget.allocatedAmount) || 0) - (Number(budget.actualSpend) || 0);
                   const isOverBudget = variance < 0;
                   return (
                     <tr key={budget.id} className="hover:bg-gray-50 transition-colors">
@@ -236,8 +238,8 @@ export default function BudgetManagementTab() {
                       <td className="py-3 px-2 text-gray-600">{budget.budgetYear}</td>
                       <td className="py-3 px-2 text-gray-600 text-xs font-mono">{budget.departmentId}</td>
                       <td className="py-3 px-2 text-gray-700">{formatCurrency(budget.allocatedAmount, budget.currency)}</td>
-                      <td className="py-3 px-2 text-gray-700">{formatCurrency(budget.actualAmount || 0, budget.currency)}</td>
-                      <td className="py-3 px-2 text-gray-700">{formatCurrency(budget.projectedAmount || 0, budget.currency)}</td>
+                      <td className="py-3 px-2 text-gray-700">{formatCurrency(budget.actualSpend || 0, budget.currency)}</td>
+                      <td className="py-3 px-2 text-gray-700">{formatCurrency(budget.projectedSpend || 0, budget.currency)}</td>
                       <td className={`py-3 px-2 font-medium text-sm ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
                         {isOverBudget ? '-' : '+'}{formatCurrency(Math.abs(variance), budget.currency)}
                       </td>

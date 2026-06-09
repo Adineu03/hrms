@@ -188,15 +188,15 @@ export default function LaborLawComplianceTab() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {workingHours.map((w) => (
-                          <tr key={w.employeeId} className="hover:bg-gray-50">
+                        {workingHours.map((w, i) => (
+                          <tr key={w.employeeId ?? i} className="hover:bg-gray-50">
                             <td className="py-2 px-2 font-medium text-[#2c2c2c]">{w.employeeName}</td>
                             <td className="py-2 px-2 text-gray-600">{w.weeklyHours}h</td>
                             <td className="py-2 px-2 text-gray-600">{w.maxAllowed}h</td>
                             <td className="py-2 px-2 text-orange-600">{w.overtimeHours}h</td>
                             <td className="py-2 px-2">
                               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[w.status]}`}>
-                                {w.status.replace('_', ' ')}
+                                {(w.status ?? '').replace('_', ' ')}
                               </span>
                             </td>
                           </tr>
@@ -223,15 +223,15 @@ export default function LaborLawComplianceTab() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {leaveCompliance.map((l) => (
-                          <tr key={l.employeeId} className="hover:bg-gray-50">
+                        {leaveCompliance.map((l, i) => (
+                          <tr key={l.employeeId ?? i} className="hover:bg-gray-50">
                             <td className="py-2 px-2 font-medium text-[#2c2c2c]">{l.employeeName}</td>
                             <td className="py-2 px-2 text-gray-600">{l.mandatoryLeavesTaken}</td>
                             <td className="py-2 px-2 text-gray-600">{l.mandatoryLeavesRequired}</td>
                             <td className="py-2 px-2 text-blue-600">{l.carryoverDays}</td>
                             <td className="py-2 px-2">
                               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[l.status]}`}>
-                                {l.status.replace('_', ' ')}
+                                {(l.status ?? '').replace('_', ' ')}
                               </span>
                             </td>
                           </tr>

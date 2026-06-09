@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -98,7 +98,7 @@ export class TeamEngagementDashboardService {
             eq(schema.surveyResponses.orgId, orgId),
             eq(schema.surveyResponses.surveyId, survey.id),
             eq(schema.surveyResponses.isActive, true),
-            sql`${schema.surveyResponses.respondentId} = ANY(${teamMemberIds})`,
+            inArray(schema.surveyResponses.respondentId, teamMemberIds),
           ));
 
         const sentimentCounts = responses.reduce((acc, r) => {
@@ -136,7 +136,7 @@ export class TeamEngagementDashboardService {
       .where(and(
         eq(schema.surveyResponses.orgId, orgId),
         eq(schema.surveyResponses.isActive, true),
-        sql`${schema.surveyResponses.respondentId} = ANY(${teamMemberIds})`,
+        inArray(schema.surveyResponses.respondentId, teamMemberIds),
       ));
 
     // Wellness participation
@@ -146,7 +146,7 @@ export class TeamEngagementDashboardService {
       .where(and(
         eq(schema.wellnessParticipations.orgId, orgId),
         eq(schema.wellnessParticipations.isActive, true),
-        sql`${schema.wellnessParticipations.employeeId} = ANY(${teamMemberIds})`,
+        inArray(schema.wellnessParticipations.employeeId, teamMemberIds),
       ));
 
     // Social participation
@@ -156,7 +156,7 @@ export class TeamEngagementDashboardService {
       .where(and(
         eq(schema.socialPosts.orgId, orgId),
         eq(schema.socialPosts.isActive, true),
-        sql`${schema.socialPosts.authorId} = ANY(${teamMemberIds})`,
+        inArray(schema.socialPosts.authorId, teamMemberIds),
       ));
 
     return {
@@ -190,7 +190,7 @@ export class TeamEngagementDashboardService {
       .where(and(
         eq(schema.engagementScores.orgId, orgId),
         eq(schema.engagementScores.isActive, true),
-        sql`${schema.engagementScores.employeeId} = ANY(${teamMemberIds})`,
+        inArray(schema.engagementScores.employeeId, teamMemberIds),
         sql`${schema.engagementScores.overallScore} < 50`,
       ))
       .orderBy(schema.engagementScores.overallScore);

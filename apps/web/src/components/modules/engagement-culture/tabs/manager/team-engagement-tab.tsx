@@ -47,15 +47,51 @@ export default function TeamEngagementTab() {
 
       const engagement = engagementRes.data?.data || engagementRes.data || {};
       const rawPulse = pulseRes.data?.data ?? pulseRes.data;
-      const pulseResults = Array.isArray(rawPulse) ? rawPulse : [];
+      const rawPulseArr = Array.isArray(rawPulse) ? rawPulse : [];
       const participation = participationRes.data?.data || participationRes.data || {};
 
+      const rawMembers = Array.isArray(engagement.members) ? engagement.members : [];
+      const members: TeamMember[] = rawMembers.map((m: Record<string, unknown>) => ({
+        id: (m.employeeId ?? m.id ?? '') as string,
+        name: (m.name ?? '') as string,
+        designation: (m.designation ?? m.period ?? '') as string,
+        engagementScore: Number(m.overallScore ?? m.engagementScore ?? 0) || 0,
+        lastSurveyDate: (m.lastSurveyDate ?? '') as string,
+        trend: (m.trend ?? 'stable') as string,
+      }));
+
+      // backend pulse rows expose participationRate + teamResponses; map to the UI shape
+      const pulseResults: PulseResult[] = rawPulseArr.map((p: Record<string, unknown>) => ({
+        id: (p.surveyId ?? p.id ?? '') as string,
+        surveyTitle: (p.title ?? p.surveyTitle ?? 'Pulse Survey') as string,
+        date: (p.closesAt ?? p.date ?? '') as string,
+        teamScore: Number(p.teamScore ?? 0) || 0,
+        orgAvg: Number(p.orgAvg ?? 0) || 0,
+        participation: Number(p.participationRate ?? p.participation ?? 0) || 0,
+      }));
+
+      // average team engagement score from the per-member breakdown
+      const avgScore = Number(engagement.averageScore ?? engagement.teamScore ?? 0) || 0;
+      const avgEnps = members.length
+        ? Math.round(
+            rawMembers.reduce((sum: number, m: Record<string, unknown>) => sum + (Number(m.enpsScore ?? 0) || 0), 0) /
+              rawMembers.length,
+          )
+        : Number(engagement.teamEnps ?? 0) || 0;
+
+      // participation endpoint returns counts (surveyParticipation) + teamSize → derive a %
+      const teamSize = Number(participation.teamSize ?? engagement.teamSize ?? 0) || 0;
+      const surveyParticipants = Number(participation.surveyParticipation ?? 0) || 0;
+      const participationRate =
+        Number(participation.participationRate ?? engagement.participationRate ?? 0) ||
+        (teamSize > 0 ? Math.round((surveyParticipants / teamSize) * 100) : 0);
+
       setData({
-        teamScore: engagement.teamScore || 0,
-        teamEnps: engagement.teamEnps || 0,
-        participationRate: participation.participationRate || engagement.participationRate || 0,
+        teamScore: avgScore,
+        teamEnps: avgEnps,
+        participationRate,
         pulseResults,
-        members: Array.isArray(engagement.members) ? engagement.members : [],
+        members,
       });
     } catch {
       setError('Failed to load team engagement data.');

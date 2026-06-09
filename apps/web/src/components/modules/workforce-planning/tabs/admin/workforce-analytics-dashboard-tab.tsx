@@ -9,15 +9,15 @@ interface WorkforceAnalyticsSummary {
 }
 
 interface AttritionData {
-  voluntaryPercent: number;
-  involuntaryPercent: number;
-  regrettablePercent: number;
+  voluntaryAttritionRate: number;
+  involuntaryAttritionRate: number;
+  regrettableAttritionRate: number;
 }
 
 interface DiversityData {
-  malePercent: number;
-  femalePercent: number;
-  otherPercent?: number;
+  genderMale: number;
+  genderFemale: number;
+  genderOther?: number;
 }
 
 interface PromotionRate {
@@ -117,15 +117,15 @@ export default function WorkforceAnalyticsDashboardTab() {
             <div className="space-y-3">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Voluntary Attrition</p>
-                <PercentBar value={data.attrition.voluntaryPercent || 0} color="bg-orange-400" />
+                <PercentBar value={data.attrition.voluntaryAttritionRate || 0} color="bg-orange-400" />
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">Involuntary Attrition</p>
-                <PercentBar value={data.attrition.involuntaryPercent || 0} color="bg-red-400" />
+                <PercentBar value={data.attrition.involuntaryAttritionRate || 0} color="bg-red-400" />
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">Regrettable Attrition</p>
-                <PercentBar value={data.attrition.regrettablePercent || 0} color="bg-purple-400" />
+                <PercentBar value={data.attrition.regrettableAttritionRate || 0} color="bg-purple-400" />
               </div>
             </div>
           ) : (
@@ -139,16 +139,16 @@ export default function WorkforceAnalyticsDashboardTab() {
             <div className="space-y-3">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Male</p>
-                <PercentBar value={data.diversity.malePercent || 0} color="bg-blue-400" />
+                <PercentBar value={data.diversity.genderMale || 0} color="bg-blue-400" />
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">Female</p>
-                <PercentBar value={data.diversity.femalePercent || 0} color="bg-pink-400" />
+                <PercentBar value={data.diversity.genderFemale || 0} color="bg-pink-400" />
               </div>
-              {data.diversity.otherPercent != null && (
+              {data.diversity.genderOther != null && (
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Other</p>
-                  <PercentBar value={data.diversity.otherPercent} color="bg-teal-400" />
+                  <PercentBar value={data.diversity.genderOther} color="bg-teal-400" />
                 </div>
               )}
             </div>

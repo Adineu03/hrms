@@ -45,10 +45,16 @@ export default function TeamWellnessTab() {
       const wellness = wellnessRes.data?.data || wellnessRes.data || {};
       const stress = stressRes.data?.data || stressRes.data || {};
 
+      const participations = Array.isArray(wellness.participations) ? wellness.participations : [];
+      // distinct active programs the team is enrolled in
+      const activePrograms = new Set(
+        participations.map((p: Record<string, unknown>) => p.programId).filter(Boolean),
+      ).size;
+
       setData({
-        participationRate: wellness.participationRate || 0,
-        activePrograms: wellness.activePrograms || 0,
-        participations: Array.isArray(wellness.participations) ? wellness.participations : [],
+        participationRate: Number(wellness.enrollmentRate ?? wellness.participationRate ?? 0) || 0,
+        activePrograms: Number(wellness.activePrograms ?? 0) || activePrograms,
+        participations,
         recommendations: Array.isArray(stress.recommendations) ? stress.recommendations : Array.isArray(wellness.recommendations) ? wellness.recommendations : [],
       });
     } catch {

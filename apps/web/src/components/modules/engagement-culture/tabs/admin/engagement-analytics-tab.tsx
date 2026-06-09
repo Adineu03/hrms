@@ -36,22 +36,45 @@ export default function EngagementAnalyticsTab() {
     try {
       setLoading(true);
       setError('');
-      const [enpsRes, scoresRes, deptRes] = await Promise.all([
+      const [enpsRes, scoresRes, deptRes, actionRes] = await Promise.all([
         api.get('/engagement-culture/admin/analytics/enps'),
         api.get('/engagement-culture/admin/analytics/scores'),
         api.get('/engagement-culture/admin/analytics/department-comparison'),
+        api.get('/engagement-culture/admin/analytics/action-items'),
       ]);
 
-      const enpsData = enpsRes.data?.data || enpsRes.data || {};
-      const scoresData = scoresRes.data?.data || scoresRes.data || {};
-      const deptData = deptRes.data?.data || deptRes.data || {};
+      const enpsData = enpsRes.data?.data ?? enpsRes.data ?? [];
+      const scoresData = scoresRes.data?.data ?? scoresRes.data ?? [];
+      const deptData = deptRes.data?.data ?? deptRes.data ?? [];
+      const actionData = actionRes.data?.data ?? actionRes.data ?? [];
+
+      // enps endpoint returns an array of { period, enps, respondents } — use the latest period
+      const enpsArr = Array.isArray(enpsData) ? enpsData : [];
+      const latestEnps = enpsArr.length ? enpsArr[enpsArr.length - 1] : null;
+
+      // scores endpoint returns an array of { period, overallScore, participationScore, ... } — use the latest
+      const scoresArr = Array.isArray(scoresData) ? scoresData : [];
+      const latestScores = scoresArr.length ? scoresArr[scoresArr.length - 1] : null;
+
+      // department-comparison returns [{ departmentName, averageScore, averageEnps, employeeCount }]
+      const deptArr = Array.isArray(deptData.departments)
+        ? deptData.departments
+        : Array.isArray(deptData)
+          ? deptData
+          : [];
+      const departments: DepartmentComparison[] = deptArr.map((d: Record<string, unknown>) => ({
+        department: (d.departmentName ?? d.department ?? 'Unknown') as string,
+        engagementScore: Number(d.averageScore ?? d.engagementScore ?? 0) || 0,
+        participationRate: Number(d.averageEnps ?? d.participationRate ?? 0) || 0,
+        trend: (d.trend ?? 'stable') as string,
+      }));
 
       setData({
-        enpsScore: enpsData.enpsScore || enpsData.score || 0,
-        overallEngagement: scoresData.overallEngagement || scoresData.overall || 0,
-        surveyParticipationRate: scoresData.surveyParticipationRate || scoresData.participationRate || 0,
-        departments: Array.isArray(deptData.departments) ? deptData.departments : Array.isArray(deptData) ? deptData : [],
-        actionItems: Array.isArray(scoresData.actionItems) ? scoresData.actionItems : [],
+        enpsScore: Number(latestEnps?.enps ?? latestEnps?.enpsScore ?? 0) || 0,
+        overallEngagement: Number(latestScores?.overallScore ?? latestScores?.overallEngagement ?? 0) || 0,
+        surveyParticipationRate: Number(latestScores?.participationScore ?? latestScores?.surveyParticipationRate ?? 0) || 0,
+        departments,
+        actionItems: Array.isArray(actionData) ? actionData : [],
       });
     } catch {
       setError('Failed to load analytics data.');

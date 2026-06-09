@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -66,7 +66,7 @@ Base everything strictly on the provided items — do NOT invent feedback, names
       .where(and(
         eq(schema.surveys.orgId, orgId),
         eq(schema.surveys.isActive, true),
-        sql`${schema.surveys.type} IN ('feedback', 'pulse')`,
+        inArray(schema.surveys.type, ['feedback', 'pulse']),
       ));
 
     const surveyIds = feedbackSurveys.map((s) => s.id);
@@ -87,8 +87,8 @@ Base everything strictly on the provided items — do NOT invent feedback, names
       .where(and(
         eq(schema.surveyResponses.orgId, orgId),
         eq(schema.surveyResponses.isActive, true),
-        sql`${schema.surveyResponses.surveyId} = ANY(${surveyIds})`,
-        sql`${schema.surveyResponses.respondentId} = ANY(${teamMemberIds})`,
+        inArray(schema.surveyResponses.surveyId, surveyIds),
+        inArray(schema.surveyResponses.respondentId, teamMemberIds),
       ))
       .orderBy(desc(schema.surveyResponses.submittedAt));
 
@@ -193,8 +193,8 @@ Base everything strictly on the provided items — do NOT invent feedback, names
       .where(and(
         eq(schema.socialPosts.orgId, orgId),
         eq(schema.socialPosts.isActive, true),
-        sql`${schema.socialPosts.authorId} = ANY(${teamMemberIds})`,
-        sql`${schema.socialPosts.type} IN ('shoutout', 'announcement')`,
+        inArray(schema.socialPosts.authorId, teamMemberIds),
+        inArray(schema.socialPosts.type, ['shoutout', 'announcement']),
       ))
       .orderBy(desc(schema.socialPosts.createdAt));
 

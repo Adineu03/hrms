@@ -8,7 +8,7 @@ interface CareerPath {
   roleTitle: string;
   gradeCode: string;
   jobFamily?: string;
-  progressionPath?: string;
+  progressionPaths?: string[] | null;
 }
 
 interface MyRole {
@@ -40,8 +40,8 @@ export default function CareerPathExplorerTab() {
       setLoading(true);
       const [pathsRes, roleRes, gapRes] = await Promise.allSettled([
         api.get('/workforce-planning/employee/career-path'),
-        api.get('/workforce-planning/employee/my-role'),
-        api.get('/workforce-planning/employee/skills-gap'),
+        api.get('/workforce-planning/employee/career-path/my-role'),
+        api.get('/workforce-planning/employee/career-path/skills-gap'),
       ]);
       if (pathsRes.status === 'fulfilled') setCareerPaths(pathsRes.value.data?.data || pathsRes.value.data || []);
       if (roleRes.status === 'fulfilled') setMyRole(roleRes.value.data?.data || roleRes.value.data || null);
@@ -125,7 +125,11 @@ export default function CareerPathExplorerTab() {
                       <span className="px-2 py-0.5 rounded font-mono text-xs bg-indigo-50 text-indigo-700">{path.gradeCode}</span>
                     </td>
                     <td className="py-3 px-2 text-gray-600">{path.jobFamily || '—'}</td>
-                    <td className="py-3 px-2 text-gray-600 text-xs">{path.progressionPath || '—'}</td>
+                    <td className="py-3 px-2 text-gray-600 text-xs">
+                      {Array.isArray(path.progressionPaths) && path.progressionPaths.length > 0
+                        ? path.progressionPaths.join(' → ')
+                        : '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

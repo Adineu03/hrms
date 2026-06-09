@@ -15,15 +15,15 @@ interface TeamSuccessionPlan {
   positionTitle: string;
   criticalityLevel: string;
   benchStrength: string;
-  coveragePercent: number;
+  successionCoveragePercent: number;
   candidates?: SuccessionCandidate[];
 }
 
 interface BenchStrengthSummary {
-  strong: number;
-  adequate: number;
-  weak: number;
-  none: number;
+  strongBench: number;
+  adequateBench: number;
+  weakBench: number;
+  noBench: number;
 }
 
 const criticalityColors: Record<string, string> = {
@@ -99,10 +99,10 @@ export default function TeamSuccessionDashboardTab() {
       {benchSummary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Strong Bench', value: benchSummary.strong, color: 'text-green-600' },
-            { label: 'Adequate Bench', value: benchSummary.adequate, color: 'text-blue-600' },
-            { label: 'Weak Bench', value: benchSummary.weak, color: 'text-orange-600' },
-            { label: 'No Bench', value: benchSummary.none, color: 'text-red-600' },
+            { label: 'Strong Bench', value: benchSummary.strongBench, color: 'text-green-600' },
+            { label: 'Adequate Bench', value: benchSummary.adequateBench, color: 'text-blue-600' },
+            { label: 'Weak Bench', value: benchSummary.weakBench, color: 'text-orange-600' },
+            { label: 'No Bench', value: benchSummary.noBench, color: 'text-red-600' },
           ].map((card) => (
             <div key={card.label} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
               <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">{card.label}</p>
@@ -134,8 +134,8 @@ export default function TeamSuccessionDashboardTab() {
                         {plan.benchStrength}
                       </span>
                     )}
-                    {plan.coveragePercent != null && (
-                      <span className="text-xs text-gray-500">{plan.coveragePercent}% coverage</span>
+                    {plan.successionCoveragePercent != null && (
+                      <span className="text-xs text-gray-500">{plan.successionCoveragePercent}% coverage</span>
                     )}
                   </div>
                 </div>

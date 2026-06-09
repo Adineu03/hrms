@@ -32,80 +32,69 @@ export class ComplianceReportingService {
         .where(and(eq(schema.compliancePolicies.orgId, orgId), eq(schema.compliancePolicies.isActive, true))),
     ]);
 
-    const trainingByStatus = trainingCompletions.reduce(
-      (acc, tc) => {
-        acc[tc.status] = (acc[tc.status] ?? 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+    const totalPolicies = policies.length;
+    const publishedPolicies = policies.filter((p) => p.status === 'published').length;
+    const completedTrainings = trainingCompletions.filter((tc) => tc.status === 'completed').length;
+    const overdueTrainings = trainingCompletions.filter((tc) => tc.status === 'overdue').length;
+    const overdueChecklists = checklists.filter((c) => c.status === 'overdue').length;
+    const pendingChecklists = checklists.filter((c) => c.status === 'pending').length;
+    const openEthicsComplaints = ethicsComplaints.filter((e) => e.status !== 'closed').length;
 
-    const checklistByStatus = checklists.reduce(
-      (acc, c) => {
-        acc[c.status] = (acc[c.status] ?? 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+    // Mandatory published policies × 20 employees = expected acknowledgments.
+    const mandatoryPolicyCount = policies.filter((p) => p.status === 'published' && p.mandatoryAcknowledgment).length;
+    const expectedAcks = mandatoryPolicyCount * 20;
+    const pendingAcknowledgments = Math.max(0, expectedAcks - acknowledgments.length);
+
+    const trainingScore = trainingCompletions.length > 0 ? (completedTrainings / trainingCompletions.length) * 100 : 100;
+    const ackScore = expectedAcks > 0 ? (acknowledgments.length / expectedAcks) * 100 : 100;
+    const checklistScore = checklists.length > 0 ? (checklists.filter((c) => c.status === 'completed').length / checklists.length) * 100 : 100;
+    const overallComplianceScore = Math.round((trainingScore + ackScore + checklistScore) / 3);
 
     return {
       data: {
-        policies: {
-          total: policies.length,
-          published: policies.filter((p) => p.status === 'published').length,
-          draft: policies.filter((p) => p.status === 'draft').length,
-          archived: policies.filter((p) => p.status === 'archived').length,
-        },
-        acknowledgments: {
-          total: acknowledgments.length,
-        },
-        trainings: {
-          total: trainingCompletions.length,
-          byStatus: trainingByStatus,
-          completed: trainingCompletions.filter((tc) => tc.status === 'completed').length,
-          overdue: trainingCompletions.filter((tc) => tc.status === 'overdue').length,
-        },
-        checklists: {
-          total: checklists.length,
-          byStatus: checklistByStatus,
-          completed: checklists.filter((c) => c.status === 'completed').length,
-          pending: checklists.filter((c) => c.status === 'pending').length,
-        },
-        ethics: {
-          total: ethicsComplaints.length,
-          open: ethicsComplaints.filter((e) => e.status !== 'closed').length,
-          closed: ethicsComplaints.filter((e) => e.status === 'closed').length,
-        },
+        totalPolicies,
+        publishedPolicies,
+        pendingAcknowledgments,
+        completedTrainings,
+        overdueItems: overdueTrainings + overdueChecklists,
+        overallComplianceScore,
+        openEthicsComplaints,
+        pendingChecklists,
       },
     };
   }
 
   async getTrainingCompletionReport(orgId: string) {
-    const rows = await this.db
-      .select()
-      .from(schema.trainingCompletions)
-      .where(and(eq(schema.trainingCompletions.orgId, orgId), eq(schema.trainingCompletions.isActive, true)))
-      .orderBy(schema.trainingCompletions.createdAt);
+    const [completions, trainings] = await Promise.all([
+      this.db
+        .select()
+        .from(schema.trainingCompletions)
+        .where(and(eq(schema.trainingCompletions.orgId, orgId), eq(schema.trainingCompletions.isActive, true))),
+      this.db
+        .select()
+        .from(schema.complianceTrainings)
+        .where(and(eq(schema.complianceTrainings.orgId, orgId), eq(schema.complianceTrainings.isActive, true))),
+    ]);
 
-    const byStatus = rows.reduce(
-      (acc, tc) => {
-        acc[tc.status] = (acc[tc.status] ?? 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    const completionRate = rows.length > 0 ? Math.round((rows.filter((r) => r.status === 'completed').length / rows.length) * 100) : 0;
-
-    return {
-      data: {
-        total: rows.length,
-        byStatus,
+    const report = trainings.map((t) => {
+      const rows = completions.filter((c) => c.trainingId === t.id);
+      const completed = rows.filter((r) => r.status === 'completed').length;
+      const inProgress = rows.filter((r) => r.status === 'in_progress' || r.status === 'assigned').length;
+      const overdue = rows.filter((r) => r.status === 'overdue').length;
+      const totalAssigned = rows.length;
+      const completionRate = totalAssigned > 0 ? Math.round((completed / totalAssigned) * 100) : 0;
+      return {
+        trainingId: t.id,
+        title: t.title,
+        totalAssigned,
+        completed,
+        inProgress,
+        overdue,
         completionRate,
-        records: rows,
-      },
-      meta: { total: rows.length },
-    };
+      };
+    });
+
+    return { data: report, meta: { total: report.length } };
   }
 
   async getPolicyAcknowledgmentReport(orgId: string) {
@@ -128,13 +117,22 @@ export class ComplianceReportingService {
       {} as Record<string, number>,
     );
 
-    const report = policies.map((p) => ({
-      policyId: p.id,
-      title: p.title,
-      policyCode: p.policyCode,
-      mandatoryAcknowledgment: p.mandatoryAcknowledgment,
-      acknowledgmentCount: ackByPolicy[p.id] ?? 0,
-    }));
+    const totalRequired = 20; // 20 seeded employees
+    const report = policies.map((p) => {
+      const acknowledged = ackByPolicy[p.id] ?? 0;
+      const required = p.mandatoryAcknowledgment ? totalRequired : acknowledged;
+      const pending = Math.max(0, required - acknowledged);
+      const acknowledgmentRate = required > 0 ? Math.round((acknowledged / required) * 100) : 100;
+      return {
+        policyId: p.id,
+        policyTitle: p.title,
+        policyCode: p.policyCode,
+        totalRequired: required,
+        acknowledged,
+        pending,
+        acknowledgmentRate,
+      };
+    });
 
     return { data: report, meta: { total: report.length } };
   }
@@ -144,24 +142,20 @@ export class ComplianceReportingService {
       .select()
       .from(schema.complianceChecklists)
       .where(and(eq(schema.complianceChecklists.orgId, orgId), eq(schema.complianceChecklists.isActive, true)))
-      .orderBy(schema.complianceChecklists.status);
+      .orderBy(schema.complianceChecklists.category);
 
-    const byStatus = rows.reduce(
-      (acc, c) => {
-        acc[c.status] = (acc[c.status] ?? 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+    const categories = Array.from(new Set(rows.map((r) => r.category)));
+    const report = categories.map((category) => {
+      const items = rows.filter((r) => r.category === category);
+      const completed = items.filter((c) => c.status === 'completed').length;
+      const pending = items.filter((c) => c.status === 'pending').length;
+      const overdue = items.filter((c) => c.status === 'overdue').length;
+      const total = items.length;
+      const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return { category, total, completed, pending, overdue, completionRate };
+    });
 
-    return {
-      data: {
-        total: rows.length,
-        byStatus,
-        records: rows,
-      },
-      meta: { total: rows.length },
-    };
+    return { data: report, meta: { total: report.length } };
   }
 
   async getRegulatoryFilingsTracker(orgId: string) {

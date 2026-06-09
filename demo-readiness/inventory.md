@@ -12,10 +12,10 @@ _Last survey run: 2026-06-09 · 263 tab-views across 57 module×role views._
 ## Summary
 | | OK | EMPTY | ERROR | Total |
 |---|---|---|---|---|
-| admin | 86 | 20 | 0 | 106 |
-| manager | 63 | 10 | 3 | 76 |
-| employee | 70 | 11 | 0 | 81 |
-| **All** | **219** | **41** | **3** | **263** |
+| admin | 100 | 6 | 0 | 106 |
+| manager | 71 | 4 | 1 | 76 |
+| employee | 79 | 2 | 0 | 81 |
+| **All** | **250** | **12** | **1** | **263** |
 
 <details><summary>⚠️ Module×role views with no tab bar / special screen (1)</summary>
 
@@ -23,7 +23,7 @@ _Last survey run: 2026-06-09 · 263 tab-views across 57 module×role views._
 
 </details>
 
-## Triaged backlog — EMPTY / ERROR by sprint cluster (44 of 263)
+## Triaged backlog — EMPTY / ERROR by sprint cluster (13 of 263)
 
 ### Sprint 1 — cold-start-setup, core-hr, leave-management  · 0 to fix (🔴 0 / ⚠️ 0)
 _All green._
@@ -37,40 +37,8 @@ _All green._
 ### Sprint 4 — learning-development, compensation-rewards, expense-management  · 0 to fix (🔴 0 / ⚠️ 0)
 _All green._
 
-### Sprint 5 — engagement-culture, compliance-audit, workforce-planning  · 31 to fix (🔴 2 / ⚠️ 29)
-| Module | Role | Tab | Status | Notes |
-|---|---|---|---|---|
-| engagement-culture | admin | Survey & Pulse | ⚠️ EMPTY | empty-text matched: "No surveys created yet" |
-| engagement-culture | admin | Culture & Values | ⚠️ EMPTY | empty-text matched: "No culture values configured yet" |
-| engagement-culture | admin | Wellness Programs | ⚠️ EMPTY | empty-text matched: "No wellness programs configured yet" |
-| engagement-culture | admin | Engagement Analytics | ⚠️ EMPTY | empty-text matched: "No department data available" |
-| engagement-culture | manager | Team Engagement | ⚠️ EMPTY | empty-text matched: "No pulse results available" |
-| engagement-culture | manager | Team Wellness | 🔴 ERROR | api: 500 GET /api/v1/engagement-culture/manager/team-wellness \| 500 GET /api/v1/engagement-culture/manager/team-wellness; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
-| engagement-culture | manager | Feedback & Suggestions | 🔴 ERROR | api: 500 GET /api/v1/engagement-culture/manager/feedback/suggestions \| 500 GET /api/v1/engagement-culture/manager/feedback/suggestions; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
-| engagement-culture | employee | Surveys | ⚠️ EMPTY | empty-text matched: "No active surveys available" |
-| engagement-culture | employee | Social & Community | ⚠️ EMPTY | empty-text matched: "No posts yet" |
-| engagement-culture | employee | Wellness Portal | ⚠️ EMPTY | empty-text matched: "haven't enrolled" |
-| engagement-culture | employee | My Engagement | ⚠️ EMPTY | empty-text matched: "No score breakdown available" |
-| compliance-audit | admin | Policy Management | ⚠️ EMPTY | empty-text matched: "No policies found" |
-| compliance-audit | admin | Data Privacy & GDPR/DPDP | ⚠️ EMPTY | empty-text matched: "No DSAR requests found" |
-| compliance-audit | admin | Regulatory Compliance | ⚠️ EMPTY | empty-text matched: "No compliance checklists found" |
-| compliance-audit | admin | Document Retention | ⚠️ EMPTY | empty-text matched: "No retention policies configured" |
-| compliance-audit | admin | Ethics & Whistleblower | ⚠️ EMPTY | empty-text matched: "No ethics complaints found" |
-| compliance-audit | manager | Team Compliance Dashboard | ⚠️ EMPTY | empty-text matched: "No team members found" |
-| compliance-audit | employee | Policy Acknowledgment | ⚠️ EMPTY | empty-text matched: "No policies assigned" |
-| compliance-audit | employee | Mandatory Training Tracker | ⚠️ EMPTY | empty-text matched: "No mandatory trainings assigned" |
-| workforce-planning | admin | Headcount Planning | ⚠️ EMPTY | empty-text matched: "No headcount plans found" |
-| workforce-planning | admin | Budget Management | ⚠️ EMPTY | empty-text matched: "No budgets found" |
-| workforce-planning | admin | Org Design Studio | ⚠️ EMPTY | empty-text matched: "No department data available" |
-| workforce-planning | admin | Succession Planning | ⚠️ EMPTY | empty-text matched: "No succession plans found" |
-| workforce-planning | admin | Internal Mobility & Transfers | ⚠️ EMPTY | empty-text matched: "No mobility requests found" |
-| workforce-planning | manager | Team Headcount | ⚠️ EMPTY | empty-text matched: "No headcount plans found" |
-| workforce-planning | manager | Succession Dashboard | ⚠️ EMPTY | empty-text matched: "No succession plans found" |
-| workforce-planning | manager | Transfer & Mobility Requests | ⚠️ EMPTY | empty-text matched: "No transfer requests found" |
-| workforce-planning | manager | Team Composition | ⚠️ EMPTY | empty-text matched: "No grade distribution data available" |
-| workforce-planning | employee | Career Path Explorer | ⚠️ EMPTY | empty-text matched: "No career path options found" |
-| workforce-planning | employee | Internal Job Board | ⚠️ EMPTY | empty-text matched: "No open positions available" |
-| workforce-planning | employee | My Transfer Request | ⚠️ EMPTY | empty-text matched: "no transfer requests" |
+### Sprint 5 — engagement-culture, compliance-audit, workforce-planning  · 0 to fix (🔴 0 / ⚠️ 0)
+_All green._
 
 ### Sprint 6 — integrations-api, people-analytics, platform-experience, demo-company  · 13 to fix (🔴 1 / ⚠️ 12)
 | Module | Role | Tab | Status | Notes |
@@ -82,7 +50,7 @@ _All green._
 | platform-experience | admin | Platform Customization | ⚠️ EMPTY | empty-text matched: "No dashboards created yet" |
 | platform-experience | manager | Team Notifications | ⚠️ EMPTY | empty-text matched: "No announcements sent yet" |
 | platform-experience | manager | Custom Dashboards | ⚠️ EMPTY | empty-text matched: "No custom dashboards created yet" |
-| platform-experience | manager | Quick Actions | 🔴 ERROR | api: 500 GET /api/v1/platform-experience/manager/quick-actions \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals \| 500 GET /api/v1/platform-experience/manager/quick-actions; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
+| platform-experience | manager | Quick Actions | 🔴 ERROR | api: 500 GET /api/v1/platform-experience/manager/quick-actions \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
 | platform-experience | employee | Notifications | ⚠️ EMPTY | empty-text matched: "No notifications found" |
 | platform-experience | employee | Search & Navigation | ⚠️ EMPTY | empty-text matched: "No bookmarks saved yet" |
 | demo-company | admin | Demo Org | ⚠️ EMPTY | empty-text matched: "No demo organizations yet" |
@@ -275,47 +243,47 @@ _All green._
 | expense-management | employee | My Expenses | OK | — | [png](../apps/web/e2e/screenshots/employee/expense-management/0-My_Expenses.png) |
 | expense-management | employee | Expense Tracking | OK | — | [png](../apps/web/e2e/screenshots/employee/expense-management/1-Expense_Tracking.png) |
 | expense-management | employee | Expense Policies | OK | — | [png](../apps/web/e2e/screenshots/employee/expense-management/2-Expense_Policies.png) |
-| engagement-culture | admin | Survey & Pulse | ⚠️ EMPTY | empty-text matched: "No surveys created yet" | [png](../apps/web/e2e/screenshots/admin/engagement-culture/0-Survey__Pulse.png) |
-| engagement-culture | admin | Culture & Values | ⚠️ EMPTY | empty-text matched: "No culture values configured yet" | [png](../apps/web/e2e/screenshots/admin/engagement-culture/1-Culture__Values.png) |
-| engagement-culture | admin | Wellness Programs | ⚠️ EMPTY | empty-text matched: "No wellness programs configured yet" | [png](../apps/web/e2e/screenshots/admin/engagement-culture/2-Wellness_Programs.png) |
-| engagement-culture | admin | Engagement Analytics | ⚠️ EMPTY | empty-text matched: "No department data available" | [png](../apps/web/e2e/screenshots/admin/engagement-culture/3-Engagement_Analytics.png) |
+| engagement-culture | admin | Survey & Pulse | OK | — | [png](../apps/web/e2e/screenshots/admin/engagement-culture/0-Survey__Pulse.png) |
+| engagement-culture | admin | Culture & Values | OK | — | [png](../apps/web/e2e/screenshots/admin/engagement-culture/1-Culture__Values.png) |
+| engagement-culture | admin | Wellness Programs | OK | — | [png](../apps/web/e2e/screenshots/admin/engagement-culture/2-Wellness_Programs.png) |
+| engagement-culture | admin | Engagement Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/engagement-culture/3-Engagement_Analytics.png) |
 | engagement-culture | admin | Sentiment Analysis | OK | — | [png](../apps/web/e2e/screenshots/admin/engagement-culture/4-Sentiment_Analysis.png) |
-| engagement-culture | manager | Team Engagement | ⚠️ EMPTY | empty-text matched: "No pulse results available" | [png](../apps/web/e2e/screenshots/manager/engagement-culture/0-Team_Engagement.png) |
-| engagement-culture | manager | Team Wellness | 🔴 ERROR | api: 500 GET /api/v1/engagement-culture/manager/team-wellness \| 500 GET /api/v1/engagement-culture/manager/team-wellness; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/engagement-culture/1-Team_Wellness.png) |
-| engagement-culture | manager | Feedback & Suggestions | 🔴 ERROR | api: 500 GET /api/v1/engagement-culture/manager/feedback/suggestions \| 500 GET /api/v1/engagement-culture/manager/feedback/suggestions; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/engagement-culture/2-Feedback__Suggestions.png) |
-| engagement-culture | employee | Surveys | ⚠️ EMPTY | empty-text matched: "No active surveys available" | [png](../apps/web/e2e/screenshots/employee/engagement-culture/0-Surveys.png) |
-| engagement-culture | employee | Social & Community | ⚠️ EMPTY | empty-text matched: "No posts yet" | [png](../apps/web/e2e/screenshots/employee/engagement-culture/1-Social__Community.png) |
-| engagement-culture | employee | Wellness Portal | ⚠️ EMPTY | empty-text matched: "haven't enrolled" | [png](../apps/web/e2e/screenshots/employee/engagement-culture/2-Wellness_Portal.png) |
-| engagement-culture | employee | My Engagement | ⚠️ EMPTY | empty-text matched: "No score breakdown available" | [png](../apps/web/e2e/screenshots/employee/engagement-culture/3-My_Engagement.png) |
-| compliance-audit | admin | Policy Management | ⚠️ EMPTY | empty-text matched: "No policies found" | [png](../apps/web/e2e/screenshots/admin/compliance-audit/0-Policy_Management.png) |
+| engagement-culture | manager | Team Engagement | OK | — | [png](../apps/web/e2e/screenshots/manager/engagement-culture/0-Team_Engagement.png) |
+| engagement-culture | manager | Team Wellness | OK | — | [png](../apps/web/e2e/screenshots/manager/engagement-culture/1-Team_Wellness.png) |
+| engagement-culture | manager | Feedback & Suggestions | OK | — | [png](../apps/web/e2e/screenshots/manager/engagement-culture/2-Feedback__Suggestions.png) |
+| engagement-culture | employee | Surveys | OK | — | [png](../apps/web/e2e/screenshots/employee/engagement-culture/0-Surveys.png) |
+| engagement-culture | employee | Social & Community | OK | — | [png](../apps/web/e2e/screenshots/employee/engagement-culture/1-Social__Community.png) |
+| engagement-culture | employee | Wellness Portal | OK | — | [png](../apps/web/e2e/screenshots/employee/engagement-culture/2-Wellness_Portal.png) |
+| engagement-culture | employee | My Engagement | OK | — | [png](../apps/web/e2e/screenshots/employee/engagement-culture/3-My_Engagement.png) |
+| compliance-audit | admin | Policy Management | OK | — | [png](../apps/web/e2e/screenshots/admin/compliance-audit/0-Policy_Management.png) |
 | compliance-audit | admin | Audit Trail & Logging | OK | — | [png](../apps/web/e2e/screenshots/admin/compliance-audit/1-Audit_Trail__Logging.png) |
-| compliance-audit | admin | Data Privacy & GDPR/DPDP | ⚠️ EMPTY | empty-text matched: "No DSAR requests found" | [png](../apps/web/e2e/screenshots/admin/compliance-audit/2-Data_Privacy__GDPRDPDP.png) |
-| compliance-audit | admin | Regulatory Compliance | ⚠️ EMPTY | empty-text matched: "No compliance checklists found" | [png](../apps/web/e2e/screenshots/admin/compliance-audit/3-Regulatory_Compliance.png) |
-| compliance-audit | admin | Document Retention | ⚠️ EMPTY | empty-text matched: "No retention policies configured" | [png](../apps/web/e2e/screenshots/admin/compliance-audit/4-Document_Retention.png) |
-| compliance-audit | admin | Ethics & Whistleblower | ⚠️ EMPTY | empty-text matched: "No ethics complaints found" | [png](../apps/web/e2e/screenshots/admin/compliance-audit/5-Ethics__Whistleblower.png) |
+| compliance-audit | admin | Data Privacy & GDPR/DPDP | OK | — | [png](../apps/web/e2e/screenshots/admin/compliance-audit/2-Data_Privacy__GDPRDPDP.png) |
+| compliance-audit | admin | Regulatory Compliance | OK | — | [png](../apps/web/e2e/screenshots/admin/compliance-audit/3-Regulatory_Compliance.png) |
+| compliance-audit | admin | Document Retention | OK | — | [png](../apps/web/e2e/screenshots/admin/compliance-audit/4-Document_Retention.png) |
+| compliance-audit | admin | Ethics & Whistleblower | OK | — | [png](../apps/web/e2e/screenshots/admin/compliance-audit/5-Ethics__Whistleblower.png) |
 | compliance-audit | admin | Compliance Reporting | OK | — | [png](../apps/web/e2e/screenshots/admin/compliance-audit/6-Compliance_Reporting.png) |
-| compliance-audit | manager | Team Compliance Dashboard | ⚠️ EMPTY | empty-text matched: "No team members found" | [png](../apps/web/e2e/screenshots/manager/compliance-audit/0-Team_Compliance_Dashboard.png) |
+| compliance-audit | manager | Team Compliance Dashboard | OK | — | [png](../apps/web/e2e/screenshots/manager/compliance-audit/0-Team_Compliance_Dashboard.png) |
 | compliance-audit | manager | Policy Violation Tracking | OK | — | [png](../apps/web/e2e/screenshots/manager/compliance-audit/1-Policy_Violation_Tracking.png) |
 | compliance-audit | manager | Audit Support | OK | — | [png](../apps/web/e2e/screenshots/manager/compliance-audit/2-Audit_Support.png) |
 | compliance-audit | manager | Labor Law Compliance | OK | — | [png](../apps/web/e2e/screenshots/manager/compliance-audit/3-Labor_Law_Compliance.png) |
-| compliance-audit | employee | Policy Acknowledgment | ⚠️ EMPTY | empty-text matched: "No policies assigned" | [png](../apps/web/e2e/screenshots/employee/compliance-audit/0-Policy_Acknowledgment.png) |
-| compliance-audit | employee | Mandatory Training Tracker | ⚠️ EMPTY | empty-text matched: "No mandatory trainings assigned" | [png](../apps/web/e2e/screenshots/employee/compliance-audit/1-Mandatory_Training_Tracker.png) |
+| compliance-audit | employee | Policy Acknowledgment | OK | — | [png](../apps/web/e2e/screenshots/employee/compliance-audit/0-Policy_Acknowledgment.png) |
+| compliance-audit | employee | Mandatory Training Tracker | OK | — | [png](../apps/web/e2e/screenshots/employee/compliance-audit/1-Mandatory_Training_Tracker.png) |
 | compliance-audit | employee | Whistleblower & Ethics Portal | OK | — | [png](../apps/web/e2e/screenshots/employee/compliance-audit/2-Whistleblower__Ethics_Portal.png) |
 | compliance-audit | employee | Data Privacy Controls | OK | — | [png](../apps/web/e2e/screenshots/employee/compliance-audit/3-Data_Privacy_Controls.png) |
-| workforce-planning | admin | Headcount Planning | ⚠️ EMPTY | empty-text matched: "No headcount plans found" | [png](../apps/web/e2e/screenshots/admin/workforce-planning/0-Headcount_Planning.png) |
-| workforce-planning | admin | Budget Management | ⚠️ EMPTY | empty-text matched: "No budgets found" | [png](../apps/web/e2e/screenshots/admin/workforce-planning/1-Budget_Management.png) |
-| workforce-planning | admin | Org Design Studio | ⚠️ EMPTY | empty-text matched: "No department data available" | [png](../apps/web/e2e/screenshots/admin/workforce-planning/2-Org_Design_Studio.png) |
+| workforce-planning | admin | Headcount Planning | OK | — | [png](../apps/web/e2e/screenshots/admin/workforce-planning/0-Headcount_Planning.png) |
+| workforce-planning | admin | Budget Management | OK | — | [png](../apps/web/e2e/screenshots/admin/workforce-planning/1-Budget_Management.png) |
+| workforce-planning | admin | Org Design Studio | OK | — | [png](../apps/web/e2e/screenshots/admin/workforce-planning/2-Org_Design_Studio.png) |
 | workforce-planning | admin | Role & Grade Architecture | OK | — | [png](../apps/web/e2e/screenshots/admin/workforce-planning/3-Role__Grade_Architecture.png) |
-| workforce-planning | admin | Succession Planning | ⚠️ EMPTY | empty-text matched: "No succession plans found" | [png](../apps/web/e2e/screenshots/admin/workforce-planning/4-Succession_Planning.png) |
-| workforce-planning | admin | Internal Mobility & Transfers | ⚠️ EMPTY | empty-text matched: "No mobility requests found" | [png](../apps/web/e2e/screenshots/admin/workforce-planning/5-Internal_Mobility__Transfers.png) |
+| workforce-planning | admin | Succession Planning | OK | — | [png](../apps/web/e2e/screenshots/admin/workforce-planning/4-Succession_Planning.png) |
+| workforce-planning | admin | Internal Mobility & Transfers | OK | — | [png](../apps/web/e2e/screenshots/admin/workforce-planning/5-Internal_Mobility__Transfers.png) |
 | workforce-planning | admin | Workforce Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/workforce-planning/6-Workforce_Analytics.png) |
-| workforce-planning | manager | Team Headcount | ⚠️ EMPTY | empty-text matched: "No headcount plans found" | [png](../apps/web/e2e/screenshots/manager/workforce-planning/0-Team_Headcount.png) |
-| workforce-planning | manager | Succession Dashboard | ⚠️ EMPTY | empty-text matched: "No succession plans found" | [png](../apps/web/e2e/screenshots/manager/workforce-planning/1-Succession_Dashboard.png) |
-| workforce-planning | manager | Transfer & Mobility Requests | ⚠️ EMPTY | empty-text matched: "No transfer requests found" | [png](../apps/web/e2e/screenshots/manager/workforce-planning/2-Transfer__Mobility_Requests.png) |
-| workforce-planning | manager | Team Composition | ⚠️ EMPTY | empty-text matched: "No grade distribution data available" | [png](../apps/web/e2e/screenshots/manager/workforce-planning/3-Team_Composition.png) |
-| workforce-planning | employee | Career Path Explorer | ⚠️ EMPTY | empty-text matched: "No career path options found" | [png](../apps/web/e2e/screenshots/employee/workforce-planning/0-Career_Path_Explorer.png) |
-| workforce-planning | employee | Internal Job Board | ⚠️ EMPTY | empty-text matched: "No open positions available" | [png](../apps/web/e2e/screenshots/employee/workforce-planning/1-Internal_Job_Board.png) |
-| workforce-planning | employee | My Transfer Request | ⚠️ EMPTY | empty-text matched: "no transfer requests" | [png](../apps/web/e2e/screenshots/employee/workforce-planning/2-My_Transfer_Request.png) |
+| workforce-planning | manager | Team Headcount | OK | — | [png](../apps/web/e2e/screenshots/manager/workforce-planning/0-Team_Headcount.png) |
+| workforce-planning | manager | Succession Dashboard | OK | — | [png](../apps/web/e2e/screenshots/manager/workforce-planning/1-Succession_Dashboard.png) |
+| workforce-planning | manager | Transfer & Mobility Requests | OK | — | [png](../apps/web/e2e/screenshots/manager/workforce-planning/2-Transfer__Mobility_Requests.png) |
+| workforce-planning | manager | Team Composition | OK | — | [png](../apps/web/e2e/screenshots/manager/workforce-planning/3-Team_Composition.png) |
+| workforce-planning | employee | Career Path Explorer | OK | — | [png](../apps/web/e2e/screenshots/employee/workforce-planning/0-Career_Path_Explorer.png) |
+| workforce-planning | employee | Internal Job Board | OK | — | [png](../apps/web/e2e/screenshots/employee/workforce-planning/1-Internal_Job_Board.png) |
+| workforce-planning | employee | My Transfer Request | OK | — | [png](../apps/web/e2e/screenshots/employee/workforce-planning/2-My_Transfer_Request.png) |
 | integrations-api | admin | Integration Marketplace | OK | — | [png](../apps/web/e2e/screenshots/admin/integrations-api/0-Integration_Marketplace.png) |
 | integrations-api | admin | API Keys | OK | — | [png](../apps/web/e2e/screenshots/admin/integrations-api/1-API_Keys.png) |
 | integrations-api | admin | Webhooks | OK | — | [png](../apps/web/e2e/screenshots/admin/integrations-api/2-Webhooks.png) |
@@ -342,7 +310,7 @@ _All green._
 | platform-experience | admin | System Administration | OK | — | [png](../apps/web/e2e/screenshots/admin/platform-experience/3-System_Administration.png) |
 | platform-experience | manager | Team Notifications | ⚠️ EMPTY | empty-text matched: "No announcements sent yet" | [png](../apps/web/e2e/screenshots/manager/platform-experience/0-Team_Notifications.png) |
 | platform-experience | manager | Custom Dashboards | ⚠️ EMPTY | empty-text matched: "No custom dashboards created yet" | [png](../apps/web/e2e/screenshots/manager/platform-experience/1-Custom_Dashboards.png) |
-| platform-experience | manager | Quick Actions | 🔴 ERROR | api: 500 GET /api/v1/platform-experience/manager/quick-actions \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals \| 500 GET /api/v1/platform-experience/manager/quick-actions; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/platform-experience/2-Quick_Actions.png) |
+| platform-experience | manager | Quick Actions | 🔴 ERROR | api: 500 GET /api/v1/platform-experience/manager/quick-actions \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/platform-experience/2-Quick_Actions.png) |
 | platform-experience | employee | Notifications | ⚠️ EMPTY | empty-text matched: "No notifications found" | [png](../apps/web/e2e/screenshots/employee/platform-experience/0-Notifications.png) |
 | platform-experience | employee | Self-Service | OK | — | [png](../apps/web/e2e/screenshots/employee/platform-experience/1-Self-Service.png) |
 | platform-experience | employee | Search & Navigation | ⚠️ EMPTY | empty-text matched: "No bookmarks saved yet" | [png](../apps/web/e2e/screenshots/employee/platform-experience/2-Search__Navigation.png) |

@@ -175,13 +175,13 @@ export default function MandatoryTrainingTrackerTab() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="font-medium text-[#2c2c2c]">{training.title}</p>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[training.status]}`}>
-                            {training.status.replace('_', ' ')}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[training.status] || 'bg-gray-100 text-gray-600'}`}>
+                            {(training.status ?? '').replace('_', ' ')}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${categoryColors[training.category] || 'bg-gray-100 text-gray-700'}`}>
-                            {training.category.replace('_', ' ')}
+                            {(training.category ?? '').replace('_', ' ')}
                           </span>
                           {training.estimatedDuration && (
                             <span className="text-xs text-gray-500">{training.estimatedDuration} min</span>

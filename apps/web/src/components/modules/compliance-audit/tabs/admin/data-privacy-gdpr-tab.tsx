@@ -181,11 +181,11 @@ export default function DataPrivacyGdprTab() {
                         <td className="py-3 px-2 text-gray-600">{req.requestType}</td>
                         <td className="py-3 px-2">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${dsarStatusColors[req.status] || 'bg-gray-100 text-gray-700'}`}>
-                            {req.status.replace('_', ' ')}
+                            {(req.status ?? '').replace('_', ' ')}
                           </span>
                         </td>
-                        <td className="py-3 px-2 text-gray-600 text-xs">{new Date(req.requestDate).toLocaleDateString()}</td>
-                        <td className="py-3 px-2 text-gray-600 text-xs">{new Date(req.dueDate).toLocaleDateString()}</td>
+                        <td className="py-3 px-2 text-gray-600 text-xs">{req.requestDate ? new Date(req.requestDate).toLocaleDateString() : '—'}</td>
+                        <td className="py-3 px-2 text-gray-600 text-xs">{req.dueDate ? new Date(req.dueDate).toLocaleDateString() : '—'}</td>
                         <td className="py-3 px-2 text-gray-600 text-xs">
                           {req.completedDate ? new Date(req.completedDate).toLocaleDateString() : '—'}
                         </td>
@@ -225,7 +225,7 @@ export default function DataPrivacyGdprTab() {
                       </div>
                     </div>
                     <p className="text-sm text-gray-600">{breach.description}</p>
-                    <p className="text-xs text-gray-500 mt-1">Affected records: <span className="font-medium text-red-600">{breach.affectedRecords.toLocaleString()}</span></p>
+                    <p className="text-xs text-gray-500 mt-1">Affected records: <span className="font-medium text-red-600">{(Number(breach.affectedRecords) || 0).toLocaleString()}</span></p>
                   </div>
                 ))}
               </div>

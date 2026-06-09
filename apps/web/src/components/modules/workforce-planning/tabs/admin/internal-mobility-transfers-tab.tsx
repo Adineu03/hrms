@@ -5,9 +5,9 @@ import { api } from '@/lib/api';
 
 interface MobilityStats {
   totalRequests: number;
-  pending: number;
-  approved: number;
-  completed: number;
+  pendingCount: number;
+  approvedCount: number;
+  completedCount: number;
 }
 
 interface MobilityRequest {
@@ -89,9 +89,9 @@ export default function InternalMobilityTransfersTab() {
 
   const statCards = [
     { label: 'Total Requests', value: stats?.totalRequests ?? 0, color: 'text-indigo-600' },
-    { label: 'Pending', value: stats?.pending ?? 0, color: 'text-yellow-600' },
-    { label: 'Approved', value: stats?.approved ?? 0, color: 'text-green-600' },
-    { label: 'Completed', value: stats?.completed ?? 0, color: 'text-blue-600' },
+    { label: 'Pending', value: stats?.pendingCount ?? 0, color: 'text-yellow-600' },
+    { label: 'Approved', value: stats?.approvedCount ?? 0, color: 'text-green-600' },
+    { label: 'Completed', value: stats?.completedCount ?? 0, color: 'text-blue-600' },
   ];
 
   return (

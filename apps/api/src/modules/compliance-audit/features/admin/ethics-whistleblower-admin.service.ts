@@ -15,7 +15,13 @@ export class EthicsWhistleblowerAdminService {
       .where(and(eq(schema.ethicsComplaints.orgId, orgId), eq(schema.ethicsComplaints.isActive, true)))
       .orderBy(schema.ethicsComplaints.createdAt);
 
-    return { data: rows, meta: { total: rows.length } };
+    // Frontend reads `reportedDate`; the column is `createdAt`. Expose both.
+    const mapped = rows.map((r) => ({
+      ...r,
+      reportedDate: r.createdAt ? new Date(r.createdAt).toISOString() : null,
+    }));
+
+    return { data: mapped, meta: { total: mapped.length } };
   }
 
   async getComplaint(orgId: string, id: string) {

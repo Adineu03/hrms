@@ -16,7 +16,7 @@ interface SuccessionPlan {
   departmentId: string;
   criticalityLevel: 'critical' | 'high' | 'medium';
   benchStrength: 'strong' | 'adequate' | 'weak' | 'none';
-  coveragePercent: number;
+  successionCoveragePercent: number;
   status: string;
   notes?: string;
   candidates?: SuccessionCandidate[];
@@ -233,8 +233,8 @@ export default function SuccessionPlanningTab() {
                           {plan.benchStrength} bench
                         </span>
                       )}
-                      {plan.coveragePercent != null && (
-                        <span className="text-xs text-gray-500">{plan.coveragePercent}% coverage</span>
+                      {plan.successionCoveragePercent != null && (
+                        <span className="text-xs text-gray-500">{plan.successionCoveragePercent}% coverage</span>
                       )}
                     </div>
                     <button

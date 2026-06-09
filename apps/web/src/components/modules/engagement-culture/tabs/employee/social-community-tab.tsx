@@ -29,6 +29,7 @@ interface Group {
   name: string;
   description: string;
   membersCount: number;
+  memberCount: number;
   isMember: boolean;
 }
 
@@ -261,7 +262,7 @@ export default function SocialCommunityTab() {
                   <h4 className="text-sm font-medium text-text mb-1">{group.name}</h4>
                   <p className="text-xs text-text-muted mb-2">{group.description || 'No description.'}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-text-muted">{group.membersCount || 0} members</span>
+                    <span className="text-xs text-text-muted">{group.memberCount ?? group.membersCount ?? 0} members</span>
                     <button
                       onClick={() => handleJoinLeaveGroup(group.id, group.isMember)}
                       className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${

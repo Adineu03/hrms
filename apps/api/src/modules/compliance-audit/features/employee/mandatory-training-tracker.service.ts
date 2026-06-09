@@ -8,10 +8,57 @@ import * as schema from '../../../../infrastructure/database/schema';
 export class MandatoryTrainingTrackerService {
   constructor(@Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>) {}
 
-  async getMyTrainings(orgId: string, userId: string) {
-    const rows = await this.db
-      .select()
+  /** Join completion rows with the training catalog so the UI gets title/category/description. */
+  private completionSelect() {
+    return this.db
+      .select({
+        id: schema.trainingCompletions.id,
+        trainingId: schema.trainingCompletions.trainingId,
+        employeeId: schema.trainingCompletions.employeeId,
+        status: schema.trainingCompletions.status,
+        score: schema.trainingCompletions.score,
+        dueDate: schema.trainingCompletions.dueDate,
+        assignedAt: schema.trainingCompletions.assignedAt,
+        completedAt: schema.trainingCompletions.completedAt,
+        renewalDue: schema.trainingCompletions.renewalDue,
+        certificateUrl: schema.trainingCompletions.certificateUrl,
+        title: schema.complianceTrainings.title,
+        category: schema.complianceTrainings.category,
+        description: schema.complianceTrainings.description,
+        estimatedDuration: schema.complianceTrainings.durationMinutes,
+      })
       .from(schema.trainingCompletions)
+      .innerJoin(schema.complianceTrainings, eq(schema.trainingCompletions.trainingId, schema.complianceTrainings.id));
+  }
+
+  private mapTraining(r: {
+    id: string;
+    trainingId: string;
+    status: string;
+    score: number | null;
+    dueDate: Date | null;
+    completedAt: Date | null;
+    title: string | null;
+    category: string | null;
+    description: string | null;
+    estimatedDuration: number | null;
+  }) {
+    return {
+      id: r.id,
+      trainingId: r.trainingId,
+      title: r.title ?? 'Compliance Training',
+      category: r.category ?? 'compliance',
+      description: r.description ?? undefined,
+      status: r.status,
+      score: r.score,
+      dueDate: r.dueDate,
+      completedDate: r.completedAt,
+      estimatedDuration: r.estimatedDuration ?? undefined,
+    };
+  }
+
+  async getMyTrainings(orgId: string, userId: string) {
+    const rows = await this.completionSelect()
       .where(
         and(
           eq(schema.trainingCompletions.orgId, orgId),
@@ -21,13 +68,11 @@ export class MandatoryTrainingTrackerService {
       )
       .orderBy(schema.trainingCompletions.assignedAt);
 
-    return { data: rows, meta: { total: rows.length } };
+    return { data: rows.map((r) => this.mapTraining(r)), meta: { total: rows.length } };
   }
 
   async getOverdueTrainings(orgId: string, userId: string) {
-    const rows = await this.db
-      .select()
-      .from(schema.trainingCompletions)
+    const rows = await this.completionSelect()
       .where(
         and(
           eq(schema.trainingCompletions.orgId, orgId),
@@ -38,7 +83,7 @@ export class MandatoryTrainingTrackerService {
       )
       .orderBy(schema.trainingCompletions.dueDate);
 
-    return { data: rows, meta: { total: rows.length } };
+    return { data: rows.map((r) => this.mapTraining(r)), meta: { total: rows.length } };
   }
 
   async markTrainingStarted(orgId: string, userId: string, completionId: string) {
@@ -83,7 +128,6 @@ export class MandatoryTrainingTrackerService {
 
     if (!existing.length) throw new NotFoundException('Training completion record not found');
 
-    const training = existing[0];
     const score = dto.score ?? null;
     const passingScore = 80; // default passing score
     const passed = score !== null ? score >= passingScore : true;
@@ -108,9 +152,7 @@ export class MandatoryTrainingTrackerService {
   }
 
   async getMyCertificates(orgId: string, userId: string) {
-    const rows = await this.db
-      .select()
-      .from(schema.trainingCompletions)
+    const rows = await this.completionSelect()
       .where(
         and(
           eq(schema.trainingCompletions.orgId, orgId),
@@ -121,6 +163,16 @@ export class MandatoryTrainingTrackerService {
       )
       .orderBy(schema.trainingCompletions.completedAt);
 
-    return { data: rows, meta: { total: rows.length } };
+    const certs = rows.map((r) => ({
+      id: r.id,
+      trainingId: r.trainingId,
+      trainingTitle: r.title ?? 'Compliance Training',
+      issuedDate: r.completedAt,
+      expiryDate: r.renewalDue,
+      score: r.score ?? 0,
+      downloadUrl: r.certificateUrl ?? undefined,
+    }));
+
+    return { data: certs, meta: { total: certs.length } };
   }
 }

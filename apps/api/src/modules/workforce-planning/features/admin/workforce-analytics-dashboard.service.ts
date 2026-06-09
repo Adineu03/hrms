@@ -78,22 +78,30 @@ export class WorkforceAnalyticsDashboardService {
   }
 
   async getPromotionRate(orgId: string) {
-    const rows = await this.db
+    const all = await this.db
       .select()
       .from(schema.internalTransferRequests)
-      .where(
-        and(
-          eq(schema.internalTransferRequests.orgId, orgId),
-          eq(schema.internalTransferRequests.isActive, true),
-          eq(schema.internalTransferRequests.requestType, 'promotion'),
-          eq(schema.internalTransferRequests.status, 'completed'),
-        ),
-      );
+      .where(and(eq(schema.internalTransferRequests.orgId, orgId), eq(schema.internalTransferRequests.isActive, true)));
+
+    const promotions = all.filter((r) => r.requestType === 'promotion' && r.status === 'completed');
+    const internalMoves = all.filter((r) => r.status === 'completed');
+
+    // Headcount denominator for rate %
+    const plans = await this.db
+      .select()
+      .from(schema.workforceHeadcountPlans)
+      .where(and(eq(schema.workforceHeadcountPlans.orgId, orgId), eq(schema.workforceHeadcountPlans.isActive, true)));
+    const totalHeadcount = plans.reduce((sum, p) => sum + (p.currentHeadcount ?? 0), 0);
+
+    const promotionRate = totalHeadcount > 0 ? Math.round((promotions.length / totalHeadcount) * 1000) / 10 : 0;
+    const internalMobilityRate = totalHeadcount > 0 ? Math.round((internalMoves.length / totalHeadcount) * 1000) / 10 : 0;
 
     return {
       data: {
-        promotionsCompleted: rows.length,
-        promotionList: rows,
+        promotionsCompleted: promotions.length,
+        internalMobilityRate,
+        promotionRate,
+        promotionList: promotions,
       },
     };
   }

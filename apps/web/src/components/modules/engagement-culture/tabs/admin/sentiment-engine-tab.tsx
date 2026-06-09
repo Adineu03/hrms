@@ -149,7 +149,7 @@ export default function SentimentEngineTab() {
               <h3 className="text-sm font-semibold text-text mb-2">Representative Comments</h3>
               <div className="space-y-2">
                 {data.samples.map((q, i) => {
-                  const meta = SENT_META[q.sentiment];
+                  const meta = SENT_META[q.sentiment] || SENT_META.neutral;
                   const Icon = meta.icon;
                   return (
                     <div key={i} className="flex items-start gap-2 p-3 rounded-lg border border-border bg-card">

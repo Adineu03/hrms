@@ -9,19 +9,39 @@ export class PolicyAcknowledgmentService {
   constructor(@Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>) {}
 
   async getMyPolicies(orgId: string, userId: string) {
-    const rows = await this.db
-      .select()
-      .from(schema.compliancePolicies)
-      .where(
-        and(
-          eq(schema.compliancePolicies.orgId, orgId),
-          eq(schema.compliancePolicies.status, 'published'),
-          eq(schema.compliancePolicies.isActive, true),
+    const [rows, myAcks] = await Promise.all([
+      this.db
+        .select()
+        .from(schema.compliancePolicies)
+        .where(
+          and(
+            eq(schema.compliancePolicies.orgId, orgId),
+            eq(schema.compliancePolicies.status, 'published'),
+            eq(schema.compliancePolicies.isActive, true),
+          ),
+        )
+        .orderBy(schema.compliancePolicies.createdAt),
+      this.db
+        .select()
+        .from(schema.policyAcknowledgments)
+        .where(
+          and(
+            eq(schema.policyAcknowledgments.orgId, orgId),
+            eq(schema.policyAcknowledgments.employeeId, userId),
+            eq(schema.policyAcknowledgments.isActive, true),
+          ),
         ),
-      )
-      .orderBy(schema.compliancePolicies.createdAt);
+    ]);
 
-    return { data: rows, meta: { total: rows.length } };
+    const ackByPolicy = new Map(myAcks.map((a) => [a.policyId, a.acknowledgedAt]));
+
+    const enriched = rows.map((p) => ({
+      ...p,
+      acknowledgmentStatus: ackByPolicy.has(p.id) ? ('acknowledged' as const) : ('pending' as const),
+      acknowledgedAt: ackByPolicy.get(p.id) ?? undefined,
+    }));
+
+    return { data: enriched, meta: { total: enriched.length } };
   }
 
   async getPolicyDetail(orgId: string, id: string) {

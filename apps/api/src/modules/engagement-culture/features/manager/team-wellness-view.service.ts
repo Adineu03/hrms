@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -40,7 +40,7 @@ export class TeamWellnessViewService {
       .where(and(
         eq(schema.wellnessParticipations.orgId, orgId),
         eq(schema.wellnessParticipations.isActive, true),
-        sql`${schema.wellnessParticipations.employeeId} = ANY(${teamMemberIds})`,
+        inArray(schema.wellnessParticipations.employeeId, teamMemberIds),
       ))
       .orderBy(desc(schema.wellnessParticipations.enrolledAt));
 
@@ -155,7 +155,7 @@ export class TeamWellnessViewService {
       .where(and(
         eq(schema.wellnessParticipations.orgId, orgId),
         eq(schema.wellnessParticipations.isActive, true),
-        sql`${schema.wellnessParticipations.employeeId} = ANY(${teamMemberIds})`,
+        inArray(schema.wellnessParticipations.employeeId, teamMemberIds),
       ));
 
     const enrolledProgramIds = new Set(currentParticipations.map((p) => p.programId));

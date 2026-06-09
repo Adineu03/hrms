@@ -150,7 +150,47 @@ export class EngagementAnalyticsService {
       .where(and(eq(schema.orgModules.orgId, orgId), eq(schema.orgModules.moduleId, 'engagement-culture')));
 
     const config = (moduleConfig[0]?.config as Record<string, any>) ?? {};
-    return { data: config.actionItems ?? [] };
+    const stored = config.actionItems;
+    if (Array.isArray(stored) && stored.length > 0) {
+      return { data: stored };
+    }
+
+    // No stored items — derive deterministic, meaningful action items from department engagement.
+    const dept = await this.getDepartmentComparison(orgId);
+    const items: Array<{ id: string; title: string; department: string; priority: string; status: string }> = [];
+    for (const d of dept.data) {
+      if (d.averageScore < 55) {
+        items.push({
+          id: `ai-dept-${d.departmentId ?? d.departmentName}`,
+          title: `Improve engagement in ${d.departmentName}`,
+          department: d.departmentName,
+          priority: d.averageScore < 45 ? 'high' : 'medium',
+          status: 'open',
+        });
+      }
+      if (d.averageEnps < 0) {
+        items.push({
+          id: `ai-enps-${d.departmentId ?? d.departmentName}`,
+          title: `Address detractor sentiment in ${d.departmentName}`,
+          department: d.departmentName,
+          priority: 'high',
+          status: 'open',
+        });
+      }
+    }
+    // Guarantee at least one item so the dashboard is never blank.
+    if (items.length === 0 && dept.data.length > 0) {
+      const lowest = [...dept.data].sort((a, b) => a.averageScore - b.averageScore)[0];
+      items.push({
+        id: `ai-dept-${lowest.departmentId ?? lowest.departmentName}`,
+        title: `Sustain engagement momentum in ${lowest.departmentName}`,
+        department: lowest.departmentName,
+        priority: 'medium',
+        status: 'open',
+      });
+    }
+
+    return { data: items };
   }
 
   async saveActionItems(orgId: string, actionItems: any[]) {

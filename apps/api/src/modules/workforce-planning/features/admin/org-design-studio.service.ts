@@ -38,16 +38,33 @@ export class OrgDesignStudioService {
       .where(and(eq(schema.workforceHeadcountPlans.orgId, orgId), eq(schema.workforceHeadcountPlans.isActive, true)))
       .orderBy(desc(schema.workforceHeadcountPlans.createdAt));
 
-    const byDept: Record<string, { departmentId: string | null; current: number; approved: number; target: number }> = {};
+    const departments = await this.db
+      .select({ id: schema.departments.id, name: schema.departments.name })
+      .from(schema.departments)
+      .where(eq(schema.departments.orgId, orgId));
+    const deptNameById = new Map(departments.map((d) => [d.id, d.name]));
+
+    const byDept: Record<
+      string,
+      { departmentId: string | null; departmentName: string; currentHeadcount: number; approvedHeadcount: number; targetHeadcount: number; openRequisitions: number }
+    > = {};
 
     for (const plan of plans) {
       const key = plan.departmentId ?? 'unassigned';
       if (!byDept[key]) {
-        byDept[key] = { departmentId: plan.departmentId, current: 0, approved: 0, target: 0 };
+        byDept[key] = {
+          departmentId: plan.departmentId,
+          departmentName: (plan.departmentId && deptNameById.get(plan.departmentId)) || 'Unassigned',
+          currentHeadcount: 0,
+          approvedHeadcount: 0,
+          targetHeadcount: 0,
+          openRequisitions: 0,
+        };
       }
-      byDept[key].current += plan.currentHeadcount ?? 0;
-      byDept[key].approved += plan.approvedHeadcount ?? 0;
-      byDept[key].target += plan.targetHeadcount ?? 0;
+      byDept[key].currentHeadcount += plan.currentHeadcount ?? 0;
+      byDept[key].approvedHeadcount += plan.approvedHeadcount ?? 0;
+      byDept[key].targetHeadcount += plan.targetHeadcount ?? 0;
+      byDept[key].openRequisitions += plan.openRequisitions ?? 0;
     }
 
     return { data: Object.values(byDept), meta: { total: Object.keys(byDept).length } };

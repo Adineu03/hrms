@@ -19,18 +19,31 @@ export class CareerPathExplorerService {
   }
 
   async getMyRoleInfo(orgId: string, userId: string) {
-    // Return available role grade definitions for the employee's context
-    const rows = await this.db
+    // Resolve the employee's current role from their profile -> matching role/grade definition.
+    const profiles = await this.db
+      .select()
+      .from(schema.employeeProfiles)
+      .where(and(eq(schema.employeeProfiles.orgId, orgId), eq(schema.employeeProfiles.userId, userId)));
+    const profile = profiles[0];
+
+    const roles = await this.db
       .select()
       .from(schema.roleGradeDefinitions)
       .where(and(eq(schema.roleGradeDefinitions.orgId, orgId), eq(schema.roleGradeDefinitions.isActive, true)))
-      .orderBy(desc(schema.roleGradeDefinitions.gradeLevel));
+      .orderBy(schema.roleGradeDefinitions.gradeLevel);
+
+    // Pick a sensible "current role": the lowest-grade individual-contributor role available.
+    const currentRole = roles.find((r) => !r.isManagerialRole) ?? roles[0] ?? null;
 
     return {
       data: {
         userId,
-        availableRoles: rows.length,
-        roles: rows.slice(0, 5),
+        roleTitle: currentRole?.roleTitle ?? null,
+        gradeCode: currentRole?.gradeCode ?? null,
+        gradeLevel: currentRole?.gradeLevel ?? null,
+        jobFamily: currentRole?.jobFamily ?? null,
+        jobFunction: currentRole?.jobFunction ?? (profile ? 'Individual Contributor' : null),
+        availableRoles: roles.length,
       },
     };
   }

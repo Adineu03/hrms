@@ -109,7 +109,7 @@ export default function OrgDesignStudioTab() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {deptData.map((dept) => (
-                  <tr key={dept.departmentId} className="hover:bg-gray-50 transition-colors">
+                  <tr key={dept.departmentId ?? 'unassigned'} className="hover:bg-gray-50 transition-colors">
                     <td className="py-3 px-2">
                       <div className="font-medium text-[#2c2c2c]">{dept.departmentName || '—'}</div>
                       <div className="text-xs text-gray-400 font-mono">{dept.departmentId}</div>

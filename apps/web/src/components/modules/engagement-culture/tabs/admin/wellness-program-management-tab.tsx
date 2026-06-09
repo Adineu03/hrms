@@ -24,6 +24,7 @@ interface WellnessProgram {
   budget: number;
   maxParticipants: number;
   participantsCount: number;
+  currentParticipants: number;
   status: string;
   createdAt: string;
 }
@@ -232,9 +233,9 @@ export default function WellnessProgramManagementTab() {
                   <td className="px-4 py-3 text-sm text-text-muted">
                     {p.startDate ? new Date(p.startDate).toLocaleDateString() : '—'} — {p.endDate ? new Date(p.endDate).toLocaleDateString() : '—'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-text">{formatCurrency(p.budget || 0)}</td>
+                  <td className="px-4 py-3 text-sm text-text">{formatCurrency(Number(p.budget) || 0)}</td>
                   <td className="px-4 py-3 text-sm text-text">
-                    {p.participantsCount || 0}{p.maxParticipants ? ` / ${p.maxParticipants}` : ''}
+                    {p.currentParticipants ?? p.participantsCount ?? 0}{p.maxParticipants ? ` / ${p.maxParticipants}` : ''}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

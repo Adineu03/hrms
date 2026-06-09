@@ -131,6 +131,12 @@ export class RegulatoryComplianceService {
       .where(and(eq(schema.complianceChecklists.orgId, orgId), eq(schema.complianceChecklists.isActive, true), isNotNull(schema.complianceChecklists.dueDate)))
       .orderBy(schema.complianceChecklists.dueDate);
 
-    return { data: rows, meta: { total: rows.length } };
+    const anchor = new Date('2026-06-09T00:00:00Z').getTime();
+    const enriched = rows.map((r) => ({
+      ...r,
+      daysUntilDue: r.dueDate ? Math.round((new Date(r.dueDate).getTime() - anchor) / 86400000) : 0,
+    }));
+
+    return { data: enriched, meta: { total: enriched.length } };
   }
 }

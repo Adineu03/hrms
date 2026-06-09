@@ -23,6 +23,7 @@ interface Survey {
   isAnonymous: boolean;
   status: string;
   responsesCount: number;
+  responseCount: number;
   scheduledAt: string;
   closesAt: string;
   createdAt: string;
@@ -222,7 +223,7 @@ export default function SurveyPulseManagementTab() {
                       {s.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-text">{s.responsesCount || 0}</td>
+                  <td className="px-4 py-3 text-sm text-text">{s.responseCount ?? s.responsesCount ?? 0}</td>
                   <td className="px-4 py-3 text-sm text-text-muted">{s.isAnonymous ? 'Yes' : 'No'}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

@@ -60,7 +60,7 @@ export default function WellnessPortalTab() {
       setData({
         programs,
         participations,
-        wellnessPoints: pointsData.points || pointsData.wellnessPoints || 0,
+        wellnessPoints: Number(pointsData.totalPoints ?? pointsData.points ?? pointsData.wellnessPoints ?? 0) || 0,
       });
     } catch {
       setError('Failed to load wellness data.');
@@ -203,7 +203,7 @@ export default function WellnessPortalTab() {
                     <span>Ends: {new Date(program.endDate).toLocaleDateString()}</span>
                   )}
                   <span>
-                    {program.participantsCount || 0}{program.maxParticipants ? ` / ${program.maxParticipants}` : ''} enrolled
+                    {(program as WellnessProgram & { currentParticipants?: number }).currentParticipants ?? program.participantsCount ?? 0}{program.maxParticipants ? ` / ${program.maxParticipants}` : ''} enrolled
                   </span>
                 </div>
                 {program.isEnrolled ? (

@@ -16,9 +16,9 @@ interface TeamHeadcountPlan {
 
 interface OpenPosition {
   id: string;
-  positionTitle: string;
+  planName: string;
   departmentId: string;
-  openSlots: number;
+  openRequisitions: number;
 }
 
 interface HeadcountSummary {
@@ -160,9 +160,9 @@ export default function TeamHeadcountViewTab() {
           <div className="space-y-2">
             {openPositions.map((pos) => (
               <div key={pos.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
-                <span className="text-sm font-medium text-[#2c2c2c]">{pos.positionTitle}</span>
+                <span className="text-sm font-medium text-[#2c2c2c]">{pos.planName}</span>
                 <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
-                  {pos.openSlots} open slot{pos.openSlots !== 1 ? 's' : ''}
+                  {pos.openRequisitions} open req{pos.openRequisitions !== 1 ? 's' : ''}
                 </span>
               </div>
             ))}

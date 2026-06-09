@@ -204,13 +204,13 @@ export default function TeamComplianceDashboardTab() {
                           <p className="text-xs text-gray-500">{member.designation}</p>
                         </td>
                         <td className="py-3 px-2">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${trainingStatusColors[member.trainingStatus]}`}>
-                            {member.trainingStatus.replace('_', ' ')}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${trainingStatusColors[member.trainingStatus] || 'bg-gray-100 text-gray-600'}`}>
+                            {(member.trainingStatus ?? '').replace('_', ' ')}
                           </span>
                         </td>
                         <td className="py-3 px-2">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${policyAckColors[member.policyAckStatus]}`}>
-                            {member.policyAckStatus.replace('_', ' ')}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${policyAckColors[member.policyAckStatus] || 'bg-gray-100 text-gray-600'}`}>
+                            {(member.policyAckStatus ?? '').replace('_', ' ')}
                           </span>
                         </td>
                         <td className="py-3 px-2">

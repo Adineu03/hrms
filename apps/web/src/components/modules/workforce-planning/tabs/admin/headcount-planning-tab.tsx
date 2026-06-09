@@ -12,7 +12,7 @@ interface HeadcountPlan {
   approvedHeadcount: number;
   targetHeadcount: number;
   openRequisitions: number;
-  isFrozen: boolean;
+  hiringFreezeActive: boolean;
   status: 'draft' | 'pending_approval' | 'approved' | 'active';
 }
 
@@ -248,7 +248,7 @@ export default function HeadcountPlanningTab() {
                     <td className="py-3 px-2 text-gray-700">{plan.targetHeadcount}</td>
                     <td className="py-3 px-2 text-gray-700">{plan.openRequisitions ?? 0}</td>
                     <td className="py-3 px-2">
-                      {plan.isFrozen ? (
+                      {plan.hiringFreezeActive ? (
                         <span className="flex items-center gap-1 text-xs text-red-600">
                           <Lock className="w-3 h-3" /> Frozen
                         </span>
@@ -273,9 +273,9 @@ export default function HeadcountPlanningTab() {
                         )}
                         <button
                           onClick={() => handleToggleFreeze(plan.id)}
-                          className={`px-2 py-1 text-xs rounded transition-colors ${plan.isFrozen ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                          className={`px-2 py-1 text-xs rounded transition-colors ${plan.hiringFreezeActive ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
                         >
-                          {plan.isFrozen ? 'Unfreeze' : 'Freeze'}
+                          {plan.hiringFreezeActive ? 'Unfreeze' : 'Freeze'}
                         </button>
                       </div>
                     </td>

@@ -10,8 +10,9 @@ interface RoleGrade {
   jobFunction: string;
   gradeCode: string;
   gradeLevel: number;
-  salaryRangeMin: number;
-  salaryRangeMax: number;
+  // numeric/decimal columns arrive as strings from drizzle
+  salaryRangeMin: number | string;
+  salaryRangeMax: number | string;
   currency: string;
   isManagerialRole: boolean;
   employmentType?: string;
@@ -79,9 +80,12 @@ export default function RoleGradeArchitectureTab() {
     }
   };
 
-  const formatSalaryRange = (min: number, max: number, currency: string) => {
+  const formatSalaryRange = (min: number | string, max: number | string, currency: string) => {
     const symbol = currency === 'INR' ? '₹' : currency;
-    return `${symbol}${min.toLocaleString('en-IN')} – ${symbol}${max.toLocaleString('en-IN')}`;
+    const minN = Number(min) || 0;
+    const maxN = Number(max) || 0;
+    if (minN === 0 && maxN === 0) return '—';
+    return `${symbol}${minN.toLocaleString('en-IN')} – ${symbol}${maxN.toLocaleString('en-IN')}`;
   };
 
   if (loading) {

@@ -200,7 +200,7 @@ export default function EthicsWhistleblowerAdminTab() {
                   {Object.entries(analytics.byCategory || {}).map(([cat, count]) => (
                     <div key={cat} className="flex items-center justify-between">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${categoryColors[cat] || 'bg-gray-100 text-gray-700'}`}>
-                        {cat.replace('_', ' ')}
+                        {(cat ?? '').replace('_', ' ')}
                       </span>
                       <span className="text-sm font-medium text-[#2c2c2c]">{count}</span>
                     </div>
@@ -231,10 +231,10 @@ export default function EthicsWhistleblowerAdminTab() {
                           {complaint.referenceCode}
                         </span>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${categoryColors[complaint.category] || 'bg-gray-100 text-gray-700'}`}>
-                          {complaint.category.replace('_', ' ')}
+                          {(complaint.category ?? '').replace('_', ' ')}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[complaint.status]}`}>
-                          {statusLabels[complaint.status]}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[complaint.status] || 'bg-gray-100 text-gray-600'}`}>
+                          {statusLabels[complaint.status] || complaint.status}
                         </span>
                         {complaint.isAnonymous && (
                           <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Anonymous</span>
