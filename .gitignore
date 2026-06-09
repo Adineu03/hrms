@@ -39,3 +39,7 @@ drizzle/meta/
 
 # Claude
 .claude/
+
+# Local DB backups / scratch (Demo-Readiness safety dumps)
+hrms-backup-*.sql
+backup-err.txt

@@ -77,7 +77,16 @@ export default function TimesheetCorrectionsTab() {
         api.get('/daily-work-logging/admin/corrections/disputes').catch(() => ({ data: [] })),
       ]);
       setAuditTrail(Array.isArray(auditRes.data) ? auditRes.data : auditRes.data?.data || []);
-      setDisputes(Array.isArray(disputeRes.data) ? disputeRes.data : disputeRes.data?.data || []);
+      const dData = disputeRes.data;
+      setDisputes(
+        Array.isArray(dData)
+          ? dData
+          : Array.isArray(dData?.disputes)
+            ? dData.disputes
+            : Array.isArray(dData?.data)
+              ? dData.data
+              : []
+      );
     } catch {
       setError('Failed to load corrections data.');
     } finally {

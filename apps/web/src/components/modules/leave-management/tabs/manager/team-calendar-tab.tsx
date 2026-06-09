@@ -33,6 +33,8 @@ interface MonthlyCalendarData {
   holidays: HolidayEntry[];
 }
 
+type AnyRec = Record<string, unknown>;
+
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; text: string }> = {
@@ -67,10 +69,42 @@ export default function TeamCalendarTab() {
         params: { month, year },
       });
       const data = res.data || {};
-      setCalendarData({
-        leaves: data.leaves || data.data?.leaves || [],
-        holidays: data.holidays || data.data?.holidays || [],
-      });
+      // Endpoint returns { employees: [{ employeeId, employeeName, days: [{ date,
+      // leaveRequestId, status, leaveType, ... }] }] }. Group each employee's leave days by
+      // leaveRequestId into one calendar entry (start/end/day-count).
+      const employees: AnyRec[] = data.employees || data.data?.employees || [];
+      const leaves: CalendarEntry[] = [];
+      const skip = new Set(['available', 'weekend', 'holiday', 'absent']);
+      const holidaySet = new Map<string, string>();
+      for (const emp of employees) {
+        const byReq = new Map<string, CalendarEntry>();
+        for (const day of (emp.days as AnyRec[]) || []) {
+          if (day.status === 'holiday' && day.date) holidaySet.set(day.date as string, (day.holidayName as string) || 'Holiday');
+          if (!day.leaveRequestId || !day.status || skip.has(day.status as string)) continue;
+          const id = day.leaveRequestId as string;
+          const existing = byReq.get(id);
+          if (existing) {
+            if ((day.date as string) < existing.startDate) existing.startDate = day.date as string;
+            if ((day.date as string) > existing.endDate) existing.endDate = day.date as string;
+            existing.days += 1;
+          } else {
+            byReq.set(id, {
+              id,
+              employeeId: emp.employeeId as string,
+              employeeName: emp.employeeName as string,
+              leaveType: (day.leaveType as string) || '',
+              status: day.status as CalendarEntry['status'],
+              startDate: day.date as string,
+              endDate: day.date as string,
+              days: 1,
+            });
+          }
+        }
+        leaves.push(...byReq.values());
+      }
+      const holidays: HolidayEntry[] = (data.holidays as HolidayEntry[]) ||
+        Array.from(holidaySet.entries()).map(([date, name]) => ({ date, name }));
+      setCalendarData({ leaves, holidays });
     } catch {
       setError('Failed to load team calendar data.');
     } finally {

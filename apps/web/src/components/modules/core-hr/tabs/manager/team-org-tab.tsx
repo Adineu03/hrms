@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, Fragment, type FormEvent } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -301,9 +301,8 @@ export default function TeamOrgTab() {
               const StatusIcon = STATUS_ICONS[change.status] || Clock;
               const isExpanded = expandedId === change.id;
               return (
-                <>
+                <Fragment key={change.id}>
                   <tr
-                    key={change.id}
                     className="bg-card hover:bg-background/50 transition-colors cursor-pointer"
                     onClick={() =>
                       setExpandedId(isExpanded ? null : change.id)
@@ -337,7 +336,7 @@ export default function TeamOrgTab() {
                     </td>
                   </tr>
                   {isExpanded && (
-                    <tr key={`${change.id}-detail`} className="bg-background/30">
+                    <tr className="bg-background/30">
                       <td colSpan={5} className="px-8 py-4">
                         <div className="space-y-2 text-sm">
                           <div>
@@ -356,7 +355,7 @@ export default function TeamOrgTab() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
             {changes.length === 0 && (

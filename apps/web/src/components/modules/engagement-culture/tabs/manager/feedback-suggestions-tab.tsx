@@ -10,6 +10,7 @@ import {
   Inbox,
   ArrowUpRight,
   MessageCircle,
+  Sparkles,
 } from 'lucide-react';
 
 interface FeedbackItem {
@@ -39,6 +40,37 @@ export default function FeedbackSuggestionsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [digesting, setDigesting] = useState(false);
+  const [digest, setDigest] = useState<string | null>(null);
+
+  const handleGenerateDigest = async () => {
+    const items = [
+      ...feedback.map((f) => f.message),
+      ...suggestions.map((s) => `${s.title}: ${s.description}`),
+    ]
+      .map((t) => (t || '').trim())
+      .filter(Boolean);
+    if (items.length === 0) {
+      setError('There is no feedback to summarize yet.');
+      return;
+    }
+    setDigesting(true);
+    setError('');
+    setDigest(null);
+    try {
+      const res = await api.post('/engagement-culture/manager/feedback/digest', { items });
+      const data = res.data;
+      if (!data?.ok) {
+        setError(data?.message || 'AI digest is unavailable.');
+        return;
+      }
+      setDigest(data.digest);
+    } catch {
+      setError('Failed to generate a digest. Please try again.');
+    } finally {
+      setDigesting(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -109,10 +141,36 @@ export default function FeedbackSuggestionsTab() {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-6">
-        <MessageSquare className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold text-text">Feedback &amp; Suggestions</h2>
+      <div className="flex items-center justify-between gap-2 mb-6">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold text-text">Feedback &amp; Suggestions</h2>
+        </div>
+        <button
+          type="button"
+          onClick={handleGenerateDigest}
+          disabled={digesting}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-primary/40 text-primary hover:bg-primary/5 disabled:opacity-50 transition-colors"
+        >
+          {digesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {digesting ? 'Summarizing…' : 'Generate Digest'}
+        </button>
       </div>
+
+      {digest && (
+        <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-text flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4 text-primary" />
+              AI Feedback Digest
+            </h3>
+            <button type="button" onClick={() => setDigest(null)} className="text-text-muted hover:text-text text-xs">
+              Dismiss
+            </button>
+          </div>
+          <p className="text-sm text-text whitespace-pre-wrap">{digest}</p>
+        </div>
+      )}
 
       {error && (
         <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">

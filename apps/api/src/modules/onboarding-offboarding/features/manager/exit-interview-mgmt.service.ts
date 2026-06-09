@@ -1,14 +1,55 @@
-import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { eq, and, desc, inArray } from 'drizzle-orm';
+import { z } from 'zod';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { AiCoreService } from '../../../../shared/ai/ai-core.service';
+
+const ExitAnalysisSchema = z.object({
+  summary: z.string().describe('A neutral 2–3 sentence summary of the exit feedback.'),
+  themes: z.array(z.string()).describe('3–6 short theme tags (e.g. "compensation", "manager relationship", "growth").'),
+  sentiment: z.enum(['positive', 'neutral', 'negative', 'mixed']).describe('Overall sentiment of the feedback.'),
+});
 
 @Injectable()
 export class ExitInterviewMgmtService {
+  private readonly logger = new Logger(ExitInterviewMgmtService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly ai: AiCoreService,
   ) {}
+
+  /**
+   * AI Exit Interview Analyzer — summarize raw exit-interview notes into a neutral
+   * summary, theme tags, and an overall sentiment. Analysis only (no inference
+   * beyond the text); the manager reviews before saving.
+   */
+  async analyzeExitInterview(input: { notes: string }): Promise<
+    { ok: true; analysis: z.infer<typeof ExitAnalysisSchema> } | { ok: false; message: string }
+  > {
+    if (!this.ai.isReady()) return { ok: false, message: 'AI analysis is not configured on this server.' };
+    const notes = (input.notes || '').trim();
+    if (notes.length < 10) return { ok: false, message: 'Enter the exit-interview notes first, then analyze.' };
+
+    const instructions = `You analyze a departing employee's exit-interview free-text for HR.
+Produce a neutral summary, a few short theme tags, and the overall sentiment.
+Base everything strictly on the provided text — do NOT infer beyond it or add advice. Keep it objective and respectful.`;
+
+    try {
+      const analysis = await this.ai.extractStructured<z.infer<typeof ExitAnalysisSchema>>({
+        name: 'ExitAnalyzer',
+        schema: ExitAnalysisSchema,
+        instructions,
+        text: notes,
+      });
+      return { ok: true, analysis };
+    } catch (err: any) {
+      this.logger.error('Exit interview analysis failed', err?.message || err);
+      return { ok: false, message: 'Could not analyze the notes. Please try again.' };
+    }
+  }
 
   private async getTeamMemberIds(orgId: string, managerId: string): Promise<string[]> {
     const members = await this.db

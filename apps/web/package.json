@@ -7,11 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:survey": "playwright test --grep @survey",
+    "survey:report": "node e2e/build-inventory.mjs"
   },
   "dependencies": {
     "@hrms/shared": "workspace:*",
     "axios": "^1",
+    "html2canvas": "^1.4.1",
     "lucide-react": "^0.468",
     "next": "^15",
     "react": "^19",
@@ -20,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.4",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22",
     "@types/react": "^19",

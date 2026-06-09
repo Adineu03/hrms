@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  Patch,
   Post,
   Query,
   UnauthorizedException,
@@ -64,11 +66,26 @@ export class TimesheetCorrectionsController {
     });
   }
 
+  @Get('disputes')
+  @Roles('super_admin', 'admin')
+  async listDisputes() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.timesheetCorrectionsService.listDisputes(orgId);
+  }
+
   @Post('dispute')
   @Roles('super_admin', 'admin')
   async resolveDispute(@Body() body: Record<string, any>) {
     const orgId = this.getOrgIdOrThrow();
     const adminUserId = this.tenantService.getUserId();
     return this.timesheetCorrectionsService.resolveDispute(orgId, body, adminUserId);
+  }
+
+  @Patch('disputes/:id/resolve')
+  @Roles('super_admin', 'admin')
+  async resolveDisputeById(@Param('id') id: string) {
+    const orgId = this.getOrgIdOrThrow();
+    const adminUserId = this.tenantService.getUserId();
+    return this.timesheetCorrectionsService.resolveDisputeById(orgId, id, adminUserId);
   }
 }

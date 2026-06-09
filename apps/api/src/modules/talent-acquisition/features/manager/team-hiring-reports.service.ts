@@ -75,7 +75,19 @@ export class TeamHiringReportsService {
       };
     });
 
+    // Derive the headline metrics the dashboard cards read (top-level fields).
+    const ttf = await this.getTimeToFill(orgId, managerId);
+    const ratio = await this.getInterviewToHireRatio(orgId, managerId);
+    const ratioLabel =
+      ratio.ratio == null ? '--' : `${ratio.ratio}:1`;
+
     return {
+      // Headline metrics consumed by the dashboard cards.
+      openPositions: totalHeadcount - totalFilled,
+      filledThisQuarter: totalFilled,
+      avgTimeToFill: ttf.averageDays,
+      interviewToHireRatio: ratioLabel,
+      // Detailed breakdown (kept for completeness).
       summary: {
         totalRequisitions: requisitions.length,
         totalHeadcount,
@@ -98,19 +110,23 @@ export class TeamHiringReportsService {
       return {
         averageDays: 0,
         medianDays: 0,
+        data: [],
         breakdown: [],
       };
     }
 
-    // Get requisitions with their creation dates
+    // Get requisitions with their creation dates + department for grouping
     const requisitions = await this.db
       .select({
         id: schema.jobRequisitions.id,
         title: schema.jobRequisitions.title,
         status: schema.jobRequisitions.status,
         createdAt: schema.jobRequisitions.createdAt,
+        metadata: schema.jobRequisitions.metadata,
+        departmentName: schema.departments.name,
       })
       .from(schema.jobRequisitions)
+      .leftJoin(schema.departments, eq(schema.jobRequisitions.departmentId, schema.departments.id))
       .where(
         and(
           eq(schema.jobRequisitions.orgId, orgId),
@@ -147,27 +163,64 @@ export class TeamHiringReportsService {
     }
 
     const fillTimes: number[] = [];
-    const breakdown = requisitions.map((req) => {
-      const firstAccepted = firstAcceptedMap.get(req.id);
-      let daysToFill: number | null = null;
+    // Accumulate per-department fill stats for the dashboard chart.
+    const deptStats = new Map<string, { totalDays: number; filled: number; reqCount: number }>();
 
-      if (firstAccepted && req.createdAt) {
-        const createdDate = new Date(req.createdAt);
-        daysToFill = Math.ceil(
-          (firstAccepted.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24),
+    const breakdown = requisitions.map((req) => {
+      const meta = (req.metadata as Record<string, any>) ?? {};
+      const dept = req.departmentName ?? 'Unassigned';
+      if (!deptStats.has(dept)) {
+        deptStats.set(dept, { totalDays: 0, filled: 0, reqCount: 0 });
+      }
+      deptStats.get(dept)!.reqCount += 1;
+
+      // Prefer explicit opened/filled timestamps (deterministic seed data);
+      // fall back to (first accepted offer date − requisition creation date).
+      let daysToFill: number | null = null;
+      const openedAt = meta.openedAt ? new Date(meta.openedAt) : null;
+      const filledAt = meta.filledAt ? new Date(meta.filledAt) : null;
+      const firstAccepted = firstAcceptedMap.get(req.id);
+
+      if (openedAt && filledAt) {
+        daysToFill = Math.max(
+          0,
+          Math.ceil((filledAt.getTime() - openedAt.getTime()) / (1000 * 60 * 60 * 24)),
         );
+      } else if (firstAccepted && req.createdAt) {
+        const createdDate = new Date(req.createdAt);
+        daysToFill = Math.max(
+          0,
+          Math.ceil((firstAccepted.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)),
+        );
+      }
+
+      if (daysToFill != null) {
         fillTimes.push(daysToFill);
+        const ds = deptStats.get(dept)!;
+        ds.totalDays += daysToFill;
+        ds.filled += 1;
       }
 
       return {
         requisitionId: req.id,
         title: req.title,
+        department: dept,
         status: req.status,
         createdAt: req.createdAt?.toISOString?.() ?? req.createdAt,
         firstAcceptedAt: firstAccepted?.toISOString() ?? null,
         daysToFill,
       };
     });
+
+    // Department-grouped rows consumed by the "Time-to-Fill by Department" chart.
+    const data = Array.from(deptStats.entries())
+      .filter(([, s]) => s.filled > 0)
+      .map(([department, s]) => ({
+        department,
+        avgDays: Math.round(s.totalDays / s.filled),
+        requisitionCount: s.reqCount,
+      }))
+      .sort((a, b) => b.avgDays - a.avgDays);
 
     // Calculate averages
     const averageDays = fillTimes.length > 0
@@ -186,6 +239,7 @@ export class TeamHiringReportsService {
       medianDays,
       filledPositions: fillTimes.length,
       totalPositions: requisitions.length,
+      data,
       breakdown,
     };
   }
@@ -287,12 +341,26 @@ export class TeamHiringReportsService {
       };
     });
 
+    // Rows consumed by the "Interview-to-Hire Ratio by Position" table.
+    const data = breakdown
+      .filter((b) => b.totalInterviews > 0)
+      .map((b) => ({
+        position: b.title,
+        totalInterviews: b.totalInterviews,
+        totalHires: b.totalHires,
+        ratio:
+          b.totalHires > 0
+            ? (Math.round((b.totalInterviews / b.totalHires) * 100) / 100).toString()
+            : b.totalInterviews.toString(),
+      }));
+
     return {
       totalInterviews,
       totalHires,
       ratio: totalHires > 0
         ? Math.round((totalInterviews / totalHires) * 100) / 100
         : totalInterviews > 0 ? null : 0,
+      data,
       breakdown,
     };
   }
@@ -341,6 +409,8 @@ export class TeamHiringReportsService {
 
     return {
       data: joiners.map((j) => ({
+        id: j.offerId,
+        name: `${j.candidateFirstName} ${j.candidateLastName ?? ''}`.trim(),
         offerId: j.offerId,
         candidateName: `${j.candidateFirstName} ${j.candidateLastName ?? ''}`.trim(),
         candidateEmail: j.candidateEmail,

@@ -42,6 +42,13 @@ export class JobPostingController {
     });
   }
 
+  @Post('generate-jd')
+  @Roles('super_admin', 'admin')
+  async generateJd(@Body() body: { title: string; postingType?: string; notes?: string }) {
+    this.getOrgIdOrThrow();
+    return this.service.generateJd(body);
+  }
+
   @Post()
   @Roles('super_admin', 'admin')
   async create(@Body() body: Record<string, any>) {

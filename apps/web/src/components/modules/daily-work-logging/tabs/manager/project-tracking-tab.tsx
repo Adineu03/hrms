@@ -52,13 +52,39 @@ export default function ProjectTrackingTab() {
         api.get('/daily-work-logging/manager/projects'),
         api.get('/daily-work-logging/manager/projects/billable'),
       ]);
-      setProjects(Array.isArray(projRes.data) ? projRes.data : projRes.data?.data || []);
-      const billData = billRes.data?.data || billRes.data;
+      // Backend returns { projects: [{ projectId, projectName, totalHours, ... }] }.
+      const projData = projRes.data;
+      const rawProjects = Array.isArray(projData)
+        ? projData
+        : Array.isArray(projData?.projects)
+          ? projData.projects
+          : Array.isArray(projData?.data)
+            ? projData.data
+            : [];
+      setProjects(
+        rawProjects.map((p: Record<string, unknown>) => {
+          const actual = Number(p.totalHours ?? p.actualHours ?? 0);
+          const budget = Number(p.budgetHours ?? 0);
+          return {
+            id: String(p.projectId ?? p.id ?? '__unassigned__'),
+            name: String(p.projectName ?? p.name ?? 'Unassigned'),
+            budgetHours: budget,
+            actualHours: actual,
+            billableHours: Number(p.billableHours ?? 0),
+            utilization: budget > 0
+              ? Math.round((actual / budget) * 100)
+              : Number(p.allocationPercentage ?? 0),
+            status: String(p.status ?? 'active'),
+          };
+        })
+      );
+      // Backend returns { summary: { billableHours, nonBillableHours, utilizationPercentage } }.
+      const billData = billRes.data?.summary ?? billRes.data?.data ?? billRes.data;
       if (billData) {
         setBillable({
-          totalBillable: billData.totalBillable || 0,
-          totalNonBillable: billData.totalNonBillable || 0,
-          billableRatio: billData.billableRatio || 0,
+          totalBillable: Number(billData.billableHours ?? billData.totalBillable ?? 0),
+          totalNonBillable: Number(billData.nonBillableHours ?? billData.totalNonBillable ?? 0),
+          billableRatio: Number(billData.utilizationPercentage ?? billData.billableRatio ?? 0),
         });
       }
     } catch {
@@ -83,9 +109,22 @@ export default function ProjectTrackingTab() {
     setLoadingMembers(projectId);
     try {
       const res = await api.get(`/daily-work-logging/manager/projects/${projectId}/members`);
+      const raw = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.members)
+          ? res.data.members
+          : Array.isArray(res.data?.data)
+            ? res.data.data
+            : [];
       setMemberMap((prev) => ({
         ...prev,
-        [projectId]: Array.isArray(res.data) ? res.data : res.data?.data || [],
+        [projectId]: raw.map((m: Record<string, unknown>) => ({
+          employeeId: String(m.employeeId ?? ''),
+          employeeName: String(m.employeeName ?? 'Unknown'),
+          hours: Number(m.totalHours ?? m.hours ?? 0),
+          billableHours: Number(m.billableHours ?? 0),
+          role: String(m.role ?? '--'),
+        })),
       }));
     } catch {
       setMemberMap((prev) => ({ ...prev, [projectId]: [] }));

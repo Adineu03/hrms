@@ -40,6 +40,13 @@ export class LmsConfigController {
     return this.service.listCourses(this.getOrgIdOrThrow(), { type, format, difficulty, provider });
   }
 
+  @Post('courses/generate-description')
+  @Roles('super_admin', 'admin')
+  async generateCourseDescription(@Body() body: { title: string; skills?: string[]; audience?: string }) {
+    this.getOrgIdOrThrow();
+    return this.service.generateCourseDescription(body);
+  }
+
   @Post('courses')
   @Roles('super_admin', 'admin')
   async createCourse(@Body() body: Record<string, any>) {

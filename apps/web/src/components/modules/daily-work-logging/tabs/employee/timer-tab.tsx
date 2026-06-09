@@ -120,21 +120,54 @@ export default function TimerTab() {
         api.get('/daily-work-logging/employee/timesheet/categories').catch(() => null),
       ]);
       const activeData = activeRes?.data;
-      setActiveTimers(Array.isArray(activeData) ? activeData : Array.isArray(activeData?.data) ? activeData.data : []);
+      setActiveTimers(
+        Array.isArray(activeData)
+          ? activeData
+          : Array.isArray(activeData?.timers)
+            ? activeData.timers
+            : Array.isArray(activeData?.data)
+              ? activeData.data
+              : []
+      );
       const histData = histRes?.data;
-      setHistory(Array.isArray(histData) ? histData : Array.isArray(histData?.data) ? histData.data : []);
+      setHistory(
+        Array.isArray(histData)
+          ? histData
+          : Array.isArray(histData?.sessions)
+            ? histData.sessions
+            : Array.isArray(histData?.data)
+              ? histData.data
+              : []
+      );
       const sumData = summaryRes?.data?.data || summaryRes?.data;
       if (sumData) {
+        // Backend returns totalTrackedSeconds / sessionsCount.
         setDailySummary({
-          totalTracked: sumData.totalTracked || 0,
-          totalEntries: sumData.totalEntries || 0,
-          billableTracked: sumData.billableTracked || 0,
+          totalTracked: sumData.totalTrackedSeconds ?? sumData.totalTracked ?? 0,
+          totalEntries: sumData.sessionsCount ?? sumData.totalEntries ?? 0,
+          billableTracked: sumData.billableTrackedSeconds ?? sumData.billableTracked ?? 0,
         });
       }
       const projData = projRes?.data;
-      setProjects(Array.isArray(projData) ? projData : Array.isArray(projData?.data) ? projData.data : []);
+      setProjects(
+        Array.isArray(projData)
+          ? projData
+          : Array.isArray(projData?.projects)
+            ? projData.projects
+            : Array.isArray(projData?.data)
+              ? projData.data
+              : []
+      );
       const catData = catRes?.data;
-      setCategories(Array.isArray(catData) ? catData : Array.isArray(catData?.data) ? catData.data : []);
+      setCategories(
+        Array.isArray(catData)
+          ? catData
+          : Array.isArray(catData?.categories)
+            ? catData.categories
+            : Array.isArray(catData?.data)
+              ? catData.data
+              : []
+      );
     } catch {
       setError('Failed to load timer data.');
     } finally {

@@ -34,6 +34,21 @@ interface TagOption {
   count: number;
 }
 
+// Maps a backend timesheet/activity row to the UI Activity shape.
+function mapActivity(row: Record<string, unknown>): Activity {
+  const hours = Number(row.hours ?? 0);
+  const tags = Array.isArray(row.tags) ? (row.tags as string[]) : [];
+  return {
+    id: String(row.id ?? ''),
+    timestamp: String(row.date ?? row.createdAt ?? ''),
+    category: String(row.activityType ?? row.categoryName ?? 'other'),
+    project: String(row.projectName ?? ''),
+    description: String(row.description ?? ''),
+    tags,
+    duration: Math.round(hours * 60), // hours -> minutes for display
+  };
+}
+
 const CATEGORY_STYLES: Record<string, string> = {
   development: 'bg-blue-50 text-blue-700',
   meeting: 'bg-purple-50 text-purple-700',
@@ -76,18 +91,42 @@ export default function ActivityLogTab() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (filterFromDate) params.append('fromDate', filterFromDate);
-      if (filterToDate) params.append('toDate', filterToDate);
-      if (filterProject) params.append('project', filterProject);
-      if (filterTag) params.append('tag', filterTag);
+      if (filterFromDate) params.append('from', filterFromDate);
+      if (filterToDate) params.append('to', filterToDate);
+      if (filterProject) params.append('projectId', filterProject);
+      if (filterTag) params.append('tags', filterTag);
       if (searchQuery) params.append('search', searchQuery);
 
       const [actRes, tagsRes] = await Promise.all([
         api.get(`/daily-work-logging/employee/activities?${params.toString()}`),
         api.get('/daily-work-logging/employee/activities/tags'),
       ]);
-      setActivities(Array.isArray(actRes.data) ? actRes.data : actRes.data?.data || []);
-      setTags(Array.isArray(tagsRes.data) ? tagsRes.data : tagsRes.data?.data || []);
+      const actData = actRes.data;
+      const rawActivities = Array.isArray(actData)
+        ? actData
+        : Array.isArray(actData?.activities)
+          ? actData.activities
+          : Array.isArray(actData?.data)
+            ? actData.data
+            : [];
+      setActivities(rawActivities.map(mapActivity));
+
+      const tagData = tagsRes.data;
+      const rawTags = Array.isArray(tagData)
+        ? tagData
+        : Array.isArray(tagData?.tags)
+          ? tagData.tags
+          : Array.isArray(tagData?.data)
+            ? tagData.data
+            : [];
+      // Backend returns string[]; normalize to {value, count}.
+      setTags(
+        rawTags.map((t: unknown) =>
+          typeof t === 'string'
+            ? { value: t, count: 0 }
+            : { value: String((t as TagOption).value ?? ''), count: (t as TagOption).count ?? 0 }
+        )
+      );
     } catch {
       setError('Failed to load activities.');
     } finally {
@@ -108,12 +147,15 @@ export default function ActivityLogTab() {
     setIsSaving(true);
     try {
       const payload = {
-        ...newActivity,
+        date: new Date().toISOString().split('T')[0],
+        description: newActivity.description,
+        activityType: newActivity.category,
+        hours: (newActivity.duration || 0) / 60,
         tags: newActivity.tags.split(',').map((t) => t.trim()).filter(Boolean),
       };
       const res = await api.post('/daily-work-logging/employee/activities', payload);
       const created = res.data?.data || res.data;
-      setActivities((prev) => [created, ...prev]);
+      setActivities((prev) => [mapActivity(created), ...prev]);
       setNewActivity({ category: 'development', project: '', description: '', tags: '', duration: 0 });
       setShowAddForm(false);
       setSuccess('Activity logged.');
@@ -130,8 +172,8 @@ export default function ActivityLogTab() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (filterFromDate) params.append('fromDate', filterFromDate);
-      if (filterToDate) params.append('toDate', filterToDate);
+      if (filterFromDate) params.append('from', filterFromDate);
+      if (filterToDate) params.append('to', filterToDate);
       const res = await api.get(`/daily-work-logging/employee/activities/export?${params.toString()}`, {
         responseType: 'blob',
       });

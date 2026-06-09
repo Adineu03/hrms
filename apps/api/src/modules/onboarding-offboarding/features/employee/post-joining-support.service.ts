@@ -36,6 +36,141 @@ export class PostJoiningSupportService {
     return onboarding;
   }
 
+  // ── Aggregated Post-Joining Overview (employee dashboard tab) ────────
+  // Returns check-ins, benefits, support requests and upcoming events in the
+  // single shape the Post-Joining Support tab expects.
+  async getPostJoiningOverview(orgId: string, employeeId: string) {
+    const onboarding = await this.getOnboarding(orgId, employeeId);
+
+    // Check-ins (derived from the onboarding's checkinSchedule jsonb). The
+    // synthetic `id` is the array index so the feedback PATCH maps back.
+    const schedule = (onboarding.checkinSchedule as Array<Record<string, any>>) || [];
+    const checkIns = schedule.map((c, i) => ({
+      id: String(i),
+      type: c.dayMark || `Day ${(i + 1) * 30}`,
+      dueDate: c.scheduledDate || null,
+      status: c.status || 'upcoming',
+      completedDate: c.completedAt || null,
+      feedback:
+        (c.employeeFeedback && (c.employeeFeedback.comments || null)) ||
+        c.managerNotes ||
+        null,
+    }));
+
+    // Benefits enrollment status (from onboarding metadata, with sensible default).
+    const meta = (onboarding.metadata as Record<string, any>) || {};
+    const benefitsMeta = meta.benefitsEnrollment || {};
+    const enrolledPlans = (benefitsMeta.enrolledPlans as Array<Record<string, any>>) || [];
+    const benefits = enrolledPlans.map((p, i) => ({
+      id: p.id || String(i),
+      benefitName: p.name || p.benefitName || 'Benefit',
+      status: p.status || 'pending',
+      enrolledDate: p.enrolledDate || null,
+    }));
+
+    // Support requests = HR/IT/training request tasks the employee raised.
+    const requestTasks = await this.db
+      .select()
+      .from(schema.employeeOnboardingTasks)
+      .where(
+        and(
+          eq(schema.employeeOnboardingTasks.orgId, orgId),
+          eq(schema.employeeOnboardingTasks.onboardingId, onboarding.id),
+          eq(schema.employeeOnboardingTasks.taskOwner, 'hr'),
+          eq(schema.employeeOnboardingTasks.isActive, true),
+        ),
+      )
+      .orderBy(desc(schema.employeeOnboardingTasks.createdAt));
+
+    const supportRequests = requestTasks
+      .filter((t) => {
+        const m = (t.metadata as Record<string, any>) || {};
+        return (
+          m.requestType === 'it_support' ||
+          m.requestType === 'additional_training' ||
+          m.requestType === 'hr_question' ||
+          m.requestType === 'support_request'
+        );
+      })
+      .map((t) => {
+        const m = (t.metadata as Record<string, any>) || {};
+        return {
+          id: t.id,
+          type: m.requestType || 'support_request',
+          subject: t.title,
+          status: t.status === 'completed' ? 'resolved' : 'open',
+          createdAt: t.createdAt.toISOString(),
+        };
+      });
+
+    // Upcoming events = company holidays from the org's holiday calendar.
+    const holidays = await this.db
+      .select()
+      .from(schema.holidayCalendars)
+      .where(eq(schema.holidayCalendars.orgId, orgId))
+      .orderBy(schema.holidayCalendars.date)
+      .limit(6);
+
+    const upcomingEvents = holidays.map((h) => ({
+      id: h.id,
+      title: h.name || 'Holiday',
+      date: h.date || '',
+      type: 'holiday',
+      description: h.description || '',
+    }));
+
+    return {
+      onboardingId: onboarding.id,
+      checkIns,
+      benefits,
+      supportRequests,
+      upcomingEvents,
+    };
+  }
+
+  // ── Submit a Support Request (training / IT / general) ──────────────
+  async submitSupportRequest(orgId: string, employeeId: string, data: Record<string, any>) {
+    if (!data.subject) {
+      throw new BadRequestException('Subject is required');
+    }
+    const onboarding = await this.getOnboarding(orgId, employeeId);
+
+    const [task] = await this.db
+      .insert(schema.employeeOnboardingTasks)
+      .values({
+        orgId,
+        onboardingId: onboarding.id,
+        employeeId,
+        title: data.subject,
+        description: data.description || null,
+        taskType: 'general',
+        taskOwner: 'hr',
+        status: 'pending',
+        metadata: {
+          requestType: data.type === 'it_support' ? 'it_support' : data.type === 'training' ? 'additional_training' : 'support_request',
+          category: data.type || 'general',
+          submittedAt: new Date().toISOString(),
+        },
+      })
+      .returning();
+
+    return {
+      id: task.id,
+      type: data.type || 'general',
+      subject: task.title,
+      status: 'open',
+      createdAt: task.createdAt.toISOString(),
+    };
+  }
+
+  // ── Submit Check-In Feedback by Synthetic Id (array index) ──────────
+  async submitCheckinFeedbackById(orgId: string, employeeId: string, checkinId: string, data: Record<string, any>) {
+    return this.submitCheckinFeedback(orgId, employeeId, checkinId, {
+      comments: data.feedback ?? data.comments ?? null,
+      rating: data.rating ?? null,
+    });
+  }
+
   // ── 30-60-90 Day Check-In Schedule ──────────────────────────────────
   async getCheckins(orgId: string, employeeId: string) {
     const onboarding = await this.getOnboarding(orgId, employeeId);

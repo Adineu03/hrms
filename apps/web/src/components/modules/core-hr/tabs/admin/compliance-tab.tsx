@@ -29,6 +29,19 @@ interface ComplianceItem {
   description: string | null;
 }
 
+interface DocItem {
+  id: string;
+  employeeId?: string;
+  name: string;
+  category?: string;
+  expiryDate: string | null;
+}
+
+interface ProbationItem {
+  userId: string;
+  probationEndDate: string;
+}
+
 const STATUS_STYLES: Record<string, { bg: string; icon: React.ElementType }> = {
   valid: { bg: 'bg-green-50 text-green-700', icon: CheckCircle2 },
   expired: { bg: 'bg-red-50 text-red-700', icon: XCircle },
@@ -50,18 +63,51 @@ export default function ComplianceTab() {
   const loadCompliance = async () => {
     try {
       const res = await api.get('/core-hr/admin/compliance/dashboard');
-      const data = res.data;
-      if (data.summary) {
-        setSummary(data.summary);
-      } else {
-        setSummary({
-          expiredDocs: data.expiredDocs ?? 0,
-          expiringSoon: data.expiringSoon ?? 0,
-          trainingGaps: data.trainingGaps ?? 0,
-          totalItems: data.totalItems ?? 0,
-        });
-      }
-      setItems(Array.isArray(data.items) ? data.items : []);
+      const data = res.data ?? {};
+      // Endpoint returns an OBJECT, not a list:
+      // { expiredDocuments:{count,items}, expiringSoonDocuments:{count,items}, probationEnding:{count,items} }
+      const expired = data.expiredDocuments ?? { count: 0, items: [] };
+      const expiringSoon = data.expiringSoonDocuments ?? { count: 0, items: [] };
+      const probation = data.probationEnding ?? { count: 0, items: [] };
+
+      const expiredItems: ComplianceItem[] = (expired.items ?? []).map((d: DocItem) => ({
+        id: d.id,
+        name: d.name,
+        type: d.category ?? 'Document',
+        employeeName: null,
+        expiryDate: d.expiryDate,
+        status: 'expired',
+        description: 'Document has expired',
+      }));
+      const expiringItems: ComplianceItem[] = (expiringSoon.items ?? []).map((d: DocItem) => ({
+        id: d.id,
+        name: d.name,
+        type: d.category ?? 'Document',
+        employeeName: null,
+        expiryDate: d.expiryDate,
+        status: 'expiring_soon',
+        description: 'Document expiring soon',
+      }));
+      const probationItems: ComplianceItem[] = (probation.items ?? []).map(
+        (p: ProbationItem, idx: number) => ({
+          id: `probation-${p.userId ?? idx}`,
+          name: 'Probation Period Ending',
+          type: 'Probation',
+          employeeName: null,
+          expiryDate: p.probationEndDate,
+          status: 'pending',
+          description: 'Probation review required',
+        })
+      );
+
+      const allItems = [...expiredItems, ...expiringItems, ...probationItems];
+      setSummary({
+        expiredDocs: expired.count ?? expiredItems.length,
+        expiringSoon: expiringSoon.count ?? expiringItems.length,
+        trainingGaps: probation.count ?? probationItems.length,
+        totalItems: allItems.length,
+      });
+      setItems(allItems);
     } catch {
       setError('Failed to load compliance data.');
     } finally {
@@ -123,7 +169,7 @@ export default function ComplianceTab() {
           </div>
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-orange-700">Training Gaps</span>
+              <span className="text-sm text-orange-700">Probation Ending</span>
               <AlertCircle className="h-4 w-4 text-orange-500" />
             </div>
             <p className="text-2xl font-bold text-orange-700 mt-1">{summary.trainingGaps}</p>

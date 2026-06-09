@@ -1,23 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import { ClipboardList, Heart, Flower2, BarChart3 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useTabNavigationStore } from '@/lib/tab-navigation-store';
+import { ClipboardList, Heart, Flower2, BarChart3, Sparkles } from 'lucide-react';
 import SurveyPulseManagementTab from './tabs/admin/survey-pulse-management-tab';
 import CultureValuesSetupTab from './tabs/admin/culture-values-setup-tab';
 import WellnessProgramManagementTab from './tabs/admin/wellness-program-management-tab';
 import EngagementAnalyticsTab from './tabs/admin/engagement-analytics-tab';
+import SentimentEngineTab from './tabs/admin/sentiment-engine-tab';
 
 const TABS = [
   { id: 'survey-pulse', label: 'Survey & Pulse', icon: ClipboardList },
   { id: 'culture-values', label: 'Culture & Values', icon: Heart },
   { id: 'wellness', label: 'Wellness Programs', icon: Flower2 },
   { id: 'analytics', label: 'Engagement Analytics', icon: BarChart3 },
+  { id: 'sentiment', label: 'Sentiment Analysis', icon: Sparkles },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
 
 export default function AdminDashboard() {
+  const requestedTab = useTabNavigationStore((s) => s.requestedTab);
   const [activeTab, setActiveTab] = useState<TabId>('survey-pulse');
+
+  useEffect(() => {
+    if (requestedTab) {
+      setActiveTab(requestedTab as TabId);
+      useTabNavigationStore.getState().setRequestedTab(null);
+    }
+  }, [requestedTab]);
 
   return (
     <div>
@@ -49,6 +60,7 @@ export default function AdminDashboard() {
         {activeTab === 'culture-values' && <CultureValuesSetupTab />}
         {activeTab === 'wellness' && <WellnessProgramManagementTab />}
         {activeTab === 'analytics' && <EngagementAnalyticsTab />}
+        {activeTab === 'sentiment' && <SentimentEngineTab />}
       </div>
     </div>
   );

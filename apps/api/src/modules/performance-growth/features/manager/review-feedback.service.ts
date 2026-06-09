@@ -1,14 +1,42 @@
-import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { eq, and, desc, inArray, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { AiCoreService } from '../../../../shared/ai/ai-core.service';
 
 @Injectable()
 export class ReviewFeedbackService {
+  private readonly logger = new Logger(ReviewFeedbackService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly ai: AiCoreService,
   ) {}
+
+  /**
+   * AI Review Draft — turn a manager's rough notes into balanced, professional
+   * performance-review comments. Draft only; the manager edits before saving.
+   */
+  async generateReviewDraft(input: { notes: string; employeeName?: string }): Promise<
+    { ok: true; draft: string } | { ok: false; message: string }
+  > {
+    if (!this.ai.isReady()) return { ok: false, message: 'AI generation is not configured on this server.' };
+    const notes = (input.notes || '').trim();
+    if (notes.length < 3) return { ok: false, message: 'Add a few rough notes first, then generate a draft.' };
+
+    const instructions = `You are an experienced people manager writing performance-review feedback.
+Turn the manager's rough notes into 1–2 short, professional paragraphs of balanced review comments${input.employeeName ? ` about ${input.employeeName}` : ''}.
+Guidelines: be specific and constructive; acknowledge strengths and areas to improve; use a respectful, growth-oriented tone; do NOT invent achievements, metrics, or events not implied by the notes; no rating numbers.`;
+
+    try {
+      const draft = await this.ai.generateText({ name: 'ReviewDraft', instructions, text: notes });
+      return { ok: true, draft: draft.trim() };
+    } catch (err: any) {
+      this.logger.error('Review draft failed', err?.message || err);
+      return { ok: false, message: 'Could not generate a draft. Please try again or write it manually.' };
+    }
+  }
 
   private async getTeamMemberIds(orgId: string, managerId: string): Promise<string[]> {
     const members = await this.db

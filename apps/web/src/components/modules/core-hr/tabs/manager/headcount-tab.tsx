@@ -32,9 +32,30 @@ export default function HeadcountTab() {
     async function loadData() {
       try {
         const res = await api.get('/core-hr/manager/headcount');
-        const data = res.data;
-        setSummary(data.summary || { totalFilled: 0, openPositions: 0 });
-        setDepartments(data.departments || []);
+        const data = res.data ?? {};
+        // Endpoint returns { totalFilled, totalApproved, byDepartment:[{ departmentName, filled, approved }] }.
+        const totalFilled = data.totalFilled ?? 0;
+        const totalApproved = data.totalApproved ?? totalFilled;
+        setSummary({
+          totalFilled,
+          openPositions: Math.max(0, totalApproved - totalFilled),
+        });
+
+        const byDept =
+          data.byDepartment ?? data.departments ?? (Array.isArray(data) ? data : []);
+        setDepartments(
+          byDept.map(
+            (d: { departmentName?: string; department?: string; filled?: number; approved?: number; open?: number }) => {
+              const filled = d.filled ?? 0;
+              const approved = d.approved ?? filled;
+              return {
+                department: d.departmentName ?? d.department ?? 'Unknown',
+                filled,
+                open: d.open ?? Math.max(0, approved - filled),
+              };
+            }
+          )
+        );
       } catch {
         setError('Failed to load headcount data.');
       } finally {

@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { eq, and, desc, sql, gte } from 'drizzle-orm';
+import { eq, and, gte, inArray } from 'drizzle-orm'; // sql/desc removed: unused after = ANY → inArray fix
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -281,7 +281,7 @@ export class InterviewMgmtService {
       const users = await this.db
         .select({ id: schema.users.id, firstName: schema.users.firstName, lastName: schema.users.lastName })
         .from(schema.users)
-        .where(sql`${schema.users.id} = ANY(${reviewerIds})`);
+        .where(inArray(schema.users.id, reviewerIds));
 
       for (const user of users) {
         reviewerNames.set(user.id, `${user.firstName} ${user.lastName ?? ''}`.trim());

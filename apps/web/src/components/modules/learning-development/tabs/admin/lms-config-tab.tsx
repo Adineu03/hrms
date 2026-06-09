@@ -12,6 +12,7 @@ import {
   Trash2,
   X,
   Inbox,
+  Sparkles,
 } from 'lucide-react';
 
 const inputClassName =
@@ -112,6 +113,34 @@ export default function LmsConfigTab() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [formData, setFormData] = useState(defaultFormData);
   const [isSaving, setIsSaving] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [descNote, setDescNote] = useState<string | null>(null);
+
+  const handleGenerateDescription = async () => {
+    if (!formData.title.trim()) {
+      setDescNote('Enter a course title first.');
+      return;
+    }
+    setGeneratingDesc(true);
+    setDescNote(null);
+    try {
+      const res = await api.post('/learning-development/admin/lms-config/courses/generate-description', {
+        title: formData.title.trim(),
+        skills: formData.skills ? formData.skills.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+      });
+      const data = res.data;
+      if (!data?.ok) {
+        setDescNote(data?.message || 'AI generation is unavailable.');
+        return;
+      }
+      setFormData((prev) => ({ ...prev, description: data.description }));
+      setDescNote('Draft generated — review and edit before saving.');
+    } catch {
+      setDescNote('Failed to generate a description. Please try again.');
+    } finally {
+      setGeneratingDesc(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -329,8 +358,20 @@ export default function LmsConfigTab() {
                 <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={inputClassName} placeholder="e.g. Introduction to TypeScript" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Description</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-text-muted">Description</label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateDescription}
+                    disabled={generatingDesc || !formData.title.trim()}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {generatingDesc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    {generatingDesc ? 'Generating…' : 'Generate with AI'}
+                  </button>
+                </div>
                 <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={`${inputClassName} min-h-[60px]`} placeholder="Course description..." rows={2} />
+                {descNote && <p className="text-xs text-primary mt-1">{descNote}</p>}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>

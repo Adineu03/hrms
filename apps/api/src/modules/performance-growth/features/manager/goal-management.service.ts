@@ -1,14 +1,58 @@
-import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { eq, and, desc, inArray, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { AiCoreService } from '../../../../shared/ai/ai-core.service';
+
+const GoalSuggestionsSchema = z.object({
+  suggestions: z.array(
+    z.object({
+      title: z.string().describe('A concise, outcome-oriented goal title.'),
+      description: z.string().describe('1–2 sentences describing the goal and how success is measured (SMART).'),
+    }),
+  ),
+});
 
 @Injectable()
 export class GoalManagementService {
+  private readonly logger = new Logger(GoalManagementService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly ai: AiCoreService,
   ) {}
+
+  /**
+   * AI Goal Suggestions — propose a few SMART goals from a role/title and
+   * optional notes. Suggestions only; the manager picks and edits one.
+   */
+  async suggestGoals(input: { seed?: string; notes?: string }): Promise<
+    { ok: true; suggestions: { title: string; description: string }[] } | { ok: false; message: string }
+  > {
+    if (!this.ai.isReady()) return { ok: false, message: 'AI suggestions are not configured on this server.' };
+    const seed = (input.seed || '').trim();
+    const notes = (input.notes || '').trim();
+    if (!seed && !notes) return { ok: false, message: 'Enter a goal title, role, or a few notes to get suggestions.' };
+
+    const instructions = `You are a performance coach proposing SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound).
+Given a role/title and/or rough notes, propose 3 distinct, realistic goals. Each has a short title and a 1–2 sentence description that implies how success is measured.
+Avoid vague filler; do not invent company-specific facts.`;
+
+    try {
+      const result = await this.ai.extractStructured<z.infer<typeof GoalSuggestionsSchema>>({
+        name: 'GoalSuggestions',
+        schema: GoalSuggestionsSchema,
+        instructions,
+        text: JSON.stringify({ roleOrTitle: seed, notes }),
+      });
+      return { ok: true, suggestions: (result.suggestions || []).slice(0, 3) };
+    } catch (err: any) {
+      this.logger.error('Goal suggestions failed', err?.message || err);
+      return { ok: false, message: 'Could not generate suggestions. Please try again.' };
+    }
+  }
 
   private async getTeamMemberIds(orgId: string, managerId: string): Promise<string[]> {
     const members = await this.db

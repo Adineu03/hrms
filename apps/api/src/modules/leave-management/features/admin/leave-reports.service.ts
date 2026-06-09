@@ -13,6 +13,46 @@ export class LeaveReportsService {
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
   ) {}
 
+  async getDepartments(orgId: string) {
+    const rows = await this.db
+      .select({ name: schema.departments.name })
+      .from(schema.departments)
+      .where(eq(schema.departments.orgId, orgId))
+      .orderBy(schema.departments.name);
+
+    return rows.map((r) => r.name).filter(Boolean);
+  }
+
+  async getLocations(orgId: string) {
+    const rows = await this.db
+      .select({ name: schema.locations.name })
+      .from(schema.locations)
+      .where(
+        and(
+          eq(schema.locations.orgId, orgId),
+          eq(schema.locations.isActive, true),
+        ),
+      )
+      .orderBy(schema.locations.name);
+
+    return rows.map((r) => r.name).filter(Boolean);
+  }
+
+  async getLeaveTypes(orgId: string) {
+    const rows = await this.db
+      .select({ name: schema.leaveTypes.name })
+      .from(schema.leaveTypes)
+      .where(
+        and(
+          eq(schema.leaveTypes.orgId, orgId),
+          eq(schema.leaveTypes.isActive, true),
+        ),
+      )
+      .orderBy(schema.leaveTypes.name);
+
+    return rows.map((r) => r.name).filter(Boolean);
+  }
+
   async getUtilization(
     orgId: string,
     filters: {

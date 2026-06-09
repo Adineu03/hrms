@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -435,6 +435,47 @@ export class OfferManagementService {
       negotiationRate,
       averageTimeToAcceptDays: (avgAcceptTime as any)?.avg_days ?? 0,
       pendingOffers: sentCount,
+    };
+  }
+
+  async listShortlistedApplications(orgId: string) {
+    // Applications that are progressing (not rejected/withdrawn) and don't yet
+    // have an offer — these are eligible to receive an offer letter.
+    const rows = await this.db
+      .select({
+        applicationId: schema.applications.id,
+        status: schema.applications.status,
+        overallScore: schema.applications.overallScore,
+        candidateFirstName: schema.candidates.firstName,
+        candidateLastName: schema.candidates.lastName,
+        candidateEmail: schema.candidates.email,
+        requisitionTitle: schema.jobRequisitions.title,
+        offerId: schema.offerLetters.id,
+      })
+      .from(schema.applications)
+      .innerJoin(schema.candidates, eq(schema.applications.candidateId, schema.candidates.id))
+      .leftJoin(schema.jobRequisitions, eq(schema.applications.requisitionId, schema.jobRequisitions.id))
+      .leftJoin(schema.offerLetters, eq(schema.offerLetters.applicationId, schema.applications.id))
+      .where(
+        and(
+          eq(schema.applications.orgId, orgId),
+          eq(schema.applications.isActive, true),
+          inArray(schema.applications.status, ['new', 'screening', 'shortlisted', 'interviewing']),
+        ),
+      )
+      .orderBy(desc(schema.applications.overallScore));
+
+    return {
+      data: rows
+        .filter((r) => !r.offerId)
+        .map((r) => ({
+          id: r.applicationId,
+          candidateName: `${r.candidateFirstName} ${r.candidateLastName ?? ''}`.trim(),
+          candidateEmail: r.candidateEmail,
+          jobTitle: r.requisitionTitle ?? 'Untitled Position',
+          status: r.status,
+          overallScore: r.overallScore ? Number(r.overallScore) : null,
+        })),
     };
   }
 

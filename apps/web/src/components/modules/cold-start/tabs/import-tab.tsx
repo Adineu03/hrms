@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   XCircle,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 
 const selectClassName =
@@ -39,6 +40,9 @@ export default function ImportTab() {
     setStep,
     uploadFile,
     setColumnMapping,
+    suggestMappingAi,
+    aiSuggesting,
+    aiNote,
     submitMapping,
     execute,
     reset,
@@ -257,10 +261,37 @@ export default function ImportTab() {
             </p>
           </div>
 
-          <p className="text-sm text-text-muted">
-            Map your file columns to the employee fields below. Pre-filled
-            mappings are based on column header similarity.
-          </p>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <p className="text-sm text-text-muted max-w-xl">
+              Map your file columns to the employee fields below. Pre-filled
+              mappings are based on column header similarity — or let AI match
+              messy headers for you.
+            </p>
+            <button
+              type="button"
+              onClick={suggestMappingAi}
+              disabled={aiSuggesting}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors shrink-0 ${
+                aiSuggesting
+                  ? 'border-border text-text-muted cursor-wait'
+                  : 'border-primary/40 text-primary hover:bg-primary/5'
+              }`}
+            >
+              {aiSuggesting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {aiSuggesting ? 'Matching…' : 'Suggest with AI'}
+            </button>
+          </div>
+
+          {aiNote && (
+            <div className="flex items-center gap-2 text-xs text-primary bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              {aiNote}
+            </div>
+          )}
 
           <div className="border border-border rounded-xl overflow-hidden">
             <table className="w-full">

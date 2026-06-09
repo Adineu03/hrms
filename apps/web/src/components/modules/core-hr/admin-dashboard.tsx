@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTabNavigationStore } from '@/lib/tab-navigation-store';
 import {
   Users,
   Building,
@@ -31,7 +32,15 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 export default function AdminDashboard() {
+  const requestedTab = useTabNavigationStore((s) => s.requestedTab);
   const [activeTab, setActiveTab] = useState<TabId>('employees');
+
+  useEffect(() => {
+    if (requestedTab) {
+      setActiveTab(requestedTab as TabId);
+      useTabNavigationStore.getState().setRequestedTab(null);
+    }
+  }, [requestedTab]);
 
   return (
     <div>

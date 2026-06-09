@@ -10,3 +10,9 @@
   --color-primary-hover: #1d4ed8;
   --color-accent: #059669;
 }
+
+.ai-filled {
+  border-left: 3px solid #3b82f6 !important;
+  background-color: #eff6ff !important;
+  transition: border-color 0.3s, background-color 0.3s;
+}

@@ -90,7 +90,7 @@ export default function OneOnOneTab() {
       setIsLoading(true);
       const [meetingRes, empRes] = await Promise.all([
         api.get('/performance-growth/manager/one-on-ones').catch(() => ({ data: [] })),
-        api.get('/core-hr/admin/employees').catch(() => ({ data: [] })),
+        api.get('/core-hr/manager/team').catch(() => ({ data: [] })),
       ]);
       const meetingRaw = meetingRes.data;
       setMeetings(Array.isArray(meetingRaw) ? meetingRaw : Array.isArray(meetingRaw?.data) ? meetingRaw.data : []);

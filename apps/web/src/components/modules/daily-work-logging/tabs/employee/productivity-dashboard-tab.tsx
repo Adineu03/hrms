@@ -82,18 +82,23 @@ export default function ProductivityDashboardTab() {
 
       const prodData = prodRes?.data?.data || prodRes?.data;
       if (prodData) {
+        // Backend nests the headline numbers under `summary`.
+        const s = prodData.summary ?? prodData;
         setSummary({
-          totalHours: prodData.totalHours || 0,
-          billableHours: prodData.billableHours || 0,
-          billableRatio: prodData.billableRatio || 0,
-          utilization: prodData.utilization || 0,
-          avgHoursPerDay: prodData.avgHoursPerDay || 0,
+          totalHours: s.totalHours || 0,
+          billableHours: s.billableHours || 0,
+          billableRatio: s.billableRatio || 0,
+          utilization: s.completionPercentage ?? s.utilization ?? 0,
+          avgHoursPerDay: s.avgHoursPerDay || 0,
         });
-        // Project breakdown may be part of the main response
+        // Project breakdown is part of the main response. Map backend
+        // field names (totalHours/percentage) to the UI shape (hours/percent).
         if (Array.isArray(prodData.projectBreakdown)) {
           setProjectBreakdown(
-            prodData.projectBreakdown.map((p: ProjectBreakdown, i: number) => ({
-              ...p,
+            prodData.projectBreakdown.map((p: Record<string, unknown>, i: number) => ({
+              projectName: String(p.projectName ?? 'No Project'),
+              hours: Number(p.totalHours ?? p.hours ?? 0),
+              percent: Number(p.percentage ?? p.percent ?? 0),
               color: PROJECT_COLORS[i % PROJECT_COLORS.length],
             }))
           );
@@ -101,20 +106,60 @@ export default function ProductivityDashboardTab() {
       }
 
       const catRaw = catRes?.data;
-      const catData = Array.isArray(catRaw) ? catRaw : Array.isArray(catRaw?.data) ? catRaw.data : [];
-      setCategoryBreakdown(catData);
+      const catList = Array.isArray(catRaw)
+        ? catRaw
+        : Array.isArray(catRaw?.categories)
+          ? catRaw.categories
+          : Array.isArray(catRaw?.data)
+            ? catRaw.data
+            : [];
+      // Map backend fields (categoryName/totalHours/percentage) to UI shape.
+      setCategoryBreakdown(
+        catList.map((c: Record<string, unknown>) => ({
+          category: String(c.categoryName ?? c.category ?? 'Uncategorized'),
+          hours: Number(c.totalHours ?? c.hours ?? 0),
+          percent: Number(c.percentage ?? c.percent ?? 0),
+        }))
+      );
 
       const trendRaw = trendRes?.data;
-      const trendData = Array.isArray(trendRaw) ? trendRaw : Array.isArray(trendRaw?.data) ? trendRaw.data : [];
-      setWeeklyTrend(trendData);
+      // Backend returns { weeklyData, dailyData }; the chart plots per-day points.
+      const trendDaily = Array.isArray(trendRaw)
+        ? trendRaw
+        : Array.isArray(trendRaw?.dailyData)
+          ? trendRaw.dailyData
+          : Array.isArray(trendRaw?.data)
+            ? trendRaw.data
+            : [];
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      setWeeklyTrend(
+        trendDaily
+          .slice(-14)
+          .map((d: Record<string, unknown>) => {
+            const dateStr = String(d.date ?? '');
+            const dow = typeof d.dayOfWeek === 'number'
+              ? d.dayOfWeek
+              : dateStr
+                ? new Date(dateStr).getUTCDay()
+                : 0;
+            return {
+              day: d.day ? String(d.day) : (dayNames[dow] ?? ''),
+              hours: Number(d.totalHours ?? d.hours ?? 0),
+              billableHours: Number(d.billableHours ?? 0),
+            };
+          })
+      );
 
       const utilData = utilRes?.data?.data || utilRes?.data;
       if (utilData) {
+        // Backend returns { overall, monthly }. We show the employee's own
+        // utilization; team comparison fields aren't exposed, so mirror them.
+        const overall = utilData.overall ?? utilData;
         setUtilization({
-          myUtilization: utilData.myUtilization || 0,
-          teamAverage: utilData.teamAverage || 0,
-          myBillableRatio: utilData.myBillableRatio || 0,
-          teamBillableAvg: utilData.teamBillableAvg || 0,
+          myUtilization: overall.utilization ?? overall.myUtilization ?? 0,
+          teamAverage: overall.teamAverage ?? overall.utilization ?? 0,
+          myBillableRatio: overall.billableUtilization ?? overall.myBillableRatio ?? 0,
+          teamBillableAvg: overall.teamBillableAvg ?? overall.billableUtilization ?? 0,
         });
       }
     } catch {

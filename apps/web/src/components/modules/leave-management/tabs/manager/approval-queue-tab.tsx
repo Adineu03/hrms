@@ -14,27 +14,46 @@ import {
   Inbox,
 } from 'lucide-react';
 
+interface LeaveTypeInfo {
+  id?: string;
+  name: string;
+  code?: string;
+  color?: string | null;
+  isPaid?: boolean;
+}
+
+// The approval-queue API returns a balance object per request (or null).
+interface LeaveBalanceInfo {
+  entitled?: number;
+  available?: number;
+  used?: number;
+  pending?: number;
+}
+
 interface LeaveRequest {
   id: string;
   employeeId: string;
   employeeName: string;
-  leaveType: string;
-  startDate: string;
-  endDate: string;
-  days: number;
+  // The approval-queue API returns leaveType as an object; older/alternate
+  // shapes may return a plain string, so the component handles both.
+  leaveType: string | LeaveTypeInfo;
+  fromDate: string;
+  toDate: string;
+  totalDays: number;
   reason: string;
+  // The pending-queue endpoint only returns pending requests and omits status;
+  // we default it to 'pending' on load. It is set locally after approve/reject.
   status: 'pending' | 'approved' | 'rejected' | 'cancelled';
-  appliedOn: string;
-  balanceAvailable?: number;
-  balanceEntitled?: number;
+  createdAt?: string;
+  balance?: LeaveBalanceInfo | null;
 }
 
 interface LeaveHistoryEntry {
   id: string;
   leaveType: string;
-  startDate: string;
-  endDate: string;
-  days: number;
+  fromDate: string;
+  toDate: string;
+  totalDays: number;
   status: string;
 }
 
@@ -85,7 +104,10 @@ export default function ApprovalQueueTab() {
     try {
       const res = await api.get('/leave-management/manager/approval-queue');
       const data = res.data || {};
-      setRequests(Array.isArray(data) ? data : data.requests || data.data || []);
+      const list: LeaveRequest[] = (Array.isArray(data) ? data : data.requests || data.data || []).map(
+        (r: LeaveRequest) => ({ ...r, status: r.status || 'pending' }),
+      );
+      setRequests(list);
       if (data.stats) {
         setStats({
           pendingCount: data.stats.pendingCount || 0,
@@ -94,9 +116,7 @@ export default function ApprovalQueueTab() {
         });
       } else {
         // Calculate from requests
-        const pending = (Array.isArray(data) ? data : data.requests || []).filter(
-          (r: LeaveRequest) => r.status === 'pending'
-        );
+        const pending = list.filter((r) => r.status === 'pending');
         setStats((prev) => ({ ...prev, pendingCount: pending.length }));
       }
     } catch {
@@ -121,7 +141,7 @@ export default function ApprovalQueueTab() {
     setLoadingHistory(requestId);
     try {
       const res = await api.get(`/leave-management/manager/approval-queue/${requestId}/history`);
-      const history = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const history = Array.isArray(res.data) ? res.data : res.data?.history || res.data?.data || [];
       setHistoryMap((prev) => ({ ...prev, [employeeId]: history }));
     } catch {
       // Silently fail for history
@@ -363,15 +383,15 @@ export default function ApprovalQueueTab() {
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">{typeof req.leaveType === 'object' ? req.leaveType?.name || '' : req.leaveType}</td>
                   <td className="px-4 py-3 text-sm text-text-muted">
-                    {new Date(req.startDate).toLocaleDateString()} - {new Date(req.endDate).toLocaleDateString()}
+                    {new Date(req.fromDate).toLocaleDateString()} - {new Date(req.toDate).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3 text-sm text-text-muted font-medium">{req.days}</td>
+                  <td className="px-4 py-3 text-sm text-text-muted font-medium">{req.totalDays}</td>
                   <td className="px-4 py-3 text-sm text-text-muted max-w-[180px] truncate" title={req.reason}>
                     {req.reason}
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">
-                    {req.balanceAvailable !== undefined
-                      ? `${req.balanceAvailable}/${req.balanceEntitled || '--'}`
+                    {req.balance?.available !== undefined
+                      ? `${req.balance.available}/${req.balance.entitled ?? '--'}`
                       : '--'}
                   </td>
                   <td className="px-4 py-3 text-sm">
@@ -459,10 +479,10 @@ export default function ApprovalQueueTab() {
                                     <tr key={h.id} className="bg-card">
                                       <td className="px-3 py-1.5 text-xs text-text-muted">{h.leaveType}</td>
                                       <td className="px-3 py-1.5 text-xs text-text-muted">
-                                        {new Date(h.startDate).toLocaleDateString()} -{' '}
-                                        {new Date(h.endDate).toLocaleDateString()}
+                                        {new Date(h.fromDate).toLocaleDateString()} -{' '}
+                                        {new Date(h.toDate).toLocaleDateString()}
                                       </td>
-                                      <td className="px-3 py-1.5 text-xs text-text-muted">{h.days}</td>
+                                      <td className="px-3 py-1.5 text-xs text-text-muted">{h.totalDays}</td>
                                       <td className="px-3 py-1.5 text-xs">
                                         <span
                                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${

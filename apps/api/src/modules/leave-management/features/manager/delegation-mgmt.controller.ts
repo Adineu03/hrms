@@ -47,6 +47,14 @@ export class DelegationMgmtController {
     return this.delegationMgmtService.createDelegation(orgId, managerId, body);
   }
 
+  @Get('team-members')
+  @Roles('super_admin', 'admin', 'manager')
+  async getTeamMembers() {
+    const orgId = this.getOrgIdOrThrow();
+    const managerId = this.getManagerId();
+    return this.delegationMgmtService.getTeamMembers(orgId, managerId);
+  }
+
   @Patch(':id')
   @Roles('super_admin', 'admin', 'manager')
   async updateDelegation(

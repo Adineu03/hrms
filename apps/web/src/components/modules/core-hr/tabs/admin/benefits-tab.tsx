@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -401,9 +401,8 @@ export default function BenefitsTab() {
           </thead>
           <tbody className="divide-y divide-border">
             {plans.map((plan) => (
-              <>
+              <Fragment key={plan.id}>
                 <tr
-                  key={plan.id}
                   className="bg-card hover:bg-background/50 transition-colors"
                 >
                   <td className="px-4 py-3">
@@ -472,7 +471,7 @@ export default function BenefitsTab() {
                   </td>
                 </tr>
                 {expandedId === plan.id && (
-                  <tr key={`${plan.id}-enrollments`}>
+                  <tr>
                     <td colSpan={7} className="px-4 py-3 bg-background/50">
                       <div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
                         Enrollments
@@ -526,7 +525,7 @@ export default function BenefitsTab() {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
 
             {/* Empty State */}

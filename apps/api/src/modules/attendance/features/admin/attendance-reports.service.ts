@@ -287,4 +287,218 @@ export class AttendanceReportsService {
       byEmployee,
     };
   }
+
+  // ── Filter Options (department / location dropdowns) ───────────────────
+  async getDepartmentOptions(orgId: string) {
+    const rows = await this.db
+      .select({ name: schema.departments.name })
+      .from(schema.departments)
+      .where(eq(schema.departments.orgId, orgId))
+      .orderBy(schema.departments.name);
+    return rows.map((r) => r.name).filter((n): n is string => !!n);
+  }
+
+  async getLocationOptions(orgId: string) {
+    const rows = await this.db
+      .select({ name: schema.locations.name })
+      .from(schema.locations)
+      .where(eq(schema.locations.orgId, orgId))
+      .orderBy(schema.locations.name);
+    return rows.map((r) => r.name).filter((n): n is string => !!n);
+  }
+
+  // ── Unified Report Generator ──────────────────────────────────────────
+  // Returns a flat array of rows shaped to match the admin Reports tab's
+  // per-report column keys. Filters by department / location *name* (the
+  // dropdown values are names, not ids). Multi-tenant by orgId.
+  async generateReport(
+    orgId: string,
+    params: {
+      type: string;
+      startDate?: string;
+      endDate?: string;
+      department?: string;
+      location?: string;
+    },
+  ): Promise<Record<string, unknown>[]> {
+    const endDate = params.endDate ?? new Date().toISOString().split('T')[0];
+    const startDate =
+      params.startDate ??
+      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const deptFilter = params.department
+      ? sql`AND d.name = ${params.department}`
+      : sql``;
+    const locFilter = params.location
+      ? sql`AND l.name = ${params.location}`
+      : sql``;
+
+    switch (params.type) {
+      case 'daily_summary':
+        return this.reportDailySummary(orgId, startDate, endDate, deptFilter, locFilter);
+      case 'late_comers':
+        return this.reportLateComers(orgId, startDate, endDate, deptFilter, locFilter);
+      case 'absenteeism':
+        return this.reportAbsenteeism(orgId, startDate, endDate, deptFilter, locFilter);
+      case 'shift_adherence':
+        return this.reportShiftAdherence(orgId, startDate, endDate, deptFilter, locFilter);
+      case 'overtime_utilization':
+        return this.reportOvertimeUtilization(orgId, startDate, endDate, deptFilter, locFilter);
+      default:
+        return [];
+    }
+  }
+
+  private async reportDailySummary(
+    orgId: string,
+    startDate: string,
+    endDate: string,
+    deptFilter: ReturnType<typeof sql>,
+    locFilter: ReturnType<typeof sql>,
+  ): Promise<Record<string, unknown>[]> {
+    const rows = await this.db.execute(sql`
+      SELECT
+        ar.date,
+        COUNT(*) FILTER (WHERE ar.status IN ('present', 'late'))::int AS "presentCount",
+        COUNT(*) FILTER (WHERE ar.status = 'absent')::int AS "absentCount",
+        COUNT(*) FILTER (WHERE ar.status = 'late')::int AS "lateCount",
+        COUNT(*) FILTER (WHERE ar.status = 'on_leave')::int AS "onLeave",
+        COUNT(*) FILTER (WHERE ar.status = 'wfh')::int AS "wfh"
+      FROM attendance_records ar
+      LEFT JOIN employee_profiles ep ON ep.user_id = ar.employee_id AND ep.org_id = ar.org_id
+      LEFT JOIN departments d ON d.id = ep.department_id AND d.org_id = ar.org_id
+      LEFT JOIN locations l ON l.id = ep.location_id AND l.org_id = ar.org_id
+      WHERE ar.org_id = ${orgId}
+        AND ar.date >= ${startDate}
+        AND ar.date <= ${endDate}
+        ${deptFilter}
+        ${locFilter}
+      GROUP BY ar.date
+      ORDER BY ar.date DESC
+    `);
+    return rows as unknown as Record<string, unknown>[];
+  }
+
+  private async reportLateComers(
+    orgId: string,
+    startDate: string,
+    endDate: string,
+    deptFilter: ReturnType<typeof sql>,
+    locFilter: ReturnType<typeof sql>,
+  ): Promise<Record<string, unknown>[]> {
+    const rows = await this.db.execute(sql`
+      SELECT
+        TRIM(CONCAT(u.first_name, ' ', u.last_name)) AS "employeeName",
+        COALESCE(d.name, '--') AS "department",
+        COUNT(*)::int AS "lateCount",
+        ROUND(AVG(ar.late_minutes), 1)::float AS "avgMinutesLate"
+      FROM attendance_records ar
+      JOIN users u ON u.id = ar.employee_id AND u.org_id = ar.org_id
+      LEFT JOIN employee_profiles ep ON ep.user_id = ar.employee_id AND ep.org_id = ar.org_id
+      LEFT JOIN departments d ON d.id = ep.department_id AND d.org_id = ar.org_id
+      LEFT JOIN locations l ON l.id = ep.location_id AND l.org_id = ar.org_id
+      WHERE ar.org_id = ${orgId}
+        AND ar.late_minutes > 0
+        AND ar.date >= ${startDate}
+        AND ar.date <= ${endDate}
+        ${deptFilter}
+        ${locFilter}
+      GROUP BY u.id, u.first_name, u.last_name, d.name
+      ORDER BY "lateCount" DESC, "avgMinutesLate" DESC
+    `);
+    return rows as unknown as Record<string, unknown>[];
+  }
+
+  private async reportAbsenteeism(
+    orgId: string,
+    startDate: string,
+    endDate: string,
+    deptFilter: ReturnType<typeof sql>,
+    locFilter: ReturnType<typeof sql>,
+  ): Promise<Record<string, unknown>[]> {
+    const rows = await this.db.execute(sql`
+      SELECT
+        TRIM(CONCAT(u.first_name, ' ', u.last_name)) AS "employeeName",
+        COUNT(*) FILTER (WHERE ar.status = 'absent')::int AS "absentDays",
+        CASE WHEN COUNT(*) > 0
+          THEN ROUND((COUNT(*) FILTER (WHERE ar.status = 'absent')::numeric / COUNT(*)::numeric) * 100, 1)::float
+          ELSE 0
+        END AS "ratePercentage"
+      FROM attendance_records ar
+      JOIN users u ON u.id = ar.employee_id AND u.org_id = ar.org_id
+      LEFT JOIN employee_profiles ep ON ep.user_id = ar.employee_id AND ep.org_id = ar.org_id
+      LEFT JOIN departments d ON d.id = ep.department_id AND d.org_id = ar.org_id
+      LEFT JOIN locations l ON l.id = ep.location_id AND l.org_id = ar.org_id
+      WHERE ar.org_id = ${orgId}
+        AND ar.date >= ${startDate}
+        AND ar.date <= ${endDate}
+        ${deptFilter}
+        ${locFilter}
+      GROUP BY u.id, u.first_name, u.last_name
+      HAVING COUNT(*) FILTER (WHERE ar.status = 'absent') > 0
+      ORDER BY "absentDays" DESC
+    `);
+    return rows as unknown as Record<string, unknown>[];
+  }
+
+  private async reportShiftAdherence(
+    orgId: string,
+    startDate: string,
+    endDate: string,
+    deptFilter: ReturnType<typeof sql>,
+    locFilter: ReturnType<typeof sql>,
+  ): Promise<Record<string, unknown>[]> {
+    const rows = await this.db.execute(sql`
+      SELECT
+        TRIM(CONCAT(u.first_name, ' ', u.last_name)) AS "employeeName",
+        COALESCE(s.name, '--') AS "assignedShift",
+        COUNT(*) FILTER (WHERE ar.late_minutes = 0 AND ar.early_departure_minutes = 0 AND ar.clock_in IS NOT NULL)::int AS "adherentDays",
+        COUNT(*) FILTER (WHERE ar.late_minutes > 0 OR ar.early_departure_minutes > 0)::int AS "violations"
+      FROM attendance_records ar
+      JOIN users u ON u.id = ar.employee_id AND u.org_id = ar.org_id
+      LEFT JOIN shifts s ON s.id = ar.shift_id AND s.org_id = ar.org_id
+      LEFT JOIN employee_profiles ep ON ep.user_id = ar.employee_id AND ep.org_id = ar.org_id
+      LEFT JOIN departments d ON d.id = ep.department_id AND d.org_id = ar.org_id
+      LEFT JOIN locations l ON l.id = ep.location_id AND l.org_id = ar.org_id
+      WHERE ar.org_id = ${orgId}
+        AND ar.date >= ${startDate}
+        AND ar.date <= ${endDate}
+        ${deptFilter}
+        ${locFilter}
+      GROUP BY u.id, u.first_name, u.last_name, s.name
+      ORDER BY "violations" DESC, "employeeName" ASC
+    `);
+    return rows as unknown as Record<string, unknown>[];
+  }
+
+  private async reportOvertimeUtilization(
+    orgId: string,
+    startDate: string,
+    endDate: string,
+    deptFilter: ReturnType<typeof sql>,
+    locFilter: ReturnType<typeof sql>,
+  ): Promise<Record<string, unknown>[]> {
+    // Cost estimate: assume a flat ₹300/OT-hour notional rate for demo purposes.
+    const rows = await this.db.execute(sql`
+      SELECT
+        TRIM(CONCAT(u.first_name, ' ', u.last_name)) AS "employeeName",
+        COALESCE(d.name, '--') AS "department",
+        ROUND(COALESCE(SUM(ar.overtime_minutes), 0) / 60.0, 1)::float AS "otHours",
+        ROUND((COALESCE(SUM(ar.overtime_minutes), 0) / 60.0) * 300)::int AS "costEstimate"
+      FROM attendance_records ar
+      JOIN users u ON u.id = ar.employee_id AND u.org_id = ar.org_id
+      LEFT JOIN employee_profiles ep ON ep.user_id = ar.employee_id AND ep.org_id = ar.org_id
+      LEFT JOIN departments d ON d.id = ep.department_id AND d.org_id = ar.org_id
+      LEFT JOIN locations l ON l.id = ep.location_id AND l.org_id = ar.org_id
+      WHERE ar.org_id = ${orgId}
+        AND ar.date >= ${startDate}
+        AND ar.date <= ${endDate}
+        ${deptFilter}
+        ${locFilter}
+      GROUP BY u.id, u.first_name, u.last_name, d.name
+      HAVING COALESCE(SUM(ar.overtime_minutes), 0) > 0
+      ORDER BY "otHours" DESC
+    `);
+    return rows as unknown as Record<string, unknown>[];
+  }
 }

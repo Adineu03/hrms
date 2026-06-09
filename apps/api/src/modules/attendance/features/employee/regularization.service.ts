@@ -171,9 +171,15 @@ export class RegularizationService {
   }
 
   // ── Missed Punches Detection ──────────────────────────────────────────
-  async getMissedPunches(orgId: string, userId: string, startDate: string, endDate: string) {
-    if (!startDate || !endDate) {
-      throw new BadRequestException('startDate and endDate are required');
+  async getMissedPunches(orgId: string, userId: string, startDate?: string, endDate?: string) {
+    // Default to the last 30 days so the tab works without explicit params.
+    if (!endDate) {
+      endDate = new Date().toISOString().slice(0, 10);
+    }
+    if (!startDate) {
+      startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
     }
 
     // Get attendance records for the date range

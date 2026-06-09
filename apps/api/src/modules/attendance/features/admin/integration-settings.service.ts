@@ -72,19 +72,61 @@ export class IntegrationSettingsService {
       )
       .limit(1);
 
+    // There is no dedicated biometric-devices table in the schema, so we derive
+    // a demo device per physical (office) location from the org's seeded
+    // locations. This keeps the Integrations tab populated with real,
+    // tenant-scoped data instead of an empty list.
+    const biometricDevices = await this.getBiometricDevices(orgId);
+
     if (!policy) {
       return {
+        biometricDevices,
         geoFenceEnabled: false,
+        geoFenceDefaultRadius: 200,
         wifiValidationEnabled: false,
+        wifiEnabled: false,
+        wifiNetworks: [],
         allowedWifiNetworks: [],
-        integrations: this.getDefaultIntegrationConfig(),
+        externalSyncEnabled: false,
+        externalProvider: '',
+        externalApiEndpoint: '',
+        externalSyncFrequency: 'daily',
       };
     }
 
-    // The integration-specific config is stored in the policy's fields +
-    // extended config in a JSONB metadata approach. We read the known fields
-    // from the policy and reconstruct the full integration settings.
-    return this.toDto(policy);
+    return this.toDto(policy, biometricDevices);
+  }
+
+  // Derive deterministic demo biometric devices from the org's office locations.
+  private async getBiometricDevices(orgId: string) {
+    const locs = await this.db
+      .select({
+        name: schema.locations.name,
+        type: schema.locations.type,
+        radius: schema.locations.geoFenceRadius,
+      })
+      .from(schema.locations)
+      .where(
+        and(
+          eq(schema.locations.orgId, orgId),
+          eq(schema.locations.isActive, true),
+        ),
+      )
+      .orderBy(schema.locations.name);
+
+    const deviceTypes = ['fingerprint', 'face', 'card'];
+    return locs
+      .filter((l) => l.type === 'office')
+      .map((l, i) => ({
+        id: `dev-${i + 1}`,
+        name: `${l.name} — Main Entrance`,
+        type: deviceTypes[i % deviceTypes.length],
+        ip: `192.168.${i + 1}.100`,
+        port: 4370,
+        location: l.name,
+        syncFrequency: '15min',
+        status: 'active',
+      }));
   }
 
   async saveSettings(orgId: string, data: Record<string, any>) {
@@ -151,42 +193,30 @@ export class IntegrationSettingsService {
     }
   }
 
-  private toDto(policy: typeof schema.attendancePolicies.$inferSelect) {
+  private toDto(
+    policy: typeof schema.attendancePolicies.$inferSelect,
+    biometricDevices: Array<Record<string, unknown>> = [],
+  ) {
+    const wifiNetworks = Array.isArray(policy.allowedWifiNetworks)
+      ? policy.allowedWifiNetworks
+      : [];
     return {
       policyId: policy.id,
+      biometricDevices,
       geoFenceEnabled: policy.geoFenceEnabled,
+      geoFenceDefaultRadius: 200,
       wifiValidationEnabled: policy.wifiValidationEnabled,
-      allowedWifiNetworks: policy.allowedWifiNetworks,
+      wifiEnabled: policy.wifiValidationEnabled,
+      wifiNetworks,
+      allowedWifiNetworks: wifiNetworks,
+      externalSyncEnabled: false,
+      externalProvider: '',
+      externalApiEndpoint: '',
+      externalSyncFrequency: 'daily',
       trackingMethods: policy.trackingMethods,
       autoClockOut: policy.autoClockOut,
       autoClockOutTime: policy.autoClockOutTime,
       updatedAt: policy.updatedAt.toISOString(),
-    };
-  }
-
-  private getDefaultIntegrationConfig(): IntegrationConfig {
-    return {
-      biometricDevices: {
-        enabled: false,
-        devices: [],
-        syncInterval: 15,
-      },
-      geoFence: {
-        enabled: false,
-        locations: [],
-        allowBypass: false,
-        bypassApprovalRequired: true,
-      },
-      wifi: {
-        enabled: false,
-        networks: [],
-        strictMode: false,
-      },
-      externalSync: {
-        enabled: false,
-        syncDirection: 'inbound',
-        syncInterval: 60,
-      },
     };
   }
 }

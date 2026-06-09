@@ -34,6 +34,13 @@ export class GoalManagementController {
     return this.service.listTeamGoals(orgId, managerId, { status, category, employeeId });
   }
 
+  @Post('suggest')
+  @Roles('super_admin', 'admin', 'manager')
+  async suggestGoals(@Body() body: { seed?: string; notes?: string }) {
+    this.getOrgIdOrThrow();
+    return this.service.suggestGoals(body);
+  }
+
   @Post()
   @Roles('super_admin', 'admin', 'manager')
   async createGoalForEmployee(@Body() body: any) {

@@ -93,7 +93,15 @@ export default function OvertimeTrackerTab() {
       ]);
       setSummary(summaryRes.data || null);
       const reqData = requestsRes.data;
-      setRequests(Array.isArray(reqData) ? reqData : Array.isArray(reqData?.data) ? reqData.data : []);
+      setRequests(
+        Array.isArray(reqData)
+          ? reqData
+          : Array.isArray(reqData?.requests)
+            ? reqData.requests
+            : Array.isArray(reqData?.data)
+              ? reqData.data
+              : [],
+      );
       setPolicy(policyRes.data || null);
     } catch {
       setError('Failed to load overtime data.');

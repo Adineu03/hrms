@@ -34,10 +34,13 @@ interface ImportState {
   executeResult: ImportExecuteResult | null;
   isProcessing: boolean;
   error: string | null;
+  aiSuggesting: boolean;
+  aiNote: string | null;
 
   setStep: (step: ImportStep) => void;
   uploadFile: (file: File, type: string) => Promise<void>;
   setColumnMapping: (field: string, sourceColumn: string) => void;
+  suggestMappingAi: () => Promise<void>;
   submitMapping: () => Promise<void>;
   validate: () => Promise<void>;
   execute: () => Promise<void>;
@@ -52,6 +55,8 @@ export const useImportStore = create<ImportState>((set, get) => ({
   executeResult: null,
   isProcessing: false,
   error: null,
+  aiSuggesting: false,
+  aiNote: null,
 
   setStep: (step) => set({ currentStep: step }),
 
@@ -82,6 +87,27 @@ export const useImportStore = create<ImportState>((set, get) => ({
     set({
       columnMapping: { ...get().columnMapping, [field]: sourceColumn },
     });
+  },
+
+  suggestMappingAi: async () => {
+    const { uploadResult } = get();
+    if (!uploadResult) return;
+    set({ aiSuggesting: true, aiNote: null, error: null });
+    try {
+      const res = await api.post(`/data-import/${uploadResult.importId}/suggest-mapping`);
+      const data = res.data;
+      if (!data?.ok) {
+        set({ aiSuggesting: false, aiNote: data?.message || 'AI mapping is unavailable.' });
+        return;
+      }
+      set((s) => ({
+        columnMapping: { ...s.columnMapping, ...data.mapping },
+        aiSuggesting: false,
+        aiNote: `AI mapped ${data.mappedCount} of ${data.totalFields} fields. Review the mapping before continuing.`,
+      }));
+    } catch (err: unknown) {
+      set({ aiSuggesting: false, aiNote: getErrorMessage(err, 'AI mapping failed') });
+    }
   },
 
   submitMapping: async () => {
@@ -154,5 +180,7 @@ export const useImportStore = create<ImportState>((set, get) => ({
       executeResult: null,
       isProcessing: false,
       error: null,
+      aiSuggesting: false,
+      aiNote: null,
     }),
 }));

@@ -102,9 +102,53 @@ export default function ReferralMgmtTab() {
         api.get('/talent-acquisition/manager/referrals/bonus'),
         api.get('/talent-acquisition/manager/referrals/eligible').catch(() => ({ data: [] })),
       ]);
-      setReferrals(Array.isArray(refRes.data) ? refRes.data : refRes.data?.data || []);
-      setTeamReferrals(Array.isArray(teamRes.data) ? teamRes.data : teamRes.data?.data || []);
-      setBonuses(Array.isArray(bonusRes.data) ? bonusRes.data : bonusRes.data?.data || []);
+
+      // My referrals: backend uses `jobTitle` / `createdAt` — map to `position` / `submittedAt`.
+      const rawReferrals = Array.isArray(refRes.data) ? refRes.data : refRes.data?.data || [];
+      setReferrals(
+        rawReferrals.map((r: Record<string, unknown>) => ({
+          ...r,
+          position: (r.position ?? r.jobTitle ?? '') as string,
+          submittedAt: (r.submittedAt ?? r.createdAt) as string,
+        })) as Referral[]
+      );
+
+      // Team referrals: backend returns `{ teamMembers: [{ employeeName, referralCount, referrals }] }`.
+      const teamMembers = teamRes.data?.teamMembers || teamRes.data?.data || [];
+      setTeamReferrals(
+        teamMembers.map((m: Record<string, any>) => {
+          const refs: any[] = Array.isArray(m.referrals) ? m.referrals : [];
+          const hired = refs.filter((r) => r.status === 'hired').length;
+          return {
+            employeeId: m.employeeId,
+            employeeName: m.employeeName,
+            totalReferrals: m.referralCount ?? refs.length,
+            hired,
+            inProcess: (m.referralCount ?? refs.length) - hired,
+          };
+        }) as TeamReferral[]
+      );
+
+      // Bonus tracking: backend returns `{ referrals: [{ referralId, candidateName, jobTitle, bonusAmount, bonusStatus }] }`.
+      const bonusRows = bonusRes.data?.referrals || bonusRes.data?.data || [];
+      setBonuses(
+        bonusRows
+          .filter((b: Record<string, any>) => b.bonusStatus && b.bonusStatus !== 'not_eligible')
+          .map((b: Record<string, any>) => ({
+            id: b.referralId,
+            referralId: b.referralId,
+            candidateName: b.candidateName,
+            position: b.jobTitle ?? '',
+            amount: Number(b.bonusAmount ?? 0),
+            status:
+              b.bonusStatus === 'paid'
+                ? 'paid'
+                : b.bonusStatus === 'approved'
+                  ? 'processing'
+                  : 'eligible',
+          })) as BonusEntry[]
+      );
+
       setJobPostings(Array.isArray(jobRes.data) ? jobRes.data : jobRes.data?.data || []);
     } catch {
       setError('Failed to load referral data.');
@@ -124,7 +168,12 @@ export default function ReferralMgmtTab() {
     setError(null);
     try {
       const res = await api.post('/talent-acquisition/manager/referrals', form);
-      const newRef = res.data?.data || res.data;
+      const raw = res.data?.data || res.data;
+      const newRef = {
+        ...raw,
+        position: raw.position ?? raw.jobTitle ?? '',
+        submittedAt: raw.submittedAt ?? raw.createdAt,
+      };
       setReferrals((prev) => [newRef, ...prev]);
       setSuccess('Referral submitted successfully.');
       setShowReferralForm(false);

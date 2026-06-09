@@ -73,16 +73,27 @@ export default function MyPayslipsTab() {
       ]);
 
       const rawPayslips = payslipsRes.data?.data ?? payslipsRes.data;
-      const payslipsData = Array.isArray(rawPayslips) ? rawPayslips : [];
+      // Map DB pay_slips rows to the row shape this table renders.
+      const payslipsData: Payslip[] = (Array.isArray(rawPayslips) ? rawPayslips : []).map((p: any) => ({
+        id: p.id,
+        month: p.month,
+        year: p.year,
+        grossPay: Number(p.grossEarnings ?? p.grossPay ?? 0),
+        totalDeductions: Number(p.totalDeductions ?? 0),
+        netPay: Number(p.netPay ?? 0),
+        status: p.status,
+        generatedAt: p.generatedAt,
+        downloadUrl: p.downloadUrl,
+      }));
       const ytdData = ytdRes.data?.data || ytdRes.data || {};
 
       setPayslips(payslipsData);
       setYtdSummary({
-        totalEarnings: ytdData.totalEarnings || 0,
-        totalDeductions: ytdData.totalDeductions || 0,
-        totalNetPay: ytdData.totalNetPay || 0,
-        totalTaxPaid: ytdData.totalTaxPaid || 0,
-        monthsProcessed: ytdData.monthsProcessed || 0,
+        totalEarnings: Number(ytdData.ytdEarnings?.grossEarnings ?? ytdData.totalEarnings ?? 0),
+        totalDeductions: Number(ytdData.ytdDeductions?.totalDeductions ?? ytdData.totalDeductions ?? 0),
+        totalNetPay: Number(ytdData.ytdNetPay ?? ytdData.totalNetPay ?? 0),
+        totalTaxPaid: Number(ytdData.ytdDeductions?.incomeTax ?? ytdData.totalTaxPaid ?? 0),
+        monthsProcessed: Number(ytdData.monthsProcessed ?? 0),
       });
     } catch {
       setError('Failed to load payslips.');

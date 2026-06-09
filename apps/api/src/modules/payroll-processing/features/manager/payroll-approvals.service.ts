@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -35,7 +35,7 @@ export class PayrollApprovalsService {
           eq(schema.reimbursementClaims.orgId, orgId),
           eq(schema.reimbursementClaims.status, 'pending'),
           eq(schema.reimbursementClaims.isActive, true),
-          sql`${schema.reimbursementClaims.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.reimbursementClaims.employeeId, teamMemberIds),
         ),
       )
       .orderBy(desc(schema.reimbursementClaims.createdAt));
@@ -48,7 +48,7 @@ export class PayrollApprovalsService {
         and(
           eq(schema.overtimeRequests.orgId, orgId),
           eq(schema.overtimeRequests.status, 'pending'),
-          sql`${schema.overtimeRequests.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.overtimeRequests.employeeId, teamMemberIds),
         ),
       )
       .orderBy(desc(schema.overtimeRequests.createdAt));

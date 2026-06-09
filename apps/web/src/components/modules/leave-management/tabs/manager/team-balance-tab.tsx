@@ -49,10 +49,52 @@ export default function TeamBalanceTab() {
         api.get('/leave-management/manager/team-balance', { params: { year } }),
         api.get('/leave-management/manager/team-balance/excessive-unused', { params: { year } }),
       ]);
-      setBalances(Array.isArray(balanceRes.data) ? balanceRes.data : balanceRes.data?.data || []);
-      setExcessiveUnused(
-        Array.isArray(unusedRes.data) ? unusedRes.data : unusedRes.data?.data || []
-      );
+
+      // team-balance returns { year, leaveTypes, employees:[{ employeeId, employeeName, balances:[...] }] }
+      // Flatten into one row per (employee, leaveType).
+      const employees =
+        balanceRes.data?.employees ??
+        balanceRes.data?.data ??
+        (Array.isArray(balanceRes.data) ? balanceRes.data : []);
+      const rows: BalanceRow[] = [];
+      for (const emp of employees) {
+        for (const b of emp.balances ?? []) {
+          const totalEntitled = (b.entitled ?? 0) + (b.carriedForward ?? 0);
+          rows.push({
+            employeeId: emp.employeeId,
+            employeeName: emp.employeeName,
+            leaveType: b.leaveTypeName,
+            entitled: totalEntitled,
+            used: b.used ?? 0,
+            pending: b.pending ?? 0,
+            available: b.available ?? 0,
+            utilizationPercent:
+              totalEntitled > 0 ? ((b.used ?? 0) / totalEntitled) * 100 : 0,
+          });
+        }
+      }
+      setBalances(rows);
+
+      // excessive-unused returns { employees:[{ employeeName, excessiveLeaves:[{ leaveType, entitled, used, unusedPercent }] }] }
+      const unusedEmployees =
+        unusedRes.data?.employees ??
+        unusedRes.data?.data ??
+        (Array.isArray(unusedRes.data) ? unusedRes.data : []);
+      const unusedRows: ExcessiveUnusedEntry[] = [];
+      for (const emp of unusedEmployees) {
+        for (const l of emp.excessiveLeaves ?? []) {
+          unusedRows.push({
+            employeeId: emp.employeeId,
+            employeeName: emp.employeeName,
+            leaveType: l.leaveType,
+            entitled: l.entitled ?? 0,
+            used: l.used ?? 0,
+            // backend reports unused %, convert to utilization % for display
+            utilizationPercent: 100 - (l.unusedPercent ?? 0),
+          });
+        }
+      }
+      setExcessiveUnused(unusedRows);
     } catch {
       setError('Failed to load team balance data.');
     } finally {

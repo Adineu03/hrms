@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -19,6 +19,33 @@ export class TeamPayrollOverviewService {
     return teamMembers.map((m) => m.userId);
   }
 
+  // Resolve the run for a period, falling back to the most recent active run.
+  private async resolveRun(orgId: string, month: number, year: number) {
+    const exact = await this.db
+      .select()
+      .from(schema.payrollRuns)
+      .where(
+        and(
+          eq(schema.payrollRuns.orgId, orgId),
+          eq(schema.payrollRuns.month, month),
+          eq(schema.payrollRuns.year, year),
+          eq(schema.payrollRuns.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (exact.length) return exact[0];
+
+    const [latest] = await this.db
+      .select()
+      .from(schema.payrollRuns)
+      .where(and(eq(schema.payrollRuns.orgId, orgId), eq(schema.payrollRuns.isActive, true)))
+      .orderBy(desc(schema.payrollRuns.year), desc(schema.payrollRuns.month))
+      .limit(1);
+
+    return latest ?? null;
+  }
+
   async getTeamSalarySummary(orgId: string, managerId: string, month?: number, year?: number) {
     const teamMemberIds = await this.getTeamMemberIds(orgId, managerId);
 
@@ -34,34 +61,30 @@ export class TeamPayrollOverviewService {
       };
     }
 
-    // Get the latest run or a specific month
+    // Resolve a run for the requested month, falling back to the latest run
+    // so the overview populates even when the UI requests the current month
+    // (which may have no run yet).
     const now = new Date();
     const targetMonth = month ?? (now.getMonth() + 1);
     const targetYear = year ?? now.getFullYear();
 
-    const runs = await this.db
-      .select()
-      .from(schema.payrollRuns)
-      .where(
-        and(
-          eq(schema.payrollRuns.orgId, orgId),
-          eq(schema.payrollRuns.month, targetMonth),
-          eq(schema.payrollRuns.year, targetYear),
-          eq(schema.payrollRuns.isActive, true),
-        ),
-      )
-      .limit(1);
+    const run = await this.resolveRun(orgId, targetMonth, targetYear);
 
-    if (!runs.length) {
+    if (!run) {
       return {
         data: {
           teamSize: teamMemberIds.length,
+          headcount: teamMemberIds.length,
           month: targetMonth,
           year: targetYear,
           totalGross: '0',
+          totalCost: '0',
           totalDeductions: '0',
           totalNet: '0',
           averageGross: '0',
+          averageCost: '0',
+          overtimeCost: '0',
+          pendingItems: 0,
           status: 'no_run',
         },
       };
@@ -73,10 +96,10 @@ export class TeamPayrollOverviewService {
       .from(schema.payrollEntries)
       .where(
         and(
-          eq(schema.payrollEntries.payrollRunId, runs[0].id),
+          eq(schema.payrollEntries.payrollRunId, run.id),
           eq(schema.payrollEntries.orgId, orgId),
           eq(schema.payrollEntries.isActive, true),
-          sql`${schema.payrollEntries.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.payrollEntries.employeeId, teamMemberIds),
         ),
       );
 
@@ -84,16 +107,46 @@ export class TeamPayrollOverviewService {
     const totalDeductions = entries.reduce((sum, e) => sum + parseFloat(e.totalDeductions ?? '0'), 0);
     const totalNet = entries.reduce((sum, e) => sum + parseFloat(e.netPay ?? '0'), 0);
 
+    // Pending approval items (reimbursements + overtime) from the team
+    const [pendingReimb, pendingOt] = await Promise.all([
+      this.db
+        .select({ id: schema.reimbursementClaims.id })
+        .from(schema.reimbursementClaims)
+        .where(
+          and(
+            eq(schema.reimbursementClaims.orgId, orgId),
+            eq(schema.reimbursementClaims.status, 'pending'),
+            eq(schema.reimbursementClaims.isActive, true),
+            inArray(schema.reimbursementClaims.employeeId, teamMemberIds),
+          ),
+        ),
+      this.db
+        .select({ id: schema.overtimeRequests.id })
+        .from(schema.overtimeRequests)
+        .where(
+          and(
+            eq(schema.overtimeRequests.orgId, orgId),
+            eq(schema.overtimeRequests.status, 'pending'),
+            inArray(schema.overtimeRequests.employeeId, teamMemberIds),
+          ),
+        ),
+    ]);
+
     return {
       data: {
         teamSize: teamMemberIds.length,
+        headcount: teamMemberIds.length,
         employeesInPayroll: entries.length,
-        month: targetMonth,
-        year: targetYear,
+        month: run.month,
+        year: run.year,
         totalGross: totalGross.toFixed(2),
+        totalCost: totalGross.toFixed(2),
         totalDeductions: totalDeductions.toFixed(2),
         totalNet: totalNet.toFixed(2),
         averageGross: entries.length > 0 ? (totalGross / entries.length).toFixed(2) : '0',
+        averageCost: entries.length > 0 ? (totalGross / entries.length).toFixed(2) : '0',
+        overtimeCost: '0',
+        pendingItems: pendingReimb.length + pendingOt.length,
       },
     };
   }
@@ -102,52 +155,63 @@ export class TeamPayrollOverviewService {
     const teamMemberIds = await this.getTeamMemberIds(orgId, managerId);
 
     if (!teamMemberIds.length) {
-      return { data: { headcount: 0, monthlyCost: '0', annualProjection: '0', costPerEmployee: '0' } };
+      return { data: [], meta: { total: 0 } };
     }
 
-    // Get latest payroll run
-    const [latestRun] = await this.db
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    // All active runs, most recent first, then build a month-over-month trend.
+    const runs = await this.db
       .select()
       .from(schema.payrollRuns)
       .where(and(eq(schema.payrollRuns.orgId, orgId), eq(schema.payrollRuns.isActive, true)))
       .orderBy(desc(schema.payrollRuns.year), desc(schema.payrollRuns.month))
-      .limit(1);
+      .limit(12);
 
-    if (!latestRun) {
-      return {
-        data: {
-          headcount: teamMemberIds.length,
-          monthlyCost: '0',
-          annualProjection: '0',
-          costPerEmployee: '0',
-        },
-      };
+    // Chronological order so "change" compares against the prior month.
+    const ordered = [...runs].reverse();
+    const trend: {
+      id: string;
+      month: string;
+      year: number;
+      totalCost: number;
+      headcount: number;
+      overtimeCost: number;
+      change: number;
+    }[] = [];
+
+    let prevCost = 0;
+    for (const run of ordered) {
+      const entries = await this.db
+        .select()
+        .from(schema.payrollEntries)
+        .where(
+          and(
+            eq(schema.payrollEntries.payrollRunId, run.id),
+            eq(schema.payrollEntries.orgId, orgId),
+            eq(schema.payrollEntries.isActive, true),
+            inArray(schema.payrollEntries.employeeId, teamMemberIds),
+          ),
+        );
+
+      const totalCost = entries.reduce((sum, e) => sum + parseFloat(e.grossEarnings ?? '0'), 0);
+      const change = prevCost > 0 ? ((totalCost - prevCost) / prevCost) * 100 : 0;
+
+      trend.push({
+        id: run.id,
+        month: MONTHS[run.month - 1] ?? String(run.month),
+        year: run.year,
+        totalCost,
+        headcount: entries.length,
+        overtimeCost: 0,
+        change: Number(change.toFixed(1)),
+      });
+
+      prevCost = totalCost;
     }
 
-    const entries = await this.db
-      .select()
-      .from(schema.payrollEntries)
-      .where(
-        and(
-          eq(schema.payrollEntries.payrollRunId, latestRun.id),
-          eq(schema.payrollEntries.orgId, orgId),
-          eq(schema.payrollEntries.isActive, true),
-          sql`${schema.payrollEntries.employeeId} = ANY(${teamMemberIds})`,
-        ),
-      );
-
-    const totalCost = entries.reduce((sum, e) => sum + parseFloat(e.grossEarnings ?? '0'), 0);
-    const annualProjection = totalCost * 12;
-
-    return {
-      data: {
-        headcount: teamMemberIds.length,
-        monthlyCost: totalCost.toFixed(2),
-        annualProjection: annualProjection.toFixed(2),
-        costPerEmployee: teamMemberIds.length > 0 ? (totalCost / teamMemberIds.length).toFixed(2) : '0',
-        basedOnPeriod: { month: latestRun.month, year: latestRun.year },
-      },
-    };
+    // Return most-recent first for display.
+    return { data: trend.reverse(), meta: { total: trend.length } };
   }
 
   async getOvertimeCost(orgId: string, managerId: string) {
@@ -165,7 +229,7 @@ export class TeamPayrollOverviewService {
         and(
           eq(schema.overtimeRequests.orgId, orgId),
           eq(schema.overtimeRequests.status, 'approved'),
-          sql`${schema.overtimeRequests.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.overtimeRequests.employeeId, teamMemberIds),
         ),
       )
       .orderBy(desc(schema.overtimeRequests.createdAt))
@@ -197,8 +261,8 @@ export class TeamPayrollOverviewService {
       .where(
         and(
           eq(schema.selfServiceRequests.orgId, orgId),
-          sql`${schema.selfServiceRequests.employeeId} = ANY(${teamMemberIds})`,
-          sql`${schema.selfServiceRequests.type} IN ('salary_certificate', 'bank_change')`,
+          inArray(schema.selfServiceRequests.employeeId, teamMemberIds),
+          inArray(schema.selfServiceRequests.type, ['salary_certificate', 'bank_change']),
         ),
       )
       .orderBy(desc(schema.selfServiceRequests.createdAt))

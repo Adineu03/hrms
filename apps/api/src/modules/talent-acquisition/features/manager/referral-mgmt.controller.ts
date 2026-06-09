@@ -54,6 +54,13 @@ export class ReferralMgmtController {
     return this.service.getReferralBonusEligibility(orgId, managerId);
   }
 
+  @Get('eligible')
+  @Roles('super_admin', 'admin', 'manager')
+  async getEligibleJobPostings() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.service.getEligibleJobPostings(orgId);
+  }
+
   @Get(':id')
   @Roles('super_admin', 'admin', 'manager')
   async getReferralDetail(@Param('id') id: string) {

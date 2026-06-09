@@ -77,6 +77,7 @@ export class OvertimeTrackerService {
 
     let approvedHours = 0;
     let pendingHours = 0;
+    let pendingRequests = 0;
     let compOffBalance = 0;
 
     for (const req of otRequests) {
@@ -88,16 +89,22 @@ export class OvertimeTrackerService {
         }
       } else if (req.status === 'pending') {
         pendingHours += hours;
+        pendingRequests += 1;
       }
     }
+
+    const totalOtHours = Math.round((totalOtMinutes / 60) * 10) / 10;
 
     return {
       period,
       startDate,
       endDate,
-      totalOtHours: Math.round((totalOtMinutes / 60) * 10) / 10,
+      totalOtHours,
+      // Aliases matching the employee Overtime tab's expected field names
+      totalOtThisMonth: totalOtHours,
       approvedHours,
       pendingHours,
+      pendingRequests,
       compOffBalance,
       totalRequests: otRequests.length,
     };

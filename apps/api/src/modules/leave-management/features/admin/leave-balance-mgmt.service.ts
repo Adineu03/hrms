@@ -105,6 +105,85 @@ export class LeaveBalanceMgmtService {
     };
   }
 
+  async stats(orgId: string, filters: { year?: string }) {
+    const currentYear = filters.year ?? new Date().getFullYear().toString();
+
+    // Total active employees in the org
+    const [employeeRow] = await this.db
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(schema.users)
+      .where(
+        and(
+          eq(schema.users.orgId, orgId),
+          eq(schema.users.role, 'employee'),
+          eq(schema.users.isActive, true),
+        ),
+      );
+
+    // Total active leave types
+    const [leaveTypeRow] = await this.db
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(schema.leaveTypes)
+      .where(
+        and(
+          eq(schema.leaveTypes.orgId, orgId),
+          eq(schema.leaveTypes.isActive, true),
+        ),
+      );
+
+    // Balance records for the year (to process)
+    const [balanceRow] = await this.db
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(schema.leaveBalances)
+      .where(
+        and(
+          eq(schema.leaveBalances.orgId, orgId),
+          eq(schema.leaveBalances.year, currentYear),
+        ),
+      );
+
+    return {
+      totalEmployees: Number(employeeRow?.count ?? 0),
+      totalLeaveTypes: Number(leaveTypeRow?.count ?? 0),
+      balancesToProcess: Number(balanceRow?.count ?? 0),
+      year: currentYear,
+    };
+  }
+
+  async filters(orgId: string) {
+    // Distinct departments
+    const departmentRows = await this.db
+      .select({ name: schema.departments.name })
+      .from(schema.departments)
+      .where(eq(schema.departments.orgId, orgId))
+      .orderBy(schema.departments.name);
+
+    // Distinct leave types
+    const leaveTypeRows = await this.db
+      .select({ name: schema.leaveTypes.name })
+      .from(schema.leaveTypes)
+      .where(
+        and(
+          eq(schema.leaveTypes.orgId, orgId),
+          eq(schema.leaveTypes.isActive, true),
+        ),
+      )
+      .orderBy(schema.leaveTypes.name);
+
+    // Distinct years present in balance records
+    const yearRows = await this.db
+      .selectDistinct({ year: schema.leaveBalances.year })
+      .from(schema.leaveBalances)
+      .where(eq(schema.leaveBalances.orgId, orgId))
+      .orderBy(desc(schema.leaveBalances.year));
+
+    return {
+      departments: departmentRows.map((d) => d.name).filter(Boolean),
+      leaveTypes: leaveTypeRows.map((lt) => lt.name).filter(Boolean),
+      years: yearRows.map((y) => y.year).filter(Boolean),
+    };
+  }
+
   async bulkCredit(orgId: string, data: Record<string, any>) {
     const { leaveTypeId, year, days, employeeIds } = data;
 

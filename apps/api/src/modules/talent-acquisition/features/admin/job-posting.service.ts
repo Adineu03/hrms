@@ -1,19 +1,80 @@
 import {
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { eq, and, desc, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { AiCoreService } from '../../../../shared/ai/ai-core.service';
+
+const JdSchema = z.object({
+  description: z.string().describe('A compelling 2–4 sentence overview of the role and its impact.'),
+  responsibilities: z.string().describe('Key responsibilities as newline-separated bullet points, each prefixed with "- ".'),
+  requirements: z.string().describe('Required skills/qualifications/experience as newline-separated bullet points, each prefixed with "- ".'),
+});
+type JdResult = z.infer<typeof JdSchema>;
 
 @Injectable()
 export class JobPostingService {
+  private readonly logger = new Logger(JobPostingService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly ai: AiCoreService,
   ) {}
+
+  /**
+   * AI JD Generator — draft a job description (overview, responsibilities,
+   * requirements) from a job title plus optional hints. Returns a draft only;
+   * the recruiter edits it in the form before saving.
+   */
+  async generateJd(input: {
+    title: string;
+    postingType?: string;
+    notes?: string;
+  }): Promise<{ ok: true; jd: JdResult } | { ok: false; message: string }> {
+    if (!this.ai.isReady()) {
+      return { ok: false, message: 'AI generation is not configured on this server.' };
+    }
+    const title = (input.title || '').trim();
+    if (!title) return { ok: false, message: 'A job title is required to generate a description.' };
+
+    const instructions = `You are an expert technical recruiter writing a clear, inclusive, and compelling job description.
+
+Given a job title and optional hints, produce:
+- description: a 2–4 sentence overview of the role and its impact.
+- responsibilities: 5–8 concrete responsibilities, each on its own line prefixed with "- ".
+- requirements: 5–8 required skills/qualifications/experience, each on its own line prefixed with "- ".
+
+Guidelines:
+- Be specific and realistic for the seniority implied by the title; avoid filler and clichés.
+- Use neutral, inclusive language. Do NOT include salary, company name, equal-opportunity boilerplate, or location unless given in the hints.
+- Do not invent specific company facts; keep it broadly applicable.`;
+
+    const payload = {
+      title,
+      postingType: input.postingType || 'external',
+      hints: input.notes || '',
+    };
+
+    try {
+      const jd = await this.ai.extractStructured<JdResult>({
+        name: 'JdGenerator',
+        schema: JdSchema,
+        instructions,
+        text: JSON.stringify(payload),
+      });
+      return { ok: true, jd };
+    } catch (err: any) {
+      this.logger.error('JD generation failed', err?.message || err);
+      return { ok: false, message: 'Could not generate a description. Please try again or write it manually.' };
+    }
+  }
 
   async listPostings(
     orgId: string,

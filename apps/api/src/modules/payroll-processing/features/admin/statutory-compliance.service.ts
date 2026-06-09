@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and, desc, sql, gte } from 'drizzle-orm';
+import { eq, and, desc, sql, gte, lt } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -130,7 +130,7 @@ export class StatutoryComplianceService {
           eq(schema.statutoryFilings.orgId, orgId),
           eq(schema.statutoryFilings.isActive, true),
           eq(schema.statutoryFilings.status, 'pending'),
-          sql`${schema.statutoryFilings.dueDate} < ${now}`,
+          lt(schema.statutoryFilings.dueDate, now),
         ),
       )
       .orderBy(schema.statutoryFilings.dueDate);

@@ -185,6 +185,7 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Min. 8 characters"
                 className={inputWithIconClassName}
+                suppressHydrationWarning
               />
             </div>
           </div>

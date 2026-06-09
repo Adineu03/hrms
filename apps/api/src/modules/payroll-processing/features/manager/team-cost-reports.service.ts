@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -46,7 +46,7 @@ export class TeamCostReportsService {
           eq(schema.payrollEntries.payrollRunId, latestRun.id),
           eq(schema.payrollEntries.orgId, orgId),
           eq(schema.payrollEntries.isActive, true),
-          sql`${schema.payrollEntries.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.payrollEntries.employeeId, teamMemberIds),
         ),
       );
 
@@ -121,7 +121,7 @@ export class TeamCostReportsService {
             eq(schema.payrollEntries.payrollRunId, run.id),
             eq(schema.payrollEntries.orgId, orgId),
             eq(schema.payrollEntries.isActive, true),
-            sql`${schema.payrollEntries.employeeId} = ANY(${teamMemberIds})`,
+            inArray(schema.payrollEntries.employeeId, teamMemberIds),
           ),
         );
 
@@ -172,7 +172,7 @@ export class TeamCostReportsService {
           eq(schema.payrollEntries.payrollRunId, latestRun.id),
           eq(schema.payrollEntries.orgId, orgId),
           eq(schema.payrollEntries.isActive, true),
-          sql`${schema.payrollEntries.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.payrollEntries.employeeId, teamMemberIds),
         ),
       );
 
@@ -217,7 +217,7 @@ export class TeamCostReportsService {
           eq(schema.payrollEntries.payrollRunId, latestRun.id),
           eq(schema.payrollEntries.orgId, orgId),
           eq(schema.payrollEntries.isActive, true),
-          sql`${schema.payrollEntries.employeeId} = ANY(${teamMemberIds})`,
+          inArray(schema.payrollEntries.employeeId, teamMemberIds),
         ),
       );
 

@@ -16,6 +16,7 @@ import {
   Play,
   XCircle,
   Inbox,
+  Sparkles,
 } from 'lucide-react';
 
 const inputClassName =
@@ -79,6 +80,48 @@ export default function JobPostingTab() {
   const [editingPosting, setEditingPosting] = useState<JobPosting | null>(null);
   const [formData, setFormData] = useState(defaultFormData);
   const [isSaving, setIsSaving] = useState(false);
+
+  // AI JD Generator
+  const [jdHints, setJdHints] = useState('');
+  const [generatingJd, setGeneratingJd] = useState(false);
+  const [jdNote, setJdNote] = useState<string | null>(null);
+
+  const resetJd = () => {
+    setJdHints('');
+    setJdNote(null);
+  };
+
+  const handleGenerateJd = async () => {
+    if (!formData.title.trim()) {
+      setJdNote('Enter a posting title first.');
+      return;
+    }
+    setGeneratingJd(true);
+    setJdNote(null);
+    try {
+      const res = await api.post('/talent-acquisition/admin/postings/generate-jd', {
+        title: formData.title.trim(),
+        postingType: formData.postingType,
+        notes: jdHints.trim() || undefined,
+      });
+      const data = res.data;
+      if (!data?.ok) {
+        setJdNote(data?.message || 'AI generation is unavailable.');
+        return;
+      }
+      setFormData((prev) => ({
+        ...prev,
+        description: data.jd.description || prev.description,
+        responsibilities: data.jd.responsibilities || prev.responsibilities,
+        requirements: data.jd.requirements || prev.requirements,
+      }));
+      setJdNote('Draft generated — review and edit the fields below before saving.');
+    } catch {
+      setJdNote('Failed to generate a description. Please try again.');
+    } finally {
+      setGeneratingJd(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -156,12 +199,14 @@ export default function JobPostingTab() {
       postingType: posting.postingType,
       applicationDeadline: posting.applicationDeadline ? posting.applicationDeadline.split('T')[0] : '',
     });
+    resetJd();
     setShowCreateForm(true);
   };
 
   const openCreate = () => {
     setEditingPosting(null);
     setFormData(defaultFormData);
+    resetJd();
     setShowCreateForm(true);
   };
 
@@ -379,6 +424,33 @@ export default function JobPostingTab() {
                   onChange={(e) => setFormData({ ...formData, applicationDeadline: e.target.value })}
                   className={inputClassName}
                 />
+              </div>
+
+              {/* AI JD Generator */}
+              <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-text">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-medium">Generate description with AI</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={jdHints}
+                    onChange={(e) => setJdHints(e.target.value)}
+                    className={`${inputClassName} flex-1`}
+                    placeholder="Optional hints: seniority, key skills, location…"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGenerateJd}
+                    disabled={generatingJd || !formData.title.trim()}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-hover disabled:opacity-50 transition-colors shrink-0"
+                  >
+                    {generatingJd ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {generatingJd ? 'Generating…' : 'Generate'}
+                  </button>
+                </div>
+                {jdNote && <p className="text-xs text-primary">{jdNote}</p>}
               </div>
 
               <div>

@@ -288,6 +288,41 @@ export class ReferralMgmtService {
     };
   }
 
+  async getEligibleJobPostings(orgId: string) {
+    // Published job postings the manager can refer candidates to.
+    const rows = await this.db
+      .select({
+        id: schema.jobPostings.id,
+        title: schema.jobPostings.title,
+        departmentName: schema.departments.name,
+      })
+      .from(schema.jobPostings)
+      .leftJoin(
+        schema.jobRequisitions,
+        eq(schema.jobPostings.requisitionId, schema.jobRequisitions.id),
+      )
+      .leftJoin(
+        schema.departments,
+        eq(schema.jobRequisitions.departmentId, schema.departments.id),
+      )
+      .where(
+        and(
+          eq(schema.jobPostings.orgId, orgId),
+          eq(schema.jobPostings.isActive, true),
+          eq(schema.jobPostings.status, 'published'),
+        ),
+      )
+      .orderBy(desc(schema.jobPostings.createdAt));
+
+    return {
+      data: rows.map((r) => ({
+        id: r.id,
+        title: r.title,
+        department: r.departmentName ?? 'General',
+      })),
+    };
+  }
+
   async getReferralBonusEligibility(orgId: string, managerId: string) {
     // Get manager's own referrals with bonus info
     const referrals = await this.db

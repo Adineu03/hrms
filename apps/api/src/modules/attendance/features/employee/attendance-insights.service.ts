@@ -93,6 +93,8 @@ export class AttendanceInsightsService {
       lateDays,
       score,
       averageLateMinutes,
+      // Alias matching the Insights tab's expected field name
+      avgLateMinutes: averageLateMinutes,
       rank,
       previousMonthScore: prevScore,
       scoreDelta: score - prevScore,
@@ -186,12 +188,16 @@ export class AttendanceInsightsService {
     }
 
     let comparedToTeamAvg: string;
+    let comparedToTeam: 'higher' | 'lower' | 'equal';
     if (avgPerDay > teamAvgPerDay + 0.5) {
       comparedToTeamAvg = 'above_average';
+      comparedToTeam = 'higher';
     } else if (avgPerDay < teamAvgPerDay - 0.5) {
       comparedToTeamAvg = 'below_average';
+      comparedToTeam = 'lower';
     } else {
       comparedToTeamAvg = 'on_par';
+      comparedToTeam = 'equal';
     }
 
     return {
@@ -200,6 +206,9 @@ export class AttendanceInsightsService {
       totalHoursThisMonth: Math.round((totalWorkMinutes / 60) * 10) / 10,
       daysWorked: daysWithData,
       comparedToTeamAvg,
+      // Aliases matching the Insights tab's expected field names
+      comparedToTeam,
+      differenceMinutes: Math.round((avgPerDay - teamAvgPerDay) * 60),
       teamAvgPerDay,
       trend,
     };
@@ -384,12 +393,22 @@ export class AttendanceInsightsService {
       byTypeOutput[type] = Math.round(data.totalMinutes / Math.max(1, data.count));
     }
 
+    // Breakdown array shaped for the Insights tab (type / avgMinutes / count)
+    const breakdown = Object.entries(byType)
+      .map(([type, data]) => ({
+        type,
+        avgMinutes: Math.round(data.totalMinutes / Math.max(1, data.count)),
+        count: data.count,
+      }))
+      .sort((a, b) => b.count - a.count);
+
     return {
       avgBreakMinutes,
       totalBreakMinutes,
       daysWithBreaks,
       totalBreaks: allBreaks.length,
       byType: byTypeOutput,
+      breakdown,
       comparedToPolicy,
       policyBreakMinutes: Math.round(policyBreakMinutes),
     };

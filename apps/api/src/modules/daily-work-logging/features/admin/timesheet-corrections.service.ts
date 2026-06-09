@@ -475,6 +475,82 @@ export class TimesheetCorrectionsService {
     return this.toSubmissionDto(updated);
   }
 
+  // ── List Disputes (read model for the corrections queue) ────────────────
+  // A "dispute" is a timesheet submission that an employee/manager flagged as
+  // contested — modeled as submissions in a `rejected`/`disputed` state, or any
+  // submission whose metadata carries a `dispute` marker. We surface these so an
+  // admin can review and resolve them from the Corrections tab.
+  async listDisputes(orgId: string) {
+    const rows = await this.db
+      .select({
+        submission: schema.timesheetSubmissions,
+        employeeFirstName: schema.users.firstName,
+        employeeLastName: schema.users.lastName,
+        employeeEmail: schema.users.email,
+      })
+      .from(schema.timesheetSubmissions)
+      .leftJoin(
+        schema.users,
+        and(
+          eq(schema.timesheetSubmissions.employeeId, schema.users.id),
+          eq(schema.timesheetSubmissions.orgId, schema.users.orgId),
+        ),
+      )
+      .where(eq(schema.timesheetSubmissions.orgId, orgId))
+      .orderBy(desc(schema.timesheetSubmissions.updatedAt));
+
+    const disputes = rows
+      .filter((r) => {
+        const meta = (r.submission.metadata as Record<string, any>) ?? {};
+        return (
+          r.submission.status === 'rejected' ||
+          r.submission.status === 'disputed' ||
+          meta.dispute != null ||
+          meta.disputeReason != null
+        );
+      })
+      .map((r) => {
+        const meta = (r.submission.metadata as Record<string, any>) ?? {};
+        const name = `${r.employeeFirstName ?? ''} ${r.employeeLastName ?? ''}`.trim();
+        const resolved =
+          r.submission.status === 'approved' || meta.disputeStatus === 'resolved';
+        const status: 'open' | 'resolved' | 'escalated' =
+          meta.disputeStatus === 'escalated'
+            ? 'escalated'
+            : resolved
+              ? 'resolved'
+              : 'open';
+        return {
+          id: r.submission.id,
+          employeeName: name || 'Unknown',
+          submissionDate: r.submission.submittedAt
+            ? r.submission.submittedAt.toISOString()
+            : r.submission.periodEnd,
+          disputeReason:
+            meta.disputeReason ??
+            r.submission.rejectionReason ??
+            'Timesheet submission disputed',
+          status,
+          createdAt: r.submission.createdAt.toISOString(),
+        };
+      });
+
+    return { disputes };
+  }
+
+  // ── Resolve a Dispute by id (Corrections tab "Resolve" button) ──────────
+  async resolveDisputeById(
+    orgId: string,
+    submissionId: string,
+    adminUserId?: string,
+  ) {
+    return this.resolveDispute(
+      orgId,
+      { submissionId, resolution: 'accepted' },
+      adminUserId,
+    );
+  }
+
   private toSubmissionDto(row: typeof schema.timesheetSubmissions.$inferSelect) {
     return {
       id: row.id,

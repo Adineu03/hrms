@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, Fragment, type FormEvent } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -322,9 +322,8 @@ export default function ChangeRequestsTab() {
               const StatusIcon = STATUS_ICONS[req.status] || Clock;
               const isExpanded = expandedId === req.id;
               return (
-                <>
+                <Fragment key={req.id}>
                   <tr
-                    key={req.id}
                     className="bg-card hover:bg-background/50 transition-colors cursor-pointer"
                     onClick={() =>
                       setExpandedId(isExpanded ? null : req.id)
@@ -358,7 +357,7 @@ export default function ChangeRequestsTab() {
                     </td>
                   </tr>
                   {isExpanded && (
-                    <tr key={`${req.id}-detail`} className="bg-background/30">
+                    <tr className="bg-background/30">
                       <td colSpan={5} className="px-8 py-4">
                         <div className="space-y-2 text-sm">
                           <div>
@@ -383,7 +382,7 @@ export default function ChangeRequestsTab() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
             {requests.length === 0 && (

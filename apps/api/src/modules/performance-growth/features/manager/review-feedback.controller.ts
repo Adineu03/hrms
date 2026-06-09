@@ -66,4 +66,11 @@ export class ReviewFeedbackController {
     const managerId = this.getUserIdOrThrow();
     return this.service.giveContinuousFeedback(orgId, managerId, body);
   }
+
+  @Post('generate-draft')
+  @Roles('super_admin', 'admin', 'manager')
+  async generateDraft(@Body() body: { notes: string; employeeName?: string }) {
+    this.getOrgIdOrThrow();
+    return this.service.generateReviewDraft(body);
+  }
 }

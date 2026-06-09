@@ -44,6 +44,20 @@ export class LeaveBalanceMgmtController {
     });
   }
 
+  @Get('stats')
+  @Roles('super_admin', 'admin')
+  async stats(@Query('year') year?: string) {
+    const orgId = this.getOrgIdOrThrow();
+    return this.leaveBalanceMgmtService.stats(orgId, { year });
+  }
+
+  @Get('filters')
+  @Roles('super_admin', 'admin')
+  async filters() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.leaveBalanceMgmtService.filters(orgId);
+  }
+
   @Post('credit')
   @Roles('super_admin', 'admin')
   async bulkCredit(@Body() body: Record<string, any>) {

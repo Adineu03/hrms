@@ -21,8 +21,8 @@ const selectClassName =
 
 interface MissedPunch {
   date: string;
-  missing: 'clock_in' | 'clock_out' | 'both';
-  shiftName: string | null;
+  missingPunch: 'clock_in' | 'clock_out' | 'both';
+  shiftName?: string | null;
 }
 
 interface RegularizationRequest {
@@ -96,9 +96,25 @@ export default function RegularizationTab() {
         api.get('/attendance/employee/regularizations/deadline').catch(() => ({ data: null })),
       ]);
       const missedData = missedRes.data;
-      setMissedPunches(Array.isArray(missedData) ? missedData : Array.isArray(missedData?.data) ? missedData.data : []);
+      setMissedPunches(
+        Array.isArray(missedData)
+          ? missedData
+          : Array.isArray(missedData?.missedPunches)
+            ? missedData.missedPunches
+            : Array.isArray(missedData?.data)
+              ? missedData.data
+              : [],
+      );
       const reqData = requestsRes.data;
-      setRequests(Array.isArray(reqData) ? reqData : Array.isArray(reqData?.data) ? reqData.data : []);
+      setRequests(
+        Array.isArray(reqData)
+          ? reqData
+          : Array.isArray(reqData?.regularizations)
+            ? reqData.regularizations
+            : Array.isArray(reqData?.data)
+              ? reqData.data
+              : [],
+      );
       setPolicy(policyRes.data || null);
     } catch {
       setError('Failed to load regularization data.');
@@ -119,7 +135,7 @@ export default function RegularizationTab() {
   const openFormForMissed = (mp: MissedPunch) => {
     setForm({
       date: mp.date,
-      punchType: mp.missing === 'both' ? 'clock_in' : mp.missing,
+      punchType: mp.missingPunch === 'both' ? 'clock_in' : mp.missingPunch,
       requestedTime: '',
       reason: '',
       reasonCode: 'forgot_badge',
@@ -248,7 +264,7 @@ export default function RegularizationTab() {
                     )}
                   </div>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
-                    Missing: {MISSING_LABELS[mp.missing] || mp.missing}
+                    Missing: {MISSING_LABELS[mp.missingPunch] || mp.missingPunch}
                   </span>
                 </div>
                 <button

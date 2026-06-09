@@ -343,6 +343,53 @@ export class DailyTimesheetService {
     };
   }
 
+  // ── Selectable Projects (for entry/timer dropdowns) ─────────────────────
+  async listProjects(orgId: string) {
+    const rows = await this.db
+      .select({
+        id: schema.projects.id,
+        name: schema.projects.name,
+        code: schema.projects.code,
+        clientName: schema.projects.clientName,
+        color: schema.projects.color,
+        isBillable: schema.projects.isBillable,
+        status: schema.projects.status,
+      })
+      .from(schema.projects)
+      .where(
+        and(
+          eq(schema.projects.orgId, orgId),
+          eq(schema.projects.isActive, true),
+        ),
+      )
+      .orderBy(asc(schema.projects.name));
+
+    return { projects: rows };
+  }
+
+  // ── Selectable Task Categories (for entry/timer dropdowns) ──────────────
+  async listCategories(orgId: string) {
+    const rows = await this.db
+      .select({
+        id: schema.taskCategories.id,
+        name: schema.taskCategories.name,
+        code: schema.taskCategories.code,
+        type: schema.taskCategories.type,
+        color: schema.taskCategories.color,
+        isBillable: schema.taskCategories.isBillable,
+      })
+      .from(schema.taskCategories)
+      .where(
+        and(
+          eq(schema.taskCategories.orgId, orgId),
+          eq(schema.taskCategories.isActive, true),
+        ),
+      )
+      .orderBy(asc(schema.taskCategories.sortOrder), asc(schema.taskCategories.name));
+
+    return { categories: rows };
+  }
+
   // ── Helpers ─────────────────────────────────────────────────────────────
 
   private calculateHoursFromTimeRange(startTime: string, endTime: string): number {

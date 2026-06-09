@@ -27,12 +27,12 @@ interface TimesheetEntry {
   projectId: string;
   projectName: string;
   taskCategoryId: string;
-  taskCategoryName: string;
+  categoryName: string;
   startTime: string;
   endTime: string;
   hours: number;
   description: string;
-  billable: boolean;
+  isBillable: boolean;
 }
 
 interface ProjectOption {
@@ -85,11 +85,35 @@ export default function DailyTimesheetTab() {
         api.get('/daily-work-logging/employee/timesheet/categories').catch(() => null),
       ]);
       const entriesData = entriesRes?.data;
-      setEntries(Array.isArray(entriesData) ? entriesData : Array.isArray(entriesData?.data) ? entriesData.data : []);
+      setEntries(
+        Array.isArray(entriesData)
+          ? entriesData
+          : Array.isArray(entriesData?.entries)
+            ? entriesData.entries
+            : Array.isArray(entriesData?.data)
+              ? entriesData.data
+              : []
+      );
       const projData = projectsRes?.data;
-      setProjects(Array.isArray(projData) ? projData : Array.isArray(projData?.data) ? projData.data : []);
+      setProjects(
+        Array.isArray(projData)
+          ? projData
+          : Array.isArray(projData?.projects)
+            ? projData.projects
+            : Array.isArray(projData?.data)
+              ? projData.data
+              : []
+      );
       const catData = categoriesRes?.data;
-      setTaskCategories(Array.isArray(catData) ? catData : Array.isArray(catData?.data) ? catData.data : []);
+      setTaskCategories(
+        Array.isArray(catData)
+          ? catData
+          : Array.isArray(catData?.categories)
+            ? catData.categories
+            : Array.isArray(catData?.data)
+              ? catData.data
+              : []
+      );
     } catch {
       setError('Failed to load timesheet data.');
     } finally {
@@ -118,12 +142,17 @@ export default function DailyTimesheetTab() {
     setIsSaving(true);
     try {
       const payload = {
-        ...newEntry,
+        projectId: newEntry.projectId || undefined,
+        taskCategoryId: newEntry.taskCategoryId || undefined,
+        startTime: newEntry.startTime,
+        endTime: newEntry.endTime,
+        description: newEntry.description,
+        isBillable: newEntry.billable,
         date: selectedDate,
         hours: calculateHours(newEntry.startTime, newEntry.endTime) || newEntry.hours,
       };
       const res = await api.post('/daily-work-logging/employee/timesheet', payload);
-      const created = res.data?.data || res.data;
+      const created = res.data?.entry || res.data?.data || res.data;
       setEntries((prev) => [...prev, created]);
       setNewEntry(defaultNewEntry);
       setShowAddForm(false);
@@ -214,7 +243,7 @@ export default function DailyTimesheetTab() {
   };
 
   const totalHours = entries.reduce((sum, e) => sum + (e.hours ?? 0), 0);
-  const totalBillable = entries.filter((e) => e.billable).reduce((sum, e) => sum + (e.hours ?? 0), 0);
+  const totalBillable = entries.filter((e) => e.isBillable).reduce((sum, e) => sum + (e.hours ?? 0), 0);
 
   if (isLoading) {
     return (
@@ -317,11 +346,13 @@ export default function DailyTimesheetTab() {
               </div>
               <div>
                 <span className="text-xs text-text-muted">Task</span>
-                <p className="text-sm text-text">{entry.taskCategoryName}</p>
+                <p className="text-sm text-text">{entry.categoryName || '--'}</p>
               </div>
               <div>
                 <span className="text-xs text-text-muted">Time</span>
-                <p className="text-sm text-text">{entry.startTime} - {entry.endTime}</p>
+                <p className="text-sm text-text">
+                  {entry.startTime && entry.endTime ? `${entry.startTime} - ${entry.endTime}` : '--'}
+                </p>
               </div>
               <div>
                 <span className="text-xs text-text-muted">Hours</span>
@@ -331,9 +362,9 @@ export default function DailyTimesheetTab() {
                 <span className="text-xs text-text-muted">Billable</span>
                 <p className="text-sm">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    entry.billable ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'
+                    entry.isBillable ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'
                   }`}>
-                    {entry.billable ? 'Yes' : 'No'}
+                    {entry.isBillable ? 'Yes' : 'No'}
                   </span>
                 </p>
               </div>

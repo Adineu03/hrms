@@ -98,7 +98,15 @@ export default function InterviewMgmtTab() {
     setError(null);
     try {
       const res = await api.get('/talent-acquisition/manager/interviews');
-      setInterviews(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const rows = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      // Backend returns `interviewType` / `stageName`; map to the fields this tab reads.
+      setInterviews(
+        rows.map((i: Record<string, unknown>) => ({
+          ...i,
+          type: (i.type ?? i.interviewType) as Interview['type'],
+          position: (i.position ?? i.stageName ?? '') as string,
+        })) as Interview[]
+      );
     } catch {
       setError('Failed to load interviews.');
     } finally {
@@ -165,7 +173,7 @@ export default function InterviewMgmtTab() {
     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatStatus = (s: string) => s.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const formatStatus = (s?: string) => (s ?? '').split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
   if (isLoading) {
     return (

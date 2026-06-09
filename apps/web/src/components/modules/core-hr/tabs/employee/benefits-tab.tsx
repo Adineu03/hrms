@@ -60,9 +60,23 @@ export default function BenefitsTab() {
         api.get('/core-hr/employee/benefits/my-enrollments'),
       ]);
       const rawPlans = plansRes.data;
-      setPlans(Array.isArray(rawPlans) ? rawPlans : Array.isArray(rawPlans?.data) ? rawPlans.data : []);
+      // Endpoint returns { plans:[...], total }; contributions arrive as strings.
+      const planList: Record<string, unknown>[] =
+        rawPlans?.plans ?? rawPlans?.data ?? (Array.isArray(rawPlans) ? rawPlans : []);
+      setPlans(
+        planList.map((p) => ({
+          id: p.id as string,
+          name: p.name as string,
+          type: (p.type as string) ?? 'other',
+          description: (p.description as string) ?? '',
+          employerContribution: Number(p.employerContribution) || 0,
+          employeeContribution: Number(p.employeeContribution) || 0,
+        }))
+      );
       const rawEnroll = enrollmentsRes.data;
-      setEnrollments(Array.isArray(rawEnroll) ? rawEnroll : Array.isArray(rawEnroll?.data) ? rawEnroll.data : []);
+      setEnrollments(
+        rawEnroll?.enrollments ?? rawEnroll?.data ?? (Array.isArray(rawEnroll) ? rawEnroll : [])
+      );
     } catch {
       setError('Failed to load benefits information.');
       setPlans([]);
@@ -81,7 +95,9 @@ export default function BenefitsTab() {
       // Refresh enrollments
       const enrollmentsRes = await api.get('/core-hr/employee/benefits/my-enrollments');
       const rawEnroll = enrollmentsRes.data;
-      setEnrollments(Array.isArray(rawEnroll) ? rawEnroll : Array.isArray(rawEnroll?.data) ? rawEnroll.data : []);
+      setEnrollments(
+        rawEnroll?.enrollments ?? rawEnroll?.data ?? (Array.isArray(rawEnroll) ? rawEnroll : [])
+      );
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch {
       setError('Failed to enroll in benefit plan.');

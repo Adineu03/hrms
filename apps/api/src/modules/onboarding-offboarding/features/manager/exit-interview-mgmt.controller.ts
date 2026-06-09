@@ -22,6 +22,13 @@ export class ExitInterviewMgmtController {
     return userId;
   }
 
+  @Post('analyze')
+  @Roles('super_admin', 'admin', 'manager')
+  async analyze(@Body() body: { notes: string }) {
+    this.getOrgIdOrThrow();
+    return this.service.analyzeExitInterview(body);
+  }
+
   @Get()
   @Roles('super_admin', 'admin', 'manager')
   async listExitInterviews() {

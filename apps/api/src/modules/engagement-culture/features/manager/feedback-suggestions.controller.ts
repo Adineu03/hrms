@@ -30,6 +30,12 @@ export class FeedbackSuggestionsController {
     return this.service.getTeamFeedback(orgId, userId);
   }
 
+  @Post('digest')
+  async generateDigest(@Body() body: { items: string[] }) {
+    this.getOrgIdOrThrow();
+    return this.service.generateDigest(body?.items || []);
+  }
+
   @Post(':id/respond')
   async respondToFeedback(@Param('id') id: string, @Body() dto: { response: string }) {
     const orgId = this.getOrgIdOrThrow();

@@ -13,6 +13,7 @@ import {
   Check,
   XCircle,
   GitBranch,
+  Sparkles,
 } from 'lucide-react';
 
 const inputClassName =
@@ -75,6 +76,43 @@ export default function GoalManagementTab() {
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(defaultFormData);
+  const [suggestingGoal, setSuggestingGoal] = useState(false);
+  const [goalSuggestions, setGoalSuggestions] = useState<{ title: string; description: string }[]>([]);
+  const [goalNote, setGoalNote] = useState<string | null>(null);
+
+  const handleSuggestGoals = async () => {
+    const seed = formData.title.trim() || formData.description.trim();
+    if (!seed) {
+      setGoalNote('Enter a goal title or a few notes first.');
+      return;
+    }
+    setSuggestingGoal(true);
+    setGoalNote(null);
+    setGoalSuggestions([]);
+    try {
+      const res = await api.post('/performance-growth/manager/goals/suggest', {
+        seed: formData.title.trim(),
+        notes: formData.description.trim(),
+      });
+      const data = res.data;
+      if (!data?.ok) {
+        setGoalNote(data?.message || 'AI suggestions are unavailable.');
+        return;
+      }
+      setGoalSuggestions(data.suggestions || []);
+      if (!data.suggestions?.length) setGoalNote('No suggestions were returned.');
+    } catch {
+      setGoalNote('Failed to get suggestions. Please try again.');
+    } finally {
+      setSuggestingGoal(false);
+    }
+  };
+
+  const applyGoalSuggestion = (s: { title: string; description: string }) => {
+    setFormData((prev) => ({ ...prev, title: s.title, description: s.description }));
+    setGoalSuggestions([]);
+    setGoalNote(null);
+  };
   const [isSaving, setIsSaving] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'cascade'>('table');
 
@@ -83,7 +121,7 @@ export default function GoalManagementTab() {
       setIsLoading(true);
       const [goalsRes, empRes] = await Promise.all([
         api.get('/performance-growth/manager/goals').catch(() => ({ data: [] })),
-        api.get('/core-hr/admin/employees').catch(() => ({ data: [] })),
+        api.get('/core-hr/manager/team').catch(() => ({ data: [] })),
       ]);
       const goalsRaw = goalsRes.data;
       setGoals(Array.isArray(goalsRaw) ? goalsRaw : Array.isArray(goalsRaw?.data) ? goalsRaw.data : []);
@@ -194,7 +232,7 @@ export default function GoalManagementTab() {
         </button>
         <button
           type="button"
-          onClick={() => { setFormData(defaultFormData); setShowModal(true); }}
+          onClick={() => { setFormData(defaultFormData); setGoalSuggestions([]); setGoalNote(null); setShowModal(true); }}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-hover transition-colors"
         >
           <Plus className="h-4 w-4" />
@@ -343,8 +381,36 @@ export default function GoalManagementTab() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Goal Title *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-text-muted">Goal Title *</label>
+                  <button
+                    type="button"
+                    onClick={handleSuggestGoals}
+                    disabled={suggestingGoal}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover disabled:opacity-50"
+                  >
+                    {suggestingGoal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    {suggestingGoal ? 'Thinking…' : 'Suggest with AI'}
+                  </button>
+                </div>
                 <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={inputClassName} placeholder="e.g. Complete API migration" />
+                {goalNote && <p className="text-xs text-primary mt-1">{goalNote}</p>}
+                {goalSuggestions.length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    <p className="text-xs text-text-muted">Pick a suggestion to fill the form:</p>
+                    {goalSuggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => applyGoalSuggestion(s)}
+                        className="w-full text-left p-2 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
+                      >
+                        <p className="text-xs font-medium text-text">{s.title}</p>
+                        <p className="text-xs text-text-muted line-clamp-2">{s.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-text-muted mb-1">Description</label>

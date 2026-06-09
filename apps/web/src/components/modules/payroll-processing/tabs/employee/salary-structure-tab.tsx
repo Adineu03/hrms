@@ -62,22 +62,51 @@ export default function SalaryStructureTab() {
       ]);
 
       const salaryData = salaryRes.data?.data || salaryRes.data || {};
-      const rawHistory = historyRes.data?.data ?? historyRes.data;
-      const historyData = Array.isArray(rawHistory) ? rawHistory : [];
-      const rawBenefits = benefitsRes.data?.data ?? benefitsRes.data;
-      const benefitsData = Array.isArray(rawBenefits) ? rawBenefits : [];
+      const monthly = salaryData.monthlyBreakdown || {};
 
-      if (salaryData.basic !== undefined || salaryData.ctc !== undefined) {
+      // Salary revision history — backend returns { salaryAssignments, revisionItems }
+      const historyBody = historyRes.data?.data ?? historyRes.data ?? {};
+      const rawHistory = Array.isArray(historyBody)
+        ? historyBody
+        : historyBody.revisionItems ?? [];
+      const historyData = Array.isArray(rawHistory) ? rawHistory : [];
+
+      // Benefits — backend returns { statutoryBenefits, orgBenefitPlans }
+      const benefitsBody = benefitsRes.data?.data ?? benefitsRes.data ?? {};
+      let benefitsData: BenefitItem[] = [];
+      if (Array.isArray(benefitsBody)) {
+        benefitsData = benefitsBody;
+      } else {
+        const statutory = (benefitsBody.statutoryBenefits ?? []).map((b: any, i: number) => ({
+          id: `stat-${i}`,
+          name: b.name,
+          type: b.type ?? 'statutory',
+          value: Number(b.employerContribution ?? 0),
+          frequency: b.frequency ?? 'monthly',
+          status: 'active',
+        }));
+        const org = (benefitsBody.orgBenefitPlans ?? []).map((b: any) => ({
+          id: b.id,
+          name: b.name,
+          type: b.type ?? 'benefit',
+          value: 0,
+          frequency: b.description ?? '',
+          status: 'active',
+        }));
+        benefitsData = [...statutory, ...org];
+      }
+
+      if (salaryData.basicSalary !== undefined || salaryData.ctc !== undefined) {
         setSalary({
-          basic: salaryData.basic || 0,
-          hra: salaryData.hra || 0,
-          da: salaryData.da || 0,
-          specialAllowance: salaryData.specialAllowance || 0,
-          otherAllowances: salaryData.otherAllowances || 0,
-          grossPay: salaryData.grossPay || 0,
-          ctc: salaryData.ctc || 0,
+          basic: Number(monthly.basic ?? salaryData.basicSalary ?? 0),
+          hra: Number(monthly.hra ?? 0),
+          da: Number(monthly.da ?? 0),
+          specialAllowance: Number(monthly.specialAllowance ?? 0),
+          otherAllowances: 0,
+          grossPay: Number(monthly.grossMonthly ?? 0),
+          ctc: Number(salaryData.ctc ?? 0),
           effectiveFrom: salaryData.effectiveFrom || '',
-          components: salaryData.components || [],
+          components: [],
         });
       }
       setRevisions(historyData);

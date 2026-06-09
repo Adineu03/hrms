@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -27,6 +28,30 @@ export class PostJoiningSupportController {
     const userId = this.tenantService.getUserId();
     if (!userId) throw new UnauthorizedException('Missing user context');
     return userId;
+  }
+
+  @Get()
+  @Roles('super_admin', 'admin', 'manager', 'employee')
+  async getOverview() {
+    const orgId = this.getOrgIdOrThrow();
+    const userId = this.getUserIdOrThrow();
+    return this.service.getPostJoiningOverview(orgId, userId);
+  }
+
+  @Post('support-requests')
+  @Roles('super_admin', 'admin', 'manager', 'employee')
+  async submitSupportRequest(@Body() body: Record<string, any>) {
+    const orgId = this.getOrgIdOrThrow();
+    const userId = this.getUserIdOrThrow();
+    return this.service.submitSupportRequest(orgId, userId, body);
+  }
+
+  @Patch('check-ins/:id/feedback')
+  @Roles('super_admin', 'admin', 'manager', 'employee')
+  async submitCheckinFeedbackById(@Param('id') id: string, @Body() body: Record<string, any>) {
+    const orgId = this.getOrgIdOrThrow();
+    const userId = this.getUserIdOrThrow();
+    return this.service.submitCheckinFeedbackById(orgId, userId, id, body);
   }
 
   @Get('checkins')

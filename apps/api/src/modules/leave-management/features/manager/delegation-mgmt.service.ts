@@ -73,6 +73,40 @@ export class DelegationMgmtService {
     };
   }
 
+  async getTeamMembers(orgId: string, managerId: string) {
+    const rows = await this.db
+      .select({
+        id: schema.users.id,
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName,
+        email: schema.users.email,
+      })
+      .from(schema.employeeProfiles)
+      .innerJoin(
+        schema.users,
+        and(
+          eq(schema.employeeProfiles.userId, schema.users.id),
+          eq(schema.users.orgId, orgId),
+          eq(schema.users.isActive, true),
+        ),
+      )
+      .where(
+        and(
+          eq(schema.employeeProfiles.orgId, orgId),
+          eq(schema.employeeProfiles.managerId, managerId),
+        ),
+      )
+      .orderBy(schema.users.firstName);
+
+    return rows
+      .filter((r) => r.id !== managerId)
+      .map((r) => ({
+        id: r.id,
+        name: `${r.firstName} ${r.lastName ?? ''}`.trim(),
+        email: r.email,
+      }));
+  }
+
   async createDelegation(orgId: string, managerId: string, body: Record<string, any>) {
     const { delegateId, startDate, endDate, delegationType } = body;
 

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -8,9 +8,11 @@ import * as schema from '../../../../infrastructure/database/schema';
 export class PayrollReportsService {
   constructor(@Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>) {}
 
-  async getPayrollSummary(orgId: string, month: number, year: number) {
-    // Get the payroll run for the period
-    const runs = await this.db
+  // Resolve the run for the requested period; if none exists (e.g. the UI
+  // defaults to the current month but the latest run is in a prior month),
+  // fall back to the most recent active run so reports still populate.
+  private async resolveRun(orgId: string, month: number, year: number) {
+    const exact = await this.db
       .select()
       .from(schema.payrollRuns)
       .where(
@@ -23,7 +25,23 @@ export class PayrollReportsService {
       )
       .limit(1);
 
-    if (!runs.length) {
+    if (exact.length) return exact[0];
+
+    const [latest] = await this.db
+      .select()
+      .from(schema.payrollRuns)
+      .where(and(eq(schema.payrollRuns.orgId, orgId), eq(schema.payrollRuns.isActive, true)))
+      .orderBy(desc(schema.payrollRuns.year), desc(schema.payrollRuns.month))
+      .limit(1);
+
+    return latest ?? null;
+  }
+
+  async getPayrollSummary(orgId: string, month: number, year: number) {
+    // Get the payroll run for the period (with fallback to the latest run)
+    const run = await this.resolveRun(orgId, month, year);
+
+    if (!run) {
       return {
         data: {
           month,
@@ -36,8 +54,6 @@ export class PayrollReportsService {
         },
       };
     }
-
-    const run = runs[0];
 
     // Get breakdown of earnings and deductions
     const entries = await this.db
@@ -79,12 +95,19 @@ export class PayrollReportsService {
       },
     );
 
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const gross = parseFloat(run.totalGrossPay ?? '0');
+    const headcount = run.totalEmployees ?? entries.length;
+
     return {
       data: {
-        month,
-        year,
+        month: run.month,
+        year: run.year,
+        period: `${MONTHS[run.month - 1]} ${run.year}`,
         status: run.status,
-        totalEmployees: run.totalEmployees,
+        totalEmployees: headcount,
+        headcount,
+        averageSalary: headcount > 0 ? (gross / headcount).toFixed(2) : '0',
         totalGross: run.totalGrossPay,
         totalDeductions: run.totalDeductions,
         totalNet: run.totalNetPay,
@@ -107,21 +130,10 @@ export class PayrollReportsService {
   }
 
   async getDepartmentBreakdown(orgId: string, month: number, year: number) {
-    // Get the run
-    const runs = await this.db
-      .select()
-      .from(schema.payrollRuns)
-      .where(
-        and(
-          eq(schema.payrollRuns.orgId, orgId),
-          eq(schema.payrollRuns.month, month),
-          eq(schema.payrollRuns.year, year),
-          eq(schema.payrollRuns.isActive, true),
-        ),
-      )
-      .limit(1);
+    // Get the run (with fallback to the latest run)
+    const run = await this.resolveRun(orgId, month, year);
 
-    if (!runs.length) {
+    if (!run) {
       return { data: [], meta: { total: 0 } };
     }
 
@@ -131,7 +143,7 @@ export class PayrollReportsService {
       .from(schema.payrollEntries)
       .where(
         and(
-          eq(schema.payrollEntries.payrollRunId, runs[0].id),
+          eq(schema.payrollEntries.payrollRunId, run.id),
           eq(schema.payrollEntries.orgId, orgId),
           eq(schema.payrollEntries.isActive, true),
         ),
@@ -143,7 +155,7 @@ export class PayrollReportsService {
       ? await this.db
           .select({ userId: schema.employeeProfiles.userId, departmentId: schema.employeeProfiles.departmentId })
           .from(schema.employeeProfiles)
-          .where(and(eq(schema.employeeProfiles.orgId, orgId), sql`${schema.employeeProfiles.userId} = ANY(${employeeIds})`))
+          .where(and(eq(schema.employeeProfiles.orgId, orgId), inArray(schema.employeeProfiles.userId, employeeIds)))
       : [];
 
     const empDeptMap = new Map(profiles.map((p) => [p.userId, p.departmentId]));
@@ -170,12 +182,15 @@ export class PayrollReportsService {
     }
 
     const data = Array.from(deptAgg.entries()).map(([deptId, agg]) => ({
+      id: deptId,
       departmentId: deptId,
+      department: deptId === 'unassigned' ? 'Unassigned' : deptMap.get(deptId) ?? 'Unknown',
       departmentName: deptId === 'unassigned' ? 'Unassigned' : deptMap.get(deptId) ?? 'Unknown',
       headcount: agg.headcount,
       totalGross: agg.gross.toFixed(2),
       totalDeductions: agg.deductions.toFixed(2),
       totalNet: agg.net.toFixed(2),
+      averageSalary: agg.headcount > 0 ? (agg.gross / agg.headcount).toFixed(2) : '0',
     }));
 
     return { data, meta: { total: data.length } };
@@ -216,7 +231,7 @@ export class PayrollReportsService {
       ? await this.db
           .select({ id: schema.users.id, firstName: schema.users.firstName, lastName: schema.users.lastName, email: schema.users.email })
           .from(schema.users)
-          .where(sql`${schema.users.id} = ANY(${employeeIds})`)
+          .where(inArray(schema.users.id, employeeIds))
       : [];
 
     const userMap = new Map(users.map((u) => [u.id, { name: `${u.firstName} ${u.lastName ?? ''}`.trim(), email: u.email }]));

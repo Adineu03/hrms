@@ -13,6 +13,7 @@ import {
   Send,
   Star,
   Clock,
+  Sparkles,
 } from 'lucide-react';
 
 const inputClassName =
@@ -82,6 +83,38 @@ export default function ReviewFeedbackTab() {
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
   const [reviewRatings, setReviewRatings] = useState<Record<string, { rating: number; comments: string }>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [draftingId, setDraftingId] = useState<string | null>(null);
+
+  const handleDraftReview = async (review: { id: string; employeeName: string }) => {
+    const notes = (reviewRatings[review.id]?.comments || '').trim();
+    if (notes.length < 3) {
+      setError('Type a few rough notes in Comments first, then draft with AI.');
+      return;
+    }
+    setDraftingId(review.id);
+    setError(null);
+    try {
+      const res = await api.post('/performance-growth/manager/reviews/generate-draft', {
+        notes,
+        employeeName: review.employeeName,
+      });
+      const data = res.data;
+      if (!data?.ok) {
+        setError(data?.message || 'AI drafting is unavailable.');
+        return;
+      }
+      setReviewRatings((prev) => ({
+        ...prev,
+        [review.id]: { rating: prev[review.id]?.rating || 0, comments: data.draft },
+      }));
+      setSuccess('Draft generated — review and edit before saving.');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch {
+      setError('Failed to draft review. Please try again.');
+    } finally {
+      setDraftingId(null);
+    }
+  };
 
   // Quick feedback form
   const [feedbackForm, setFeedbackForm] = useState({
@@ -96,7 +129,7 @@ export default function ReviewFeedbackTab() {
       setIsLoading(true);
       const [reviewRes, empRes] = await Promise.all([
         api.get('/performance-growth/manager/reviews').catch(() => ({ data: [] })),
-        api.get('/core-hr/admin/employees').catch(() => ({ data: [] })),
+        api.get('/core-hr/manager/team').catch(() => ({ data: [] })),
       ]);
       const reviewRaw = reviewRes.data;
       setPendingReviews(Array.isArray(reviewRaw) ? reviewRaw : Array.isArray(reviewRaw?.data) ? reviewRaw.data : []);
@@ -282,7 +315,18 @@ export default function ReviewFeedbackTab() {
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[10px] font-medium text-text-muted mb-1">Comments</label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-[10px] font-medium text-text-muted">Comments</label>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDraftReview(review)}
+                                  disabled={draftingId === review.id}
+                                  className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:text-primary-hover disabled:opacity-50"
+                                >
+                                  {draftingId === review.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                                  {draftingId === review.id ? 'Drafting…' : 'Draft with AI'}
+                                </button>
+                              </div>
                               <textarea
                                 value={reviewRatings[review.id]?.comments || ''}
                                 onChange={(e) => setReviewRatings((prev) => ({

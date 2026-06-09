@@ -21,6 +21,39 @@ export class AttendanceReportsController {
     return orgId;
   }
 
+  @Get()
+  @Roles('super_admin', 'admin')
+  async generateReport(
+    @Query('type') type?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('department') department?: string,
+    @Query('location') location?: string,
+  ) {
+    const orgId = this.getOrgIdOrThrow();
+    return this.attendanceReportsService.generateReport(orgId, {
+      type: type || 'daily_summary',
+      startDate,
+      endDate,
+      department,
+      location,
+    });
+  }
+
+  @Get('departments')
+  @Roles('super_admin', 'admin')
+  async getDepartmentOptions() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.attendanceReportsService.getDepartmentOptions(orgId);
+  }
+
+  @Get('locations')
+  @Roles('super_admin', 'admin')
+  async getLocationOptions() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.attendanceReportsService.getLocationOptions(orgId);
+  }
+
   @Get('daily-summary')
   @Roles('super_admin', 'admin')
   async getDailySummary(

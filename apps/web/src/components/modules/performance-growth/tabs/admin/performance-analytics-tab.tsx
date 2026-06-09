@@ -52,21 +52,60 @@ export default function PerformanceAnalyticsTab() {
         api.get('/performance-growth/admin/analytics/review-completion').catch(() => ({ data: {} })),
         api.get('/performance-growth/admin/analytics/trends').catch(() => ({ data: [] })),
       ]);
-      const dist = Array.isArray(distRes.data) ? distRes.data : distRes.data?.data || [];
-      const dept = Array.isArray(deptRes.data) ? deptRes.data : deptRes.data?.data || [];
+      // distribution returns { distribution: { '1': n, ... }, totalReviewed, totalAssignments }
+      const distRaw = distRes.data?.data ?? distRes.data;
+      const RATING_LABELS: Record<string, string> = {
+        '5': 'Outstanding',
+        '4': 'Exceeds Expectations',
+        '3': 'Meets Expectations',
+        '2': 'Needs Improvement',
+        '1': 'Unsatisfactory',
+      };
+      let performanceDistribution: { rating: string; count: number; percentage: number }[] = [];
+      if (Array.isArray(distRaw)) {
+        performanceDistribution = distRaw;
+      } else if (distRaw?.distribution && typeof distRaw.distribution === 'object') {
+        const buckets = distRaw.distribution as Record<string, number>;
+        const totalRated = Object.values(buckets).reduce((s, n) => s + Number(n || 0), 0);
+        performanceDistribution = ['5', '4', '3', '2', '1']
+          .map((k) => ({
+            rating: RATING_LABELS[k] ?? k,
+            count: Number(buckets[k] ?? 0),
+            percentage: totalRated > 0 ? Math.round((Number(buckets[k] ?? 0) / totalRated) * 100) : 0,
+          }))
+          .filter((b) => b.count > 0);
+      }
+
+      // department-comparison returns [{ departmentName, avgRating (string|null), totalEmployees, reviewedCount }]
+      const deptRaw = Array.isArray(deptRes.data) ? deptRes.data : deptRes.data?.data || [];
+      const departmentComparison = (deptRaw as Array<Record<string, unknown>>)
+        .map((d) => ({
+          department: (d.department ?? d.departmentName ?? 'Unassigned') as string,
+          avgRating: Number(d.avgRating ?? 0),
+          totalEmployees: Number(d.totalEmployees ?? 0),
+        }))
+        .filter((d) => d.avgRating > 0);
+
+      // goal-achievement returns { total, completed, completionRate, ... }
       const goal = goalRes.data?.data || goalRes.data || {};
+      // review-completion returns { total, submitted, completionRate, ... }
       const review = reviewRes.data?.data || reviewRes.data || {};
-      const trends = Array.isArray(trendRes.data) ? trendRes.data : trendRes.data?.data || [];
+      // trends returns [{ cycleName, startDate, avgRating (string), totalReviewed }]
+      const trendsRaw = Array.isArray(trendRes.data) ? trendRes.data : trendRes.data?.data || [];
+      const yoyTrend = (trendsRaw as Array<Record<string, unknown>>).map((t) => ({
+        year: (t.year ?? t.cycleName ?? '') as string,
+        avgRating: Number(t.avgRating ?? 0),
+      }));
       setData({
-        performanceDistribution: dist,
-        departmentComparison: dept,
-        goalAchievementRate: goal.goalAchievementRate ?? goal.rate ?? 0,
-        totalGoals: goal.totalGoals ?? goal.total ?? 0,
-        completedGoals: goal.completedGoals ?? goal.completed ?? 0,
-        reviewCompletionRate: review.reviewCompletionRate ?? review.rate ?? 0,
-        totalReviews: review.totalReviews ?? review.total ?? 0,
-        completedReviews: review.completedReviews ?? review.completed ?? 0,
-        yoyTrend: trends,
+        performanceDistribution,
+        departmentComparison,
+        goalAchievementRate: Number(goal.goalAchievementRate ?? goal.completionRate ?? goal.rate ?? 0),
+        totalGoals: Number(goal.totalGoals ?? goal.total ?? 0),
+        completedGoals: Number(goal.completedGoals ?? goal.completed ?? 0),
+        reviewCompletionRate: Number(review.reviewCompletionRate ?? review.completionRate ?? review.rate ?? 0),
+        totalReviews: Number(review.totalReviews ?? review.total ?? 0),
+        completedReviews: Number(review.completedReviews ?? review.submitted ?? review.completed ?? 0),
+        yoyTrend,
       });
     } catch {
       setError('Failed to load performance analytics.');

@@ -1,12 +1,14 @@
 import {
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { eq, and, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type {
   ImportUploadResult,
@@ -17,6 +19,7 @@ import type {
   ImportValidationError,
 } from '@hrms/shared';
 import { EMPLOYEE_IMPORT_FIELDS } from '@hrms/shared';
+import { AiCoreService } from '../ai/ai-core.service';
 import { DRIZZLE } from '../../infrastructure/database/database.module';
 import * as schema from '../../infrastructure/database/schema';
 import { dataImports } from '../../infrastructure/database/schema/data-imports';
@@ -29,8 +32,11 @@ import { EmployeeValidator } from './validators/employee-validator';
 
 @Injectable()
 export class DataImportService {
+  private readonly logger = new Logger(DataImportService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly ai: AiCoreService,
   ) {}
 
   async uploadFile(
@@ -104,6 +110,97 @@ export class DataImportService {
         updatedAt: new Date(),
       })
       .where(eq(dataImports.id, importId));
+  }
+
+  /**
+   * AI Column Mapper — propose a mapping from the uploaded file's (possibly
+   * messy) column headers to the known employee import fields, using the
+   * headers + a few sample rows. Returns a suggestion only; the user reviews
+   * and confirms it in the wizard before validation.
+   */
+  async suggestMapping(
+    orgId: string,
+    importId: string,
+  ): Promise<
+    | { ok: true; mapping: ColumnMappingData; details: { field: string; header: string; confidence: string }[]; mappedCount: number; totalFields: number }
+    | { ok: false; message: string }
+  > {
+    if (!this.ai.isReady()) {
+      return { ok: false, message: 'AI column mapping is not configured on this server.' };
+    }
+
+    const [record] = await this.db
+      .select()
+      .from(dataImports)
+      .where(and(eq(dataImports.id, importId), eq(dataImports.orgId, orgId)))
+      .limit(1);
+    if (!record) throw new NotFoundException('Import not found');
+
+    const rows = (record.rawData as Record<string, unknown>[]) || [];
+    if (rows.length === 0) return { ok: false, message: 'No data rows to analyze.' };
+
+    const headers = Object.keys(rows[0] ?? {});
+    if (headers.length === 0) return { ok: false, message: 'No columns found in the file.' };
+    const headerSet = new Set(headers);
+    const sampleRows = rows.slice(0, 4);
+
+    const fieldNames = EMPLOYEE_IMPORT_FIELDS.map((f) => f.field);
+    const MappingSchema = z.object({
+      mappings: z.array(
+        z.object({
+          field: z.enum(fieldNames as unknown as [string, ...string[]]),
+          header: z.string(),
+          confidence: z.enum(['high', 'medium', 'low']),
+        }),
+      ),
+    });
+
+    const instructions = `You map a spreadsheet's column headers to a fixed set of employee fields for a bulk import.
+
+You are given the target fields (with their human labels) and the source file's actual column headers plus a few sample rows.
+For each target field that has a good match, output { field, header, confidence }.
+
+Rules:
+- "header" MUST be copied EXACTLY from the provided source headers list. Never invent a header.
+- Match by MEANING, not just exact text. Examples: "Mail ID"/"E-mail" → email; "Cell"/"Mobile"/"Contact No" → phone; "Joining Dt"/"DOJ" → dateOfJoining; "Dept" → department; "Designation"/"Title"/"Role" → designation; "DOB" → dateOfBirth; "Manager Email"/"Reports To" → managerId.
+- Use the sample values to disambiguate (e.g. a column of emails → email; dd/mm/yyyy values → a date field).
+- Only include a field when you are reasonably confident; omit fields with no good source column.
+- Do not map two different target fields to the same source header unless that column truly contains both.`;
+
+    try {
+      const result = await this.ai.extractStructured<z.infer<typeof MappingSchema>>({
+        name: 'ColumnMapper',
+        schema: MappingSchema,
+        instructions,
+        text: JSON.stringify({
+          targetFields: EMPLOYEE_IMPORT_FIELDS,
+          sourceHeaders: headers,
+          sampleRows,
+        }),
+      });
+
+      const mapping: ColumnMappingData = {};
+      const details: { field: string; header: string; confidence: string }[] = [];
+      const usedHeaders = new Set<string>();
+      for (const m of result.mappings || []) {
+        if (m.header && headerSet.has(m.header) && !mapping[m.field] && !usedHeaders.has(m.header)) {
+          mapping[m.field] = m.header;
+          usedHeaders.add(m.header);
+          details.push({ field: m.field, header: m.header, confidence: m.confidence });
+        }
+      }
+
+      return {
+        ok: true,
+        mapping,
+        details,
+        mappedCount: Object.keys(mapping).length,
+        totalFields: EMPLOYEE_IMPORT_FIELDS.length,
+      };
+    } catch (err: any) {
+      this.logger.error('AI column mapping failed', err?.message || err);
+      return { ok: false, message: 'Could not generate a mapping. Please map the columns manually.' };
+    }
   }
 
   async validate(

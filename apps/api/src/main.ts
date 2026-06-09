@@ -9,6 +9,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.use(require('express').json({ limit: '5mb' })); // Allow large payloads for screenshot images
   app.enableCors({
     origin: config.get('WEB_URL', 'http://localhost:3000'),
     credentials: true,

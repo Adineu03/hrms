@@ -8,12 +8,14 @@ import { SurveyPulseManagementController } from './features/admin/survey-pulse-m
 import { CultureValuesSetupController } from './features/admin/culture-values-setup.controller';
 import { WellnessProgramManagementController } from './features/admin/wellness-program-management.controller';
 import { EngagementAnalyticsController } from './features/admin/engagement-analytics.controller';
+import { SentimentEngineController } from './features/admin/sentiment-engine.controller';
 
 // Admin services
 import { SurveyPulseManagementService } from './features/admin/survey-pulse-management.service';
 import { CultureValuesSetupService } from './features/admin/culture-values-setup.service';
 import { WellnessProgramManagementService } from './features/admin/wellness-program-management.service';
 import { EngagementAnalyticsService } from './features/admin/engagement-analytics.service';
+import { SentimentEngineService } from './features/admin/sentiment-engine.service';
 
 // Manager controllers
 import { TeamEngagementDashboardController } from './features/manager/team-engagement-dashboard.controller';
@@ -45,6 +47,7 @@ import { MyEngagementScoreService } from './features/employee/my-engagement-scor
     CultureValuesSetupController,
     WellnessProgramManagementController,
     EngagementAnalyticsController,
+    SentimentEngineController,
     // Manager
     TeamEngagementDashboardController,
     TeamWellnessViewController,
@@ -61,6 +64,7 @@ import { MyEngagementScoreService } from './features/employee/my-engagement-scor
     CultureValuesSetupService,
     WellnessProgramManagementService,
     EngagementAnalyticsService,
+    SentimentEngineService,
     // Manager
     TeamEngagementDashboardService,
     TeamWellnessViewService,

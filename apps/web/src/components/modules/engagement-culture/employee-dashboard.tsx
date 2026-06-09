@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTabNavigationStore } from '@/lib/tab-navigation-store';
 import { ClipboardList, Users, Flower2, TrendingUp } from 'lucide-react';
 import SurveyParticipationTab from './tabs/employee/survey-participation-tab';
 import SocialCommunityTab from './tabs/employee/social-community-tab';
@@ -17,7 +18,15 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 export default function EmployeeDashboard() {
+  const requestedTab = useTabNavigationStore((s) => s.requestedTab);
   const [activeTab, setActiveTab] = useState<TabId>('surveys');
+
+  useEffect(() => {
+    if (requestedTab) {
+      setActiveTab(requestedTab as TabId);
+      useTabNavigationStore.getState().setRequestedTab(null);
+    }
+  }, [requestedTab]);
 
   return (
     <div>

@@ -16,26 +16,37 @@ import {
 interface LeaveBalance {
   leaveTypeId: string;
   leaveTypeName: string;
-  color: string;
+  leaveTypeColor: string;
   entitled: number;
   used: number;
   pending: number;
   available: number;
-  carryForward: number;
+  carriedForward: number;
 }
 
 interface AccrualSchedule {
   leaveTypeId: string;
   leaveTypeName: string;
   nextCreditDate: string;
-  creditAmount: number;
-  frequency: string;
+  nextCreditAmount: number;
+  accrualRule: string;
 }
 
 interface PolicySummary {
-  leaveTypeId: string;
-  leaveTypeName: string;
-  rules: string[];
+  id: string;
+  name: string;
+  code: string;
+  daysPerYear: number;
+  accrualRule: string;
+  carryForwardEnabled: boolean;
+  maxCarryForwardDays: number | null;
+  encashmentEnabled: boolean;
+  requiresApproval: boolean;
+  requiresDocument: boolean;
+  documentThresholdDays: number | null;
+  minConsecutiveDays: number | null;
+  maxConsecutiveDays: number | null;
+  isPaid: boolean;
 }
 
 interface Holiday {
@@ -66,10 +77,26 @@ export default function LeaveBalanceTab() {
         api.get('/leave-management/employee/balance/upcoming-holidays').catch(() => ({ data: [] })),
       ]);
 
-      setBalances(Array.isArray(balRes.data) ? balRes.data : balRes.data?.data || []);
-      setAccrualSchedules(Array.isArray(accRes.data) ? accRes.data : accRes.data?.data || []);
-      setPolicySummaries(Array.isArray(polRes.data) ? polRes.data : polRes.data?.data || []);
-      setHolidays(Array.isArray(holRes.data) ? holRes.data : holRes.data?.data || []);
+      setBalances(
+        balRes.data?.balances ??
+          balRes.data?.data ??
+          (Array.isArray(balRes.data) ? balRes.data : [])
+      );
+      setAccrualSchedules(
+        accRes.data?.schedules ??
+          accRes.data?.data ??
+          (Array.isArray(accRes.data) ? accRes.data : [])
+      );
+      setPolicySummaries(
+        polRes.data?.leaveTypes ??
+          polRes.data?.data ??
+          (Array.isArray(polRes.data) ? polRes.data : [])
+      );
+      setHolidays(
+        holRes.data?.holidays ??
+          holRes.data?.data ??
+          (Array.isArray(holRes.data) ? holRes.data : [])
+      );
     } catch {
       setError('Failed to load leave balance data.');
     } finally {
@@ -111,7 +138,7 @@ export default function LeaveBalanceTab() {
       {balances.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {balances.map((bal) => {
-            const totalEntitled = bal.entitled + bal.carryForward;
+            const totalEntitled = bal.entitled + bal.carriedForward;
             const usagePct = totalEntitled > 0 ? Math.min(100, (bal.used / totalEntitled) * 100) : 0;
             return (
               <div
@@ -122,7 +149,7 @@ export default function LeaveBalanceTab() {
                 <div className="flex items-center gap-2">
                   <div
                     className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: bal.color || '#4F46E5' }}
+                    style={{ backgroundColor: bal.leaveTypeColor || '#4F46E5' }}
                   />
                   <h3 className="text-sm font-semibold text-text">{bal.leaveTypeName}</h3>
                 </div>
@@ -162,10 +189,10 @@ export default function LeaveBalanceTab() {
                 </div>
 
                 {/* Carry Forward */}
-                {bal.carryForward > 0 && (
+                {bal.carriedForward > 0 && (
                   <div className="text-xs text-text-muted pt-1 border-t border-border">
                     <RefreshCw className="h-3 w-3 inline mr-1" />
-                    Carry Forward: <strong>{bal.carryForward}</strong> days
+                    Carry Forward: <strong>{bal.carriedForward}</strong> days
                   </div>
                 )}
               </div>
@@ -194,10 +221,10 @@ export default function LeaveBalanceTab() {
               >
                 <div>
                   <p className="text-sm font-medium text-text">{acc.leaveTypeName}</p>
-                  <p className="text-xs text-text-muted">Frequency: {acc.frequency}</p>
+                  <p className="text-xs text-text-muted">Frequency: {acc.accrualRule}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-primary">+{acc.creditAmount} days</p>
+                  <p className="text-sm font-semibold text-primary">+{acc.nextCreditAmount} days</p>
                   <p className="text-xs text-text-muted">
                     Next: {new Date(acc.nextCreditDate).toLocaleDateString()}
                   </p>
@@ -229,19 +256,42 @@ export default function LeaveBalanceTab() {
 
           {isPolicyExpanded && (
             <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
-              {policySummaries.map((policy) => (
-                <div key={policy.leaveTypeId}>
-                  <h4 className="text-sm font-semibold text-text mb-2">{policy.leaveTypeName}</h4>
-                  <ul className="space-y-1">
-                    {policy.rules.map((rule, idx) => (
-                      <li key={idx} className="text-sm text-text-muted flex items-start gap-2">
-                        <span className="text-primary mt-1.5 text-xs">&#9679;</span>
-                        {rule}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              {policySummaries.map((policy) => {
+                const rules: string[] = [];
+                if (policy.daysPerYear != null)
+                  rules.push(`${policy.daysPerYear} days per year (${policy.accrualRule} accrual)`);
+                rules.push(policy.isPaid ? 'Paid leave' : 'Unpaid leave');
+                rules.push(
+                  policy.carryForwardEnabled
+                    ? `Carry forward allowed${policy.maxCarryForwardDays != null ? ` (max ${policy.maxCarryForwardDays} days)` : ''}`
+                    : 'No carry forward'
+                );
+                if (policy.encashmentEnabled) rules.push('Encashment allowed');
+                rules.push(
+                  policy.requiresApproval ? 'Requires manager approval' : 'Auto-approved'
+                );
+                if (policy.requiresDocument)
+                  rules.push(
+                    `Document required${policy.documentThresholdDays != null ? ` beyond ${policy.documentThresholdDays} days` : ''}`
+                  );
+                if (policy.minConsecutiveDays != null)
+                  rules.push(`Minimum ${policy.minConsecutiveDays} consecutive days`);
+                if (policy.maxConsecutiveDays != null)
+                  rules.push(`Maximum ${policy.maxConsecutiveDays} consecutive days`);
+                return (
+                  <div key={policy.id}>
+                    <h4 className="text-sm font-semibold text-text mb-2">{policy.name}</h4>
+                    <ul className="space-y-1">
+                      {rules.map((rule, idx) => (
+                        <li key={idx} className="text-sm text-text-muted flex items-start gap-2">
+                          <span className="text-primary mt-1.5 text-xs">&#9679;</span>
+                          {rule}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

@@ -54,6 +54,13 @@ export class OfferManagementController {
     return this.service.getOfferTemplates(orgId);
   }
 
+  @Get('shortlisted-applications')
+  @Roles('super_admin', 'admin')
+  async getShortlistedApplications() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.service.listShortlistedApplications(orgId);
+  }
+
   @Post()
   @Roles('super_admin', 'admin')
   async create(@Body() body: Record<string, any>) {

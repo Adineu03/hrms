@@ -40,6 +40,20 @@ export class DailyTimesheetController {
     return this.dailyTimesheetService.getEntriesForDate(orgId, userId, date);
   }
 
+  @Get('projects')
+  @Roles('super_admin', 'admin', 'manager', 'employee')
+  async getProjects() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.dailyTimesheetService.listProjects(orgId);
+  }
+
+  @Get('categories')
+  @Roles('super_admin', 'admin', 'manager', 'employee')
+  async getCategories() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.dailyTimesheetService.listCategories(orgId);
+  }
+
   @Post()
   @Roles('super_admin', 'admin', 'manager', 'employee')
   async createEntry(@Body() body: Record<string, any>) {

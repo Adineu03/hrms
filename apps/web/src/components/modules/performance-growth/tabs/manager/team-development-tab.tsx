@@ -96,7 +96,7 @@ export default function TeamDevelopmentTab() {
       setIsLoading(true);
       const [planRes, empRes] = await Promise.all([
         api.get('/performance-growth/manager/development').catch(() => ({ data: [] })),
-        api.get('/core-hr/admin/employees').catch(() => ({ data: [] })),
+        api.get('/core-hr/manager/team').catch(() => ({ data: [] })),
       ]);
       const planRaw = planRes.data;
       setPlans(Array.isArray(planRaw) ? planRaw : Array.isArray(planRaw?.data) ? planRaw.data : []);

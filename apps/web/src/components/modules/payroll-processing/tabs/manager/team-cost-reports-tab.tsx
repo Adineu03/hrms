@@ -48,28 +48,55 @@ export default function TeamCostReportsTab() {
     try {
       setLoading(true);
       setError('');
-      const [breakdownRes, budgetRes] = await Promise.all([
-        api.get('/payroll-processing/manager/cost-reports/breakdown').catch(() => ({ data: [] })),
+      const [breakdownRes, budgetRes, leaveRes] = await Promise.all([
+        api.get('/payroll-processing/manager/cost-reports/breakdown').catch(() => ({ data: {} })),
         api.get('/payroll-processing/manager/cost-reports/budget-vs-actual').catch(() => ({ data: {} })),
+        api.get('/payroll-processing/manager/cost-reports/leave-impact').catch(() => ({ data: {} })),
       ]);
 
-      const rawBreakdown = breakdownRes.data?.data ?? breakdownRes.data;
-      const breakdownData = Array.isArray(rawBreakdown) ? rawBreakdown : [];
-      const budgetData = budgetRes.data?.data || budgetRes.data || {};
-
+      // Cost breakdown — backend returns { breakdown: [{ component, amount, percentage }], ... }
+      const breakdownBody = breakdownRes.data?.data ?? breakdownRes.data ?? {};
+      const rawBreakdown = breakdownBody.breakdown;
+      const breakdownData: CostBreakdownItem[] = Array.isArray(rawBreakdown)
+        ? rawBreakdown.map((b: any, i: number) => ({
+            id: b.component ?? String(i),
+            category: b.component ?? '—',
+            budgeted: 0,
+            actual: Number(b.amount ?? 0),
+            variance: 0,
+            headcount: breakdownBody.teamSize ?? 0,
+          }))
+        : [];
       setBreakdown(breakdownData);
 
-      // Extract leave impact if nested
-      const liRaw = budgetData.leaveImpact;
-      setLeaveImpact(Array.isArray(liRaw) ? liRaw : []);
-
+      // Budget vs actual — backend returns YTD actuals (no configured budget yet)
+      const budgetData = budgetRes.data?.data || budgetRes.data || {};
+      const totalActual = Number(budgetData.ytdActual ?? budgetData.totalActual ?? 0);
+      const totalBudget = Number(budgetData.totalBudget ?? 0);
+      const variance = totalActual - totalBudget;
       setBudgetVsActual({
-        totalBudget: budgetData.totalBudget || 0,
-        totalActual: budgetData.totalActual || 0,
-        variance: budgetData.variance || 0,
-        variancePercent: budgetData.variancePercent || 0,
-        utilizationPercent: budgetData.utilizationPercent || 0,
+        totalBudget,
+        totalActual,
+        variance,
+        variancePercent: totalBudget > 0 ? (variance / totalBudget) * 100 : 0,
+        utilizationPercent: totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0,
       });
+
+      // Leave impact — backend returns a single summary object
+      const leaveData = leaveRes.data?.data || leaveRes.data || {};
+      if (leaveData.totalLopDays !== undefined && Number(leaveData.totalLopDays) > 0) {
+        setLeaveImpact([
+          {
+            id: 'lop',
+            leaveType: 'Loss of Pay',
+            totalDays: Number(leaveData.totalLopDays ?? 0),
+            costImpact: Number(leaveData.estimatedDeduction ?? 0),
+            affectedEmployees: Number(leaveData.affectedEmployees ?? 0),
+          },
+        ]);
+      } else {
+        setLeaveImpact([]);
+      }
     } catch {
       setError('Failed to load team cost reports.');
     } finally {

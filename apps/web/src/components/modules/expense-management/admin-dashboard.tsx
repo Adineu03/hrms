@@ -1,21 +1,32 @@
 'use client';
 
-import { useState } from 'react';
-import { Settings, FileText, BarChart3 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useTabNavigationStore } from '@/lib/tab-navigation-store';
+import { Settings, FileText, BarChart3, ShieldAlert } from 'lucide-react';
 import ExpensePolicyConfigurationTab from './tabs/admin/expense-policy-configuration-tab';
 import ExpenseReportManagementTab from './tabs/admin/expense-report-management-tab';
 import ExpenseAnalyticsTab from './tabs/admin/expense-analytics-tab';
+import ExpenseAnomalyDetectionTab from './tabs/admin/expense-anomaly-detection-tab';
 
 const TABS = [
   { id: 'policy-config', label: 'Expense Policy Configuration', icon: Settings },
   { id: 'report-management', label: 'Expense Report Management', icon: FileText },
   { id: 'analytics', label: 'Reports & Analytics', icon: BarChart3 },
+  { id: 'anomalies', label: 'Anomaly Detection', icon: ShieldAlert },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
 
 export default function AdminDashboard() {
+  const requestedTab = useTabNavigationStore((s) => s.requestedTab);
   const [activeTab, setActiveTab] = useState<TabId>('policy-config');
+
+  useEffect(() => {
+    if (requestedTab) {
+      setActiveTab(requestedTab as TabId);
+      useTabNavigationStore.getState().setRequestedTab(null);
+    }
+  }, [requestedTab]);
 
   return (
     <div>
@@ -46,6 +57,7 @@ export default function AdminDashboard() {
         {activeTab === 'policy-config' && <ExpensePolicyConfigurationTab />}
         {activeTab === 'report-management' && <ExpenseReportManagementTab />}
         {activeTab === 'analytics' && <ExpenseAnalyticsTab />}
+        {activeTab === 'anomalies' && <ExpenseAnomalyDetectionTab />}
       </div>
     </div>
   );

@@ -91,8 +91,19 @@ export default function StatutoryComplianceTab() {
       ]);
 
       const filingsData = Array.isArray(filingsRes.data) ? filingsRes.data : filingsRes.data?.data || [];
-      const calendarData = Array.isArray(calendarRes.data) ? calendarRes.data : calendarRes.data?.data || [];
       const proofsData = Array.isArray(proofsRes.data) ? proofsRes.data : proofsRes.data?.data || [];
+
+      // Calendar — backend returns { data: { upcoming: [...], overdue: [...] } }
+      const calBody = calendarRes.data?.data ?? calendarRes.data ?? {};
+      const calendarData: CalendarDeadline[] = Array.isArray(calBody)
+        ? calBody
+        : [...(calBody.overdue ?? []), ...(calBody.upcoming ?? [])].map((f: any) => ({
+            id: f.id,
+            type: f.type,
+            description: `${(f.type ?? '').toUpperCase()} filing for ${f.period ?? ''}`.trim(),
+            dueDate: f.dueDate,
+            status: f.status,
+          }));
 
       setFilings(filingsData);
       setCalendar(calendarData);

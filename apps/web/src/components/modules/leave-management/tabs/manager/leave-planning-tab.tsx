@@ -68,11 +68,41 @@ export default function LeavePlanningTab() {
         }),
         api.get('/leave-management/manager/planning/blocked-dates'),
       ]);
-      setAvailability(
-        Array.isArray(availRes.data) ? availRes.data : availRes.data?.data || []
+
+      // availability-calendar returns { employees:[{ employeeId, employeeName, days:[{ date, availability, ... }] }] }.
+      // Transform days array -> Record<date, status>, normalizing backend status names.
+      const STATUS_MAP: Record<string, AvailabilityEntry['days'][string]> = {
+        available: 'available',
+        leave: 'leave',
+        approved_leave: 'leave',
+        on_leave: 'leave',
+        pending: 'pending',
+        pending_leave: 'pending',
+        holiday: 'holiday',
+        weekend: 'holiday',
+        blocked: 'blocked',
+      };
+      const rawEmployees =
+        availRes.data?.employees ??
+        availRes.data?.data ??
+        (Array.isArray(availRes.data) ? availRes.data : []);
+      const entries: AvailabilityEntry[] = rawEmployees.map(
+        (emp: { employeeId: string; employeeName: string; days?: Array<{ date: string; availability: string; isWeekend?: boolean; isHoliday?: boolean }> }) => {
+          const days: AvailabilityEntry['days'] = {};
+          for (const d of emp.days ?? []) {
+            days[d.date] =
+              STATUS_MAP[d.availability] ??
+              (d.isHoliday ? 'holiday' : d.isWeekend ? 'holiday' : 'available');
+          }
+          return { employeeId: emp.employeeId, employeeName: emp.employeeName, days };
+        }
       );
+      setAvailability(entries);
+
       setBlockedDates(
-        Array.isArray(blockedRes.data) ? blockedRes.data : blockedRes.data?.data || []
+        blockedRes.data?.blockedDates ??
+          blockedRes.data?.data ??
+          (Array.isArray(blockedRes.data) ? blockedRes.data : [])
       );
     } catch {
       setError('Failed to load planning data.');

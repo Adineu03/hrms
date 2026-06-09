@@ -24,6 +24,11 @@ interface ResourceEntry {
   available: number;
   utilization: number;
   status: 'under' | 'optimal' | 'over';
+  // Raw shape returned by GET /daily-work-logging/manager/resources (members[]);
+  // the fields above are the normalized fallbacks read via ?? in the table.
+  allocatedHours?: number;
+  availableHours?: number;
+  totalAllocationPercentage?: number;
 }
 
 interface AssignForm {

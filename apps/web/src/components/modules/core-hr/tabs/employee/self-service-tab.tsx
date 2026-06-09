@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, Fragment, type FormEvent } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -86,9 +86,33 @@ export default function SelfServiceTab() {
         api.get('/core-hr/employee/requests/types'),
       ]);
       const rawReqs = requestsRes.data;
-      setRequests(Array.isArray(rawReqs) ? rawReqs : Array.isArray(rawReqs?.data) ? rawReqs.data : []);
+      // Endpoint returns { requests:[...], total }; items use slaDeadline/completedAt.
+      const reqList: Record<string, unknown>[] =
+        rawReqs?.requests ?? rawReqs?.data ?? (Array.isArray(rawReqs) ? rawReqs : []);
+      setRequests(
+        reqList.map((r) => ({
+          id: r.id as string,
+          type: r.type as string,
+          subject: (r.subject as string) ?? '',
+          description: (r.description as string) ?? '',
+          status: r.status as string,
+          data: r.data as Record<string, unknown> | undefined,
+          createdAt: r.createdAt as string,
+          sla: (r.sla as string) ?? (r.slaDeadline as string) ?? undefined,
+          resolvedAt: (r.resolvedAt as string) ?? (r.completedAt as string) ?? undefined,
+        }))
+      );
       const rawTypes = typesRes.data;
-      setRequestTypes(Array.isArray(rawTypes) ? rawTypes : Array.isArray(rawTypes?.data) ? rawTypes.data : []);
+      // Endpoint returns { types:[{ type, label, description }] }.
+      const typeList: Record<string, unknown>[] =
+        rawTypes?.types ?? rawTypes?.data ?? (Array.isArray(rawTypes) ? rawTypes : []);
+      setRequestTypes(
+        typeList.map((t) => ({
+          id: (t.id as string) ?? (t.type as string),
+          name: (t.name as string) ?? (t.label as string) ?? (t.type as string),
+          description: (t.description as string) ?? '',
+        }))
+      );
     } catch {
       setError('Failed to load requests.');
       setRequests([]);
@@ -331,9 +355,8 @@ export default function SelfServiceTab() {
                 const statusIcon = STATUS_ICONS[req.status] || STATUS_ICONS.pending;
 
                 return (
-                  <>
+                  <Fragment key={req.id}>
                     <tr
-                      key={req.id}
                       onClick={() => toggleRequestExpand(req.id)}
                       className="bg-card hover:bg-background/50 cursor-pointer transition-colors"
                     >
@@ -360,7 +383,7 @@ export default function SelfServiceTab() {
                       <td className="px-4 py-3 text-sm text-text-muted">{req.sla || '--'}</td>
                     </tr>
                     {isExpanded && (
-                      <tr key={`${req.id}-detail`} className="bg-background/50">
+                      <tr className="bg-background/50">
                         <td colSpan={6} className="px-6 py-4">
                           <div className="space-y-3 max-w-2xl">
                             <div>
@@ -395,7 +418,7 @@ export default function SelfServiceTab() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>

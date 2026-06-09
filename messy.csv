@@ -1,0 +1,6 @@
+Emp Code,Given Name,Surname,Mail ID,Cell,Dept,Job Title,Joining Dt,Type of Employment,Reports To,Sex,DOB
+E1001,Riya,Nair,riya.nair@acme.com,+91 99900 01111,Engineering,Senior Software Engineer,2025-01-10,Full Time,manager@acme.com,Female,1994-03-21
+E1002,Arjun,Mehta,arjun.mehta@acme.com,+91 99900 02222,Sales,Account Executive,2024-11-03,Full Time,manager@acme.com,Male,1992-07-08
+E1003,Priya,Sharma,priya.sharma@acme.com,+91 99900 03333,Human Resources,HR Generalist,2025-03-17,Part Time,manager@acme.com,Female,1996-12-30
+E1004,Karan,Singh,karan.singh@acme.com,+91 99900 04444,Engineering,QA Engineer,2025-02-01,Contract,manager@acme.com,Male,1990-05-14
+E1005,Neha,Verma,neha.verma@acme.com,+91 99900 05555,Marketing,Content Strategist,2024-09-22,Intern,manager@acme.com,Female,1999-01-19

@@ -43,7 +43,38 @@ export class MyPayslipsService {
 
     if (!rows.length) throw new NotFoundException('Payslip not found');
 
-    return { data: rows[0] };
+    const ps = rows[0];
+    const num = (v: string | null) => parseFloat(v ?? '0');
+
+    // Build earnings/deductions line-item arrays for the detail view.
+    const earnings = [
+      { name: 'Basic Salary', amount: num(ps.basicSalary) },
+      { name: 'HRA', amount: num(ps.hra) },
+      { name: 'Dearness Allowance', amount: num(ps.da) },
+      { name: 'Special Allowance', amount: num(ps.specialAllowance) },
+      { name: 'Other Earnings', amount: num(ps.otherEarnings) },
+    ].filter((e) => e.amount > 0);
+
+    const deductions = [
+      { name: 'Provident Fund', amount: num(ps.pfDeduction) },
+      { name: 'ESI', amount: num(ps.esiDeduction) },
+      { name: 'Professional Tax', amount: num(ps.ptDeduction) },
+      { name: 'Income Tax (TDS)', amount: num(ps.incomeTax) },
+      { name: 'Other Deductions', amount: num(ps.otherDeductions) },
+    ].filter((d) => d.amount > 0);
+
+    return {
+      data: {
+        ...ps,
+        earnings,
+        deductions,
+        grossPay: num(ps.grossEarnings),
+        netPay: num(ps.netPay),
+        totalDeductions: num(ps.totalDeductions),
+        workingDays: 30,
+        lop: 0,
+      },
+    };
   }
 
   async downloadPayslip(orgId: string, userId: string, id: string) {

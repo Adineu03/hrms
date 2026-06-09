@@ -4,7 +4,8 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -15,9 +16,12 @@ export class HandoverMgmtService {
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
   ) {}
 
-  // ── Get My Handover Overview ────────────────────────────────────────
+  // ── Get My Handover Document (single, for the employee tab) ─────────
+  // The Handover Management tab renders ONE handover document with its tasks
+  // and shared credentials, so we return the latest knowledge-transfer record
+  // mapped into that shape (or null when the employee has none).
   async getOverview(orgId: string, employeeId: string) {
-    const transfers = await this.db
+    const [transfer] = await this.db
       .select()
       .from(schema.knowledgeTransfers)
       .where(
@@ -26,26 +30,74 @@ export class HandoverMgmtService {
           eq(schema.knowledgeTransfers.employeeId, employeeId),
         ),
       )
-      .orderBy(desc(schema.knowledgeTransfers.createdAt));
+      .orderBy(desc(schema.knowledgeTransfers.createdAt))
+      .limit(1);
 
-    const total = transfers.length;
-    const completed = transfers.filter((t) => t.status === 'completed').length;
-    const pending = transfers.filter((t) => t.status === 'pending').length;
-    const inProgress = transfers.filter((t) => t.status === 'in_progress').length;
+    if (!transfer) return null;
+
+    // Resolve successor names referenced by the task items (single batch).
+    const items = (transfer.items as Array<Record<string, any>>) || [];
+    const successorIds = Array.from(
+      new Set(items.map((i) => i.successorId).filter(Boolean) as string[]),
+    );
+    const nameById = new Map<string, string>();
+    if (successorIds.length > 0) {
+      const successors = await this.db
+        .select({ id: schema.users.id, firstName: schema.users.firstName, lastName: schema.users.lastName })
+        .from(schema.users)
+        .where(inArray(schema.users.id, successorIds));
+      for (const s of successors) {
+        nameById.set(s.id, [s.firstName, s.lastName].filter(Boolean).join(' ').trim());
+      }
+    }
+
+    const tasks = items.map((i, idx) => ({
+      id: i.id || String(idx),
+      title: i.title || '',
+      description: i.description || '',
+      successorId: i.successorId || '',
+      successorName: i.successorId ? nameById.get(i.successorId) || null : i.successorName || null,
+      priority: i.priority || 'medium',
+      status: i.status || 'pending',
+    }));
+
+    // Credentials surface as a single text block for the tab's textarea.
+    const creds = (transfer.accessCredentials as Array<Record<string, any>>) || [];
+    const doc = (transfer.handoverDocument as Record<string, any>) || {};
+    let credentials = '';
+    if (typeof doc.credentials === 'string' && doc.credentials.trim()) {
+      credentials = doc.credentials;
+    } else if (creds.length > 0) {
+      credentials = creds
+        .map((c) => [c.system, c.description, c.notes].filter(Boolean).join(' — '))
+        .join('\n');
+    }
+
+    let approvedByName: string | null = null;
+    if (transfer.approvedBy) {
+      const [approver] = await this.db
+        .select({ firstName: schema.users.firstName, lastName: schema.users.lastName })
+        .from(schema.users)
+        .where(eq(schema.users.id, transfer.approvedBy))
+        .limit(1);
+      if (approver) {
+        approvedByName = [approver.firstName, approver.lastName].filter(Boolean).join(' ').trim();
+      }
+    }
+
+    const meta = (transfer.metadata as Record<string, any>) || {};
 
     return {
-      total,
-      completed,
-      pending,
-      inProgress,
-      transfers: transfers.map((t) => ({
-        id: t.id,
-        title: t.title,
-        status: t.status,
-        assignedTo: t.assignedTo,
-        dueDate: t.dueDate,
-        completedAt: t.completedAt?.toISOString() || null,
-      })),
+      id: transfer.id,
+      title: transfer.title,
+      status: transfer.status,
+      tasks,
+      credentials,
+      submittedAt: meta.submittedAt || null,
+      approvedAt: transfer.approvedAt?.toISOString() || null,
+      approvedBy: approvedByName,
+      dueDate: transfer.dueDate,
+      createdAt: transfer.createdAt.toISOString(),
     };
   }
 
@@ -160,6 +212,13 @@ export class HandoverMgmtService {
     if (data.items !== undefined) updates.items = data.items;
     if (data.documentLinks !== undefined) updates.documentLinks = data.documentLinks;
     if (data.handoverDocument !== undefined) updates.handoverDocument = data.handoverDocument;
+    // The tab removes a task by id via PATCH { removeTaskId }.
+    if (data.removeTaskId !== undefined) {
+      const currentItems = (transfer.items as Array<Record<string, any>>) || [];
+      updates.items = currentItems.filter(
+        (i, idx) => (i.id || String(idx)) !== data.removeTaskId,
+      );
+    }
 
     const [updated] = await this.db
       .update(schema.knowledgeTransfers)
@@ -194,13 +253,21 @@ export class HandoverMgmtService {
     }
 
     const currentItems = (transfer.items as Array<Record<string, any>>) || [];
-    const newTasks = (data.tasks as Array<Record<string, any>>) || [];
+    // Accept either { tasks: [...] } (bulk) or a single task object (the tab
+    // posts one task at a time as { title, description, successorId, priority }).
+    const newTasks: Array<Record<string, any>> = Array.isArray(data.tasks)
+      ? data.tasks
+      : data.title
+        ? [data]
+        : [];
     for (const task of newTasks) {
       currentItems.push({
+        id: randomUUID(),
         title: task.title,
         description: task.description || null,
+        successorId: task.successorId || null,
         priority: task.priority || 'medium',
-        status: task.status || 'ongoing',
+        status: task.status || 'pending',
         addedAt: new Date().toISOString(),
       });
     }
@@ -270,6 +337,18 @@ export class HandoverMgmtService {
 
     if (!transfer) {
       throw new NotFoundException('Handover document not found');
+    }
+
+    // The tab saves credentials as a single free-text block; also support the
+    // structured array form for programmatic callers.
+    if (typeof data.credentials === 'string') {
+      const doc = (transfer.handoverDocument as Record<string, any>) || {};
+      doc.credentials = data.credentials;
+      await this.db
+        .update(schema.knowledgeTransfers)
+        .set({ handoverDocument: doc, updatedAt: new Date() })
+        .where(eq(schema.knowledgeTransfers.id, handoverId));
+      return { handoverId, credentialsSaved: true };
     }
 
     const currentCreds = (transfer.accessCredentials as Array<Record<string, any>>) || [];
@@ -352,9 +431,12 @@ export class HandoverMgmtService {
       throw new BadRequestException('Handover has already been submitted');
     }
 
+    const meta = (transfer.metadata as Record<string, any>) || {};
+    meta.submittedAt = new Date().toISOString();
+
     const [updated] = await this.db
       .update(schema.knowledgeTransfers)
-      .set({ status: 'submitted', updatedAt: new Date() })
+      .set({ status: 'submitted', metadata: meta, updatedAt: new Date() })
       .where(eq(schema.knowledgeTransfers.id, handoverId))
       .returning();
 

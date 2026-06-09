@@ -59,8 +59,8 @@ export class RegularizationController {
   @Get('missed-punches')
   @Roles('super_admin', 'admin', 'manager', 'employee')
   async getMissedPunches(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     const orgId = this.getOrgIdOrThrow();
     const userId = this.getUserIdOrThrow();

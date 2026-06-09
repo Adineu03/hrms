@@ -77,12 +77,50 @@ export default function TalentAssessmentTab() {
         api.get('/performance-growth/manager/talent/succession').catch(() => ({ data: [] })),
         api.get('/performance-growth/manager/talent/high-potential').catch(() => ({ data: [] })),
       ]);
-      const nbRaw = nineBoxRes.data;
-      const nineBoxEmployees = Array.isArray(nbRaw) ? nbRaw : Array.isArray(nbRaw?.data) ? nbRaw.data : [];
-      const sRaw = successionRes.data;
-      const successionRoles = Array.isArray(sRaw) ? sRaw : Array.isArray(sRaw?.data) ? sRaw.data : [];
-      const hpRaw = hiPoRes.data;
-      const highPotentials = Array.isArray(hpRaw) ? hpRaw : Array.isArray(hpRaw?.data) ? hpRaw.data : [];
+      // nine-box returns { data: { grid: [{ employeeId, name, performance, potential, box }], unassessed: [...] } }
+      const nbRaw = nineBoxRes.data?.data ?? nineBoxRes.data;
+      const grid: Array<{ employeeId: string; name: string; performance: number; potential: number }> =
+        Array.isArray(nbRaw?.grid) ? nbRaw.grid : Array.isArray(nbRaw) ? nbRaw : [];
+      // Map raw 1-5 ratings into the 3-band (low/medium/high) buckets the grid expects.
+      const toBand = (v: number): number => (v >= 4 ? 3 : v >= 2.5 ? 2 : 1);
+      const nineBoxEmployees: NineBoxEmployee[] = grid.map((g) => ({
+        id: g.employeeId,
+        name: g.name,
+        designation: '',
+        performance: toBand(Number(g.performance ?? 0)),
+        potential: toBand(Number(g.potential ?? 0)),
+      }));
+
+      // succession returns { data: [{ targetRole, candidates: [{ employeeId, name, careerAspiration, readinessProgress }] }] }
+      const sRaw = successionRes.data?.data ?? successionRes.data;
+      const readinessFromProgress = (p: number): string =>
+        p >= 80 ? 'ready_now' : p >= 50 ? 'ready_1_year' : p >= 25 ? 'ready_2_years' : 'not_ready';
+      const successionRoles: SuccessionRole[] = (Array.isArray(sRaw) ? sRaw : []).map(
+        (r: { targetRole?: string; role?: string; candidates?: Array<Record<string, unknown>> }) => ({
+          role: (r.targetRole ?? r.role ?? 'Unspecified') as string,
+          candidates: (r.candidates ?? []).map((c) => ({
+            id: (c.employeeId ?? c.id) as string,
+            name: (c.name ?? '') as string,
+            currentRole: (c.careerAspiration as string) ?? '',
+            readinessLevel:
+              (c.readinessLevel as string) ?? readinessFromProgress(Number(c.readinessProgress ?? 0)),
+          })),
+        }),
+      );
+
+      // high-potential returns { data: [{ employeeId, name, performanceRating, potentialRating, achievements }] }
+      const hpRaw = hiPoRes.data?.data ?? hiPoRes.data;
+      const highPotentials: HighPotential[] = (Array.isArray(hpRaw) ? hpRaw : []).map(
+        (h: { employeeId?: string; id?: string; name?: string; performanceRating?: number; rating?: number; achievements?: unknown }) => ({
+          id: (h.employeeId ?? h.id ?? '') as string,
+          name: (h.name ?? '') as string,
+          designation: '',
+          rating: Number(h.performanceRating ?? h.rating ?? 0),
+          strengths: Array.isArray(h.achievements)
+            ? (h.achievements as unknown[]).map((a) => (typeof a === 'string' ? a : (a as { title?: string })?.title ?? '')).filter(Boolean)
+            : [],
+        }),
+      );
       setData({ nineBoxEmployees, successionRoles, highPotentials });
     } catch {
       setError('Failed to load talent assessment data.');

@@ -21,6 +21,27 @@ export class LeaveReportsController {
     return orgId;
   }
 
+  @Get('departments')
+  @Roles('super_admin', 'admin')
+  async getDepartments() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.leaveReportsService.getDepartments(orgId);
+  }
+
+  @Get('locations')
+  @Roles('super_admin', 'admin')
+  async getLocations() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.leaveReportsService.getLocations(orgId);
+  }
+
+  @Get('leave-types')
+  @Roles('super_admin', 'admin')
+  async getLeaveTypes() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.leaveReportsService.getLeaveTypes(orgId);
+  }
+
   @Get('utilization')
   @Roles('super_admin', 'admin')
   async getUtilization(

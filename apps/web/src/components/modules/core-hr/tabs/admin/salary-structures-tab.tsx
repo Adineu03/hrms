@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -470,9 +470,8 @@ export default function SalaryStructuresTab() {
           </thead>
           <tbody className="divide-y divide-border">
             {structures.map((structure) => (
-              <>
+              <Fragment key={structure.id}>
                 <tr
-                  key={structure.id}
                   className="bg-card hover:bg-background/50 transition-colors"
                 >
                   <td className="px-4 py-3">
@@ -557,13 +556,13 @@ export default function SalaryStructuresTab() {
                   </td>
                 </tr>
                 {expandedId === structure.id && structure.components?.length > 0 && (
-                  <tr key={`${structure.id}-detail`}>
+                  <tr>
                     <td colSpan={6} className="px-4 py-3 bg-background/50">
                       {renderComponentRows(structure.components)}
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
 
             {/* Empty State */}

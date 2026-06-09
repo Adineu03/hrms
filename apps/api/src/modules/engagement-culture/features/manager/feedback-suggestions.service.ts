@@ -1,12 +1,45 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { AiCoreService } from '../../../../shared/ai/ai-core.service';
 
 @Injectable()
 export class FeedbackSuggestionsService {
-  constructor(@Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>) {}
+  private readonly logger = new Logger(FeedbackSuggestionsService.name);
+
+  constructor(
+    @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly ai: AiCoreService,
+  ) {}
+
+  /**
+   * AI Feedback Digest — condense a batch of team feedback/suggestion texts into
+   * a short executive digest (key themes + sentiment + suggested actions).
+   * Summary only — never fabricates feedback not present in the input.
+   */
+  async generateDigest(items: string[]): Promise<{ ok: true; digest: string } | { ok: false; message: string }> {
+    if (!this.ai.isReady()) return { ok: false, message: 'AI digest is not configured on this server.' };
+    const cleaned = (items || []).map((s) => (s || '').trim()).filter(Boolean);
+    if (cleaned.length === 0) return { ok: false, message: 'There is no feedback to summarize yet.' };
+
+    const instructions = `You write a concise executive digest of employee feedback for a manager.
+From the list of feedback items, produce: a one-line overall summary, 3–5 key themes (as a short bulleted list with "- "), the general sentiment, and 1–3 suggested actions.
+Base everything strictly on the provided items — do NOT invent feedback, names, or numbers. Keep it under ~150 words.`;
+
+    try {
+      const digest = await this.ai.generateText({
+        name: 'FeedbackDigest',
+        instructions,
+        text: JSON.stringify({ feedbackItems: cleaned.slice(0, 100) }),
+      });
+      return { ok: true, digest: digest.trim() };
+    } catch (err: any) {
+      this.logger.error('Feedback digest failed', err?.message || err);
+      return { ok: false, message: 'Could not generate a digest. Please try again.' };
+    }
+  }
 
   private async getTeamMemberIds(orgId: string, managerId: string): Promise<string[]> {
     const teamMembers = await this.db

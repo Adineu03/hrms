@@ -1,12 +1,52 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { eq, and, desc } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { AiCoreService } from '../../../../shared/ai/ai-core.service';
 
 @Injectable()
 export class LmsConfigService {
-  constructor(@Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>) {}
+  private readonly logger = new Logger(LmsConfigService.name);
+
+  constructor(
+    @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly ai: AiCoreService,
+  ) {}
+
+  /**
+   * AI Content Generator — write an engaging course description from the title
+   * plus optional skills/audience. Draft only; the admin edits before saving.
+   */
+  async generateCourseDescription(input: {
+    title: string;
+    skills?: string[];
+    audience?: string;
+  }): Promise<{ ok: true; description: string } | { ok: false; message: string }> {
+    if (!this.ai.isReady()) return { ok: false, message: 'AI generation is not configured on this server.' };
+    const title = (input.title || '').trim();
+    if (!title) return { ok: false, message: 'Enter a course title first, then generate.' };
+
+    const instructions = `You write concise, engaging descriptions for an internal learning platform.
+Given a course title and optional target skills/audience, write a 2–4 sentence description that explains what learners will gain and why it matters.
+Be motivating but professional; do NOT invent specific durations, prices, instructors, or accreditations.`;
+
+    try {
+      const description = await this.ai.generateText({
+        name: 'CourseContent',
+        instructions,
+        text: JSON.stringify({
+          title,
+          skills: input.skills || [],
+          audience: input.audience || '',
+        }),
+      });
+      return { ok: true, description: description.trim() };
+    } catch (err: any) {
+      this.logger.error('Course description generation failed', err?.message || err);
+      return { ok: false, message: 'Could not generate a description. Please try again.' };
+    }
+  }
 
   async getLmsConfig(orgId: string) {
     // LMS config is stored as org-level metadata in the first org_modules row for learning-development

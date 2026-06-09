@@ -71,9 +71,36 @@ export default function ApprovalWorkflowsTab() {
   const loadWorkflow = async () => {
     try {
       const res = await api.get('/daily-work-logging/admin/workflows');
-      const data = res.data?.data || res.data;
+      // When no policy is configured the backend returns { data: null, message }.
+      const data = res.data?.data ?? (res.data?.message ? null : res.data);
       if (data) {
-        setWorkflow({ ...defaultWorkflow, ...data });
+        const merged = { ...defaultWorkflow, ...data };
+        // The backend stores these as JSONB which can come back as a non-array
+        // (e.g. delegationRules defaults to {}). Coerce so .map never throws,
+        // and ensure each row has a stable id for React keys.
+        merged.approvalLevels = (Array.isArray(data.approvalLevels) ? data.approvalLevels : []).map(
+          (l: ApprovalLevel, i: number) => ({
+            id: l.id ?? crypto.randomUUID(),
+            level: l.level ?? i + 1,
+            approverType: l.approverType ?? 'direct_manager',
+            approverRole: l.approverRole ?? '',
+            isRequired: l.isRequired ?? true,
+          })
+        );
+        merged.delegationRules = (Array.isArray(data.delegationRules) ? data.delegationRules : []).map(
+          (r: DelegationRule) => ({
+            id: r.id ?? crypto.randomUUID(),
+            fromRole: r.fromRole ?? 'manager',
+            toRole: r.toRole ?? 'team_lead',
+            condition: r.condition ?? 'on_leave',
+          })
+        );
+        merged.autoApprovalConditions = Array.isArray(data.autoApprovalConditions)
+          ? data.autoApprovalConditions
+          : Array.isArray(data.autoApprovalRules)
+            ? data.autoApprovalRules
+            : [];
+        setWorkflow(merged);
       }
     } catch {
       // Use defaults

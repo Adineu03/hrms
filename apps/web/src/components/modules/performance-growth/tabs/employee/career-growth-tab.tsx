@@ -91,18 +91,87 @@ export default function CareerGrowthTab() {
         api.get('/performance-growth/employee/career/readiness').catch(() => ({ data: null })),
         api.get('/performance-growth/employee/career/milestones').catch(() => ({ data: [] })),
       ]);
-      const pathsData = pathsRes.data?.data ?? pathsRes.data;
+      // career/paths returns { currentRole, currentLevel, paths: [{ id, name, level, departmentId }] }
+      const pathsRaw = pathsRes.data?.data ?? pathsRes.data;
+      const pathItems: Array<{ id: string; name: string; level: number | string | null }> = Array.isArray(pathsRaw)
+        ? pathsRaw
+        : Array.isArray(pathsRaw?.paths)
+          ? pathsRaw.paths
+          : [];
+      const currentLevel = pathsRaw?.currentLevel ?? null;
+      const tracks: CareerTrack[] = pathItems.map((p) => ({
+        id: p.id,
+        name: p.name,
+        type: 'ic',
+        description:
+          currentLevel != null && p.level != null
+            ? `Next step up from your current role (level ${currentLevel} → ${p.level}).`
+            : 'A potential next role on your career path.',
+        levels: [
+          ...(pathsRaw?.currentRole ? [`${pathsRaw.currentRole}`] : []),
+          p.name,
+        ],
+      }));
+
       const gapRaw = gapRes.data?.data ?? gapRes.data;
       const oppData = oppRes.data?.data ?? oppRes.data;
-      const readyData = readyRes.data?.data ?? readyRes.data;
-      const msData = msRes.data?.data ?? msRes.data;
+      // career/readiness returns { latestRating, goalCompletionRate, reviewCount, readinessScore }
+      const readyRaw = readyRes.data?.data ?? readyRes.data;
+      const promotionReadiness: PromotionReadiness | null =
+        readyRaw && typeof readyRaw === 'object' && !Array.isArray(readyRaw)
+          ? {
+              overallScore: Math.round(
+                ((Number(readyRaw.latestRating ?? 0) / 5) * 50) +
+                  (Number(readyRaw.goalCompletionRate ?? 0) / 2),
+              ),
+              criteria: [
+                {
+                  name: 'Latest performance rating ≥ 4',
+                  met: Number(readyRaw.latestRating ?? 0) >= 4,
+                  notes: `Current rating: ${Number(readyRaw.latestRating ?? 0).toFixed(1)}`,
+                },
+                {
+                  name: 'Goal completion ≥ 80%',
+                  met: Number(readyRaw.goalCompletionRate ?? 0) >= 80,
+                  notes: `${Number(readyRaw.goalCompletionRate ?? 0)}% of goals completed`,
+                },
+                {
+                  name: 'Completed at least one review cycle',
+                  met: Number(readyRaw.reviewCount ?? 0) >= 1,
+                  notes: `${Number(readyRaw.reviewCount ?? 0)} review(s) on record`,
+                },
+              ],
+            }
+          : null;
+      // career/milestones returns { completedGoals: [...], certifications: [...] }
+      const msRaw = msRes.data?.data ?? msRes.data;
+      const milestones: GrowthMilestone[] = Array.isArray(msRaw)
+        ? msRaw
+        : [
+            ...((msRaw?.completedGoals ?? []) as Array<{ title: string; completedAt: string }>).map(
+              (g, i: number) => ({
+                id: `goal-${i}`,
+                title: g.title,
+                achievedDate: g.completedAt,
+                type: 'goal',
+              }),
+            ),
+            ...((msRaw?.certifications ?? []) as Array<{ name: string; completedAt?: string }>).map(
+              (c, i: number) => ({
+                id: `cert-${i}`,
+                title: c.name,
+                achievedDate: c.completedAt ?? '',
+                type: 'certification',
+              }),
+            ),
+          ];
       setData({
-        tracks: Array.isArray(pathsData) ? pathsData : [],
+        tracks,
         targetRole: gapRaw?.targetRole || null,
         gaps: Array.isArray(gapRaw?.gaps) ? gapRaw.gaps : (Array.isArray(gapRaw) ? gapRaw : []),
         opportunities: Array.isArray(oppData) ? oppData : [],
-        promotionReadiness: readyData && typeof readyData === 'object' && !Array.isArray(readyData) ? readyData : null,
-        milestones: Array.isArray(msData) ? msData : [],
+        promotionReadiness,
+        milestones,
       });
     } catch {
       setError('Failed to load career growth data.');

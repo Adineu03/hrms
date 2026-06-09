@@ -15,7 +15,36 @@ import {
   XCircle,
   Send,
   Upload,
+  Sparkles,
 } from 'lucide-react';
+
+/**
+ * Read an image File and downscale it (longest edge ≤ maxDim) to a JPEG data
+ * URL, keeping the receipt-scan payload small and fast for the vision model.
+ */
+async function fileToScaledDataUrl(file: File, maxDim = 1500, quality = 0.8): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result as string);
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = dataUrl;
+  });
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  if (scale >= 1) return dataUrl;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', quality);
+}
 
 interface ExpenseReport {
   id: string;
@@ -88,6 +117,10 @@ export default function MyExpensesTab() {
   const [itemReceipt, setItemReceipt] = useState('');
   const [savingItem, setSavingItem] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Receipt scanner (AI)
+  const [scanning, setScanning] = useState(false);
+  const [scanNote, setScanNote] = useState<{ type: 'success' | 'warn' | 'error'; text: string } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -188,6 +221,46 @@ export default function MyExpensesTab() {
     setItemVendor('');
     setItemDescription('');
     setItemReceipt('');
+    setScanNote(null);
+  };
+
+  const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file
+    if (!file) return;
+    setScanNote(null);
+    setScanning(true);
+    try {
+      const image = await fileToScaledDataUrl(file);
+      const res = await api.post('/expense-management/employee/scan-receipt', { image });
+      const data = res.data;
+      if (!data?.ok) {
+        setScanNote({ type: 'error', text: data?.message || 'Could not read the receipt.' });
+        return;
+      }
+      const r = data.receipt;
+      if (!r?.isReceipt) {
+        setScanNote({ type: 'warn', text: "That doesn't look like a receipt — please enter the details manually." });
+        return;
+      }
+      if (CATEGORY_OPTIONS.some((o) => o.value === r.category)) setItemCategory(r.category);
+      if (r.date) setItemDate(r.date);
+      if (typeof r.amount === 'number' && r.amount > 0) setItemAmount(r.amount);
+      if (r.vendor) setItemVendor(r.vendor);
+      if (r.description) setItemDescription(r.description);
+      if (!itemReceipt) setItemReceipt(file.name);
+      const summary = [r.vendor, r.amount ? `${r.currency || ''} ${r.amount}`.trim() : '']
+        .filter(Boolean)
+        .join(' · ');
+      setScanNote({
+        type: 'success',
+        text: `Scanned${summary ? `: ${summary}` : ''}. Review the fields below before adding.`,
+      });
+    } catch {
+      setScanNote({ type: 'error', text: 'Failed to scan the receipt. Please try again or enter details manually.' });
+    } finally {
+      setScanning(false);
+    }
   };
 
   const handleSubmitReport = async () => {
@@ -494,6 +567,40 @@ export default function MyExpensesTab() {
               <button onClick={() => { setShowItemModal(false); resetItemForm(); }} className="p-1 text-text-muted hover:text-text">
                 <X className="h-5 w-5" />
               </button>
+            </div>
+
+            {/* AI Receipt Scanner */}
+            <div className="mb-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-sm text-text">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                  <span>Scan a receipt to auto-fill the fields below</span>
+                </div>
+                <label className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors ${scanning ? 'bg-primary/60 cursor-wait' : 'bg-primary hover:bg-primary-hover cursor-pointer'}`}>
+                  {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                  {scanning ? 'Scanning…' : 'Upload Receipt'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleScanReceipt}
+                    disabled={scanning}
+                  />
+                </label>
+              </div>
+              {scanNote && (
+                <p
+                  className={`mt-2 text-xs ${
+                    scanNote.type === 'success'
+                      ? 'text-green-700'
+                      : scanNote.type === 'warn'
+                        ? 'text-yellow-700'
+                        : 'text-red-600'
+                  }`}
+                >
+                  {scanNote.text}
+                </p>
+              )}
             </div>
 
             <div className="space-y-4">

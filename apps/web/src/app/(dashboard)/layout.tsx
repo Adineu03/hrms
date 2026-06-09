@@ -30,8 +30,12 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { useModuleStore } from '@/lib/module-store';
+import { useChatStore } from '@/lib/chat-store';
 import type { ModuleWithStatus } from '@hrms/shared';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
+import ChatBubble from '@/components/ai-assistant/chat-bubble';
+import ChatWindow from '@/components/ai-assistant/chat-window';
+import FormFillBanner from '@/components/ai-assistant/form-fill-banner';
 
 const MODULE_ICONS: Record<string, LucideIcon> = {
   Rocket, Users, Clock, CalendarOff, ClipboardList, UserPlus,
@@ -45,11 +49,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const { user, isAuthenticated, isLoading: authLoading, loadFromStorage, logout } = useAuthStore();
   const { modules, isLoading: modulesLoading, fetchModules } = useModuleStore();
+  const clearFormFill = useChatStore((s) => s.clearFormFill);
   const [dialogModule, setDialogModule] = useState<ModuleWithStatus | null>(null);
 
   useEffect(() => {
     loadFromStorage();
   }, [loadFromStorage]);
+
+  // Clear any AI form-fill banner when navigating to a different page.
+  useEffect(() => {
+    clearFormFill();
+  }, [pathname, clearFormFill]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -250,6 +260,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           onClose={() => setDialogModule(null)}
         />
       )}
+
+      {/* AI Assistant */}
+      <FormFillBanner />
+      <ChatBubble />
+      <ChatWindow />
     </div>
   );
 }

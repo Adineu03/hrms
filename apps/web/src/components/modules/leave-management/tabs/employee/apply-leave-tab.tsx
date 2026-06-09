@@ -58,7 +58,8 @@ interface LeaveRequest {
   leaveTypeName: string;
   fromDate: string;
   toDate: string;
-  days: number;
+  days?: number;
+  totalDays?: number;
   status: string;
   reason: string;
   isHalfDay: boolean;
@@ -102,19 +103,29 @@ export default function ApplyLeaveTab() {
     try {
       const [balRes, reqRes] = await Promise.all([
         api.get('/leave-management/employee/balance'),
-        api.get('/leave-management/employee/history?status=pending,draft&page=1&limit=50'),
+        api.get('/leave-management/employee/history?page=1&limit=50'),
       ]);
 
-      const balances = Array.isArray(balRes.data) ? balRes.data : balRes.data?.data || [];
+      const balances =
+        balRes.data?.balances ??
+        balRes.data?.data ??
+        (Array.isArray(balRes.data) ? balRes.data : []);
       const types: LeaveType[] = balances.map((b: Record<string, unknown>) => ({
         id: b.leaveTypeId as string,
         name: b.leaveTypeName as string,
-        color: (b.color as string) || '#4F46E5',
+        color: (b.leaveTypeColor as string) || (b.color as string) || '#4F46E5',
         maxDays: (b.available as number) || 0,
       }));
       setLeaveTypes(types);
 
-      const requests = Array.isArray(reqRes.data) ? reqRes.data : reqRes.data?.data || [];
+      const allRequests: LeaveRequest[] =
+        reqRes.data?.data ??
+        reqRes.data?.requests ??
+        (Array.isArray(reqRes.data) ? reqRes.data : []);
+      // Endpoint does not parse comma-separated status filters, so filter client-side.
+      const requests = allRequests.filter(
+        (r) => r.status === 'pending' || r.status === 'draft'
+      );
       setPendingRequests(requests);
     } catch {
       setError('Failed to load leave data.');
@@ -575,7 +586,7 @@ export default function ApplyLeaveTab() {
                       {new Date(req.toDate).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3 text-text">
-                      {req.days}
+                      {req.days ?? req.totalDays}
                       {req.isHalfDay && (
                         <span className="text-xs text-text-muted ml-1">
                           ({req.halfDayType === 'first_half' ? '1st' : '2nd'})

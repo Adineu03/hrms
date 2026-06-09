@@ -30,10 +30,12 @@ import { WorkforcePlanningModule } from './modules/workforce-planning/workforce-
 import { IntegrationsApiModule } from './modules/integrations-api/integrations-api.module';
 import { PeopleAnalyticsModule } from './modules/people-analytics/people-analytics.module';
 import { DemoCompanyModule } from './modules/demo-company/demo-company.module';
+import { AiAssistantModule } from './modules/ai-assistant/ai-assistant.module';
 import { TemplateModule } from './shared/templates/template.module';
 import { DefaultsModule } from './shared/defaults/defaults.module';
 import { DataImportModule } from './shared/data-import/data-import.module';
 import { StatsModule } from './shared/stats/stats.module';
+import { AiCoreModule } from './shared/ai/ai-core.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -65,10 +67,12 @@ import { HealthController } from './health.controller';
     IntegrationsApiModule,
     PeopleAnalyticsModule,
     DemoCompanyModule,
+    AiAssistantModule,
     TemplateModule,
     DefaultsModule,
     DataImportModule,
     StatsModule,
+    AiCoreModule,
   ],
   controllers: [HealthController],
   providers: [

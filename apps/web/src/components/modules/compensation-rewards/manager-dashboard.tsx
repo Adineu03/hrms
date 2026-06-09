@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTabNavigationStore } from '@/lib/tab-navigation-store';
 import { Users, Award, TrendingUp } from 'lucide-react';
 import TeamCompensationTab from './tabs/manager/team-compensation-tab';
 import RecognitionManagementTab from './tabs/manager/recognition-management-tab';
@@ -15,7 +16,15 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 export default function ManagerDashboard() {
+  const requestedTab = useTabNavigationStore((s) => s.requestedTab);
   const [activeTab, setActiveTab] = useState<TabId>('team-compensation');
+
+  useEffect(() => {
+    if (requestedTab) {
+      setActiveTab(requestedTab as TabId);
+      useTabNavigationStore.getState().setRequestedTab(null);
+    }
+  }, [requestedTab]);
 
   return (
     <div>

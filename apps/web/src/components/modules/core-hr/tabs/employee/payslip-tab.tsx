@@ -26,6 +26,13 @@ interface SalaryStructure {
   netSalary: number;
 }
 
+interface RawComponent {
+  name: string;
+  type: 'earning' | 'deduction';
+  value: number;
+  calculationType?: 'percentage' | 'fixed';
+}
+
 export default function PayslipTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +47,46 @@ export default function PayslipTab() {
     setError(null);
     try {
       const res = await api.get('/core-hr/employee/payslip/salary-structure');
-      setSalaryStructure(res.data);
+      // Endpoint returns { message, salaryStructure: { name, components:[{ value, calculationType }] }, assignment: { ctc, basicSalary } }.
+      const body = res.data;
+      const structure = body?.salaryStructure ?? body?.data?.salaryStructure ?? null;
+      if (!structure) {
+        setSalaryStructure(null);
+        return;
+      }
+      const assignment = body?.assignment ?? body?.data?.assignment ?? {};
+      const annualCtc = Number(assignment.ctc) || 0;
+      const monthlyCtc = annualCtc / 12;
+
+      // Component values are percentages of monthly CTC or fixed monthly amounts.
+      const components: SalaryComponent[] = (structure.components ?? []).map(
+        (c: RawComponent) => {
+          const amount =
+            c.calculationType === 'fixed'
+              ? c.value
+              : Math.round((monthlyCtc * c.value) / 100);
+          return {
+            name: c.name,
+            type: c.type,
+            amount,
+            percentage: c.calculationType === 'percentage' ? c.value : undefined,
+          };
+        }
+      );
+      const grossSalary = components
+        .filter((c) => c.type === 'earning')
+        .reduce((sum, c) => sum + c.amount, 0);
+      const totalDeductions = components
+        .filter((c) => c.type === 'deduction')
+        .reduce((sum, c) => sum + c.amount, 0);
+
+      setSalaryStructure({
+        id: structure.id,
+        name: structure.name,
+        components,
+        grossSalary,
+        netSalary: grossSalary - totalDeductions,
+      });
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 404) {

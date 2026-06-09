@@ -81,7 +81,31 @@ export default function DocumentVaultTab() {
     try {
       const res = await api.get('/core-hr/employee/documents');
       const raw = res.data;
-      setDocuments(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
+      // Endpoint returns { total, categories: { identity:[...], financial:[...], ... } }.
+      // Flatten the grouped categories into a single list and normalize fields.
+      let flat: Record<string, unknown>[] = [];
+      if (Array.isArray(raw)) {
+        flat = raw;
+      } else if (Array.isArray(raw?.data)) {
+        flat = raw.data;
+      } else if (raw?.categories && typeof raw.categories === 'object') {
+        flat = Object.values(raw.categories as Record<string, Record<string, unknown>[]>).flat();
+      }
+      const normalized: Document[] = flat.map((d) => {
+        const cat = String(d.category ?? '');
+        return {
+          id: d.id as string,
+          name: d.name as string,
+          // backend stores category lowercase (e.g. "identity"); UI filters by Capitalized
+          category: cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : '',
+          description: (d.description as string) ?? '',
+          fileUrl: (d.fileUrl as string) ?? '',
+          expiryDate: (d.expiryDate as string | null) ?? null,
+          verified: Boolean(d.verified ?? d.isVerified),
+          createdAt: (d.createdAt as string) ?? '',
+        };
+      });
+      setDocuments(normalized);
     } catch {
       setError('Failed to load documents.');
       setDocuments([]);
@@ -94,7 +118,8 @@ export default function DocumentVaultTab() {
     try {
       const res = await api.get('/core-hr/employee/documents/expiring');
       const raw = res.data;
-      setExpiringDocs(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
+      const docs = raw?.documents ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      setExpiringDocs(docs);
     } catch {
       // Non-critical
       setExpiringDocs([]);

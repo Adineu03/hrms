@@ -12,6 +12,7 @@ import {
   Inbox,
   Calendar,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 
 const inputClassName =
@@ -74,6 +75,36 @@ export default function ExitInterviewTab() {
   const [showResponseForm, setShowResponseForm] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<ExitInterview | null>(null);
   const [responseForm, setResponseForm] = useState(defaultResponseForm);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeNote, setAnalyzeNote] = useState<{ type: 'info' | 'error'; text: string } | null>(null);
+
+  const handleAnalyzeExit = async () => {
+    const notes = (responseForm.notes || '').trim();
+    if (notes.length < 10) {
+      setAnalyzeNote({ type: 'error', text: 'Enter the interview notes first, then analyze.' });
+      return;
+    }
+    setAnalyzing(true);
+    setAnalyzeNote(null);
+    try {
+      const res = await api.post('/onboarding-offboarding/manager/exit-interviews/analyze', { notes });
+      const data = res.data;
+      if (!data?.ok) {
+        setAnalyzeNote({ type: 'error', text: data?.message || 'AI analysis is unavailable.' });
+        return;
+      }
+      const { summary, themes, sentiment } = data.analysis;
+      setResponseForm((prev) => ({ ...prev, notes: summary }));
+      setAnalyzeNote({
+        type: 'info',
+        text: `Summarized. Detected themes: ${(themes || []).join(', ') || '—'} · Sentiment: ${sentiment}. Review and toggle theme chips as needed.`,
+      });
+    } catch {
+      setAnalyzeNote({ type: 'error', text: 'Failed to analyze the notes. Please try again.' });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
   const [isSaving, setIsSaving] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -370,7 +401,18 @@ export default function ExitInterviewTab() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Notes</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-text-muted">Notes</label>
+                  <button
+                    type="button"
+                    onClick={handleAnalyzeExit}
+                    disabled={analyzing}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover disabled:opacity-50"
+                  >
+                    {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    {analyzing ? 'Analyzing…' : 'Summarize with AI'}
+                  </button>
+                </div>
                 <textarea
                   value={responseForm.notes}
                   onChange={(e) => setResponseForm({ ...responseForm, notes: e.target.value })}
@@ -378,6 +420,11 @@ export default function ExitInterviewTab() {
                   placeholder="Record interview feedback and key takeaways..."
                   rows={5}
                 />
+                {analyzeNote && (
+                  <p className={`text-xs mt-1 ${analyzeNote.type === 'error' ? 'text-red-600' : 'text-primary'}`}>
+                    {analyzeNote.text}
+                  </p>
+                )}
               </div>
             </div>
 

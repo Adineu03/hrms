@@ -87,6 +87,15 @@ export class DataImportController {
     return this.dataImportService.getHistory(orgId);
   }
 
+  // ─── AI Column Mapping Suggestion ─────────────────────────────────
+
+  @Post(':importId/suggest-mapping')
+  @Roles('super_admin', 'admin')
+  async suggestMapping(@Param('importId') importId: string) {
+    const orgId = this.getOrgIdOrThrow();
+    return this.dataImportService.suggestMapping(orgId, importId);
+  }
+
   // ─── Column Mapping ───────────────────────────────────────────────
 
   @Post(':importId/map-columns')
