@@ -21,7 +21,7 @@ interface Notification {
   title: string;
   message: string;
   type: string;
-  module: string;
+  moduleId: string;
   isRead: boolean;
   createdAt: string;
 }
@@ -110,11 +110,11 @@ export default function NotificationCenterTab() {
     }
   };
 
-  const modules = Array.from(new Set(notifications.map((n) => n.module).filter(Boolean)));
+  const modules = Array.from(new Set(notifications.map((n) => n.moduleId).filter(Boolean)));
 
   const filtered = notifications.filter((n) => {
     if (filterType !== 'all' && n.type !== filterType) return false;
-    if (filterModule && n.module !== filterModule) return false;
+    if (filterModule && n.moduleId !== filterModule) return false;
     return true;
   });
 
@@ -221,9 +221,9 @@ export default function NotificationCenterTab() {
                     </div>
                     <p className="text-sm text-text-muted">{n.message}</p>
                     <div className="flex items-center gap-3 mt-2">
-                      {n.module && (
+                      {n.moduleId && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                          {n.module}
+                          {n.moduleId}
                         </span>
                       )}
                       <span className="text-xs text-text-muted">

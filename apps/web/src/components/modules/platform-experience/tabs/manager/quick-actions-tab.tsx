@@ -152,8 +152,26 @@ export default function QuickActionsTab() {
     try {
       setApproving(true);
       setError('');
-      const ids = pendingApprovals.map((a) => a.id);
-      await api.post('/platform-experience/manager/quick-actions/bulk-approve', { ids });
+      const leaveIds = pendingApprovals.filter((a) => a.type === 'leave').map((a) => a.id);
+      const overtimeIds = pendingApprovals.filter((a) => a.type === 'overtime').map((a) => a.id);
+      const calls: Promise<unknown>[] = [];
+      if (leaveIds.length) {
+        calls.push(
+          api.post('/platform-experience/manager/quick-actions/bulk-approve', {
+            type: 'leave_request',
+            ids: leaveIds,
+          }),
+        );
+      }
+      if (overtimeIds.length) {
+        calls.push(
+          api.post('/platform-experience/manager/quick-actions/bulk-approve', {
+            type: 'overtime_request',
+            ids: overtimeIds,
+          }),
+        );
+      }
+      await Promise.all(calls);
       setSuccess('All pending items approved successfully.');
       loadData();
     } catch {

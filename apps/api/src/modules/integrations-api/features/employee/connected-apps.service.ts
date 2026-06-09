@@ -29,7 +29,28 @@ export class ConnectedAppsService {
       .where(and(eq(schema.oauthApps.orgId, orgId), eq(schema.oauthApps.isActive, true)))
       .orderBy(desc(schema.oauthApps.lastUsedAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    const data = rows.map((r) => ({
+      id: r.id,
+      appName: r.appName ?? '',
+      scopes: (r.scopes as string[] | null) ?? [],
+      lastAccessed: r.lastUsedAt ? this.fmtDate(r.lastUsedAt) : 'Never',
+      authorizedAt: r.createdAt ? this.fmtDate(r.createdAt) : '—',
+      logoInitial: this.logoInitial(r.appName),
+    }));
+
+    return { data, meta: { total: data.length } };
+  }
+
+  private fmtDate(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  private logoInitial(name: string | null): string {
+    const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return '?';
+    if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
   }
 
   async revokeAppAccess(orgId: string, id: string, userId: string) {

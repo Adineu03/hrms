@@ -18,8 +18,8 @@ import {
 
 interface Bookmark {
   id: string;
-  label: string;
-  url: string;
+  title: string;
+  path: string;
   icon: string;
   createdAt: string;
 }
@@ -28,9 +28,8 @@ interface SearchResult {
   id: string;
   title: string;
   type: string;
-  module: string;
-  url: string;
-  snippet: string;
+  subtitle?: string;
+  path?: string;
 }
 
 export default function SearchNavigationTab() {
@@ -107,8 +106,8 @@ export default function SearchNavigationTab() {
       setSavingBookmark(true);
       setError('');
       await api.post('/platform-experience/employee/search/bookmarks', {
-        label: formLabel.trim(),
-        url: formUrl.trim(),
+        title: formLabel.trim(),
+        path: formUrl.trim(),
       });
       setSuccess('Bookmark added successfully.');
       setShowBookmarkModal(false);
@@ -199,20 +198,17 @@ export default function SearchNavigationTab() {
             {searchResults.map((result) => (
               <a
                 key={result.id}
-                href={result.url || '#'}
+                href={result.path || '#'}
                 className="block px-4 py-3 hover:bg-background transition-colors border-b border-border last:border-b-0"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getResultTypeBadge(result.type)} capitalize`}>
                     {result.type}
                   </span>
-                  {result.module && (
-                    <span className="text-xs text-text-muted">{result.module}</span>
-                  )}
                 </div>
                 <p className="text-sm font-medium text-text">{result.title}</p>
-                {result.snippet && (
-                  <p className="text-xs text-text-muted mt-0.5">{result.snippet}</p>
+                {result.subtitle && (
+                  <p className="text-xs text-text-muted mt-0.5">{result.subtitle}</p>
                 )}
               </a>
             ))}
@@ -244,15 +240,15 @@ export default function SearchNavigationTab() {
                 <div className="flex items-start justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-yellow-500 shrink-0" />
-                    <a href={b.url || '#'} className="text-sm font-medium text-text hover:text-primary transition-colors">
-                      {b.label}
+                    <a href={b.path || '#'} className="text-sm font-medium text-text hover:text-primary transition-colors">
+                      {b.title}
                     </a>
                   </div>
                   <button onClick={() => handleDeleteBookmark(b.id)} className="p-1 text-text-muted hover:text-red-600 transition-colors" title="Remove">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <p className="text-xs text-text-muted ml-6 truncate">{b.url}</p>
+                <p className="text-xs text-text-muted ml-6 truncate">{b.path}</p>
                 <p className="text-xs text-text-muted ml-6 mt-1">
                   {b.createdAt ? new Date(b.createdAt).toLocaleDateString() : '—'}
                 </p>

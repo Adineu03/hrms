@@ -129,6 +129,27 @@ import {
   ethicsComplaints,
   auditTrailConfigs,
   complianceChecklists,
+  // Sprint 6 (Demo-Readiness) — People Analytics gap tables
+  analyticsKpis,
+  analyticsReports,
+  analyticsSnapshots,
+  // Sprint 6 (Demo-Readiness) — Demo Company gap tables
+  demoOrgs,
+  demoTours,
+  demoSessions,
+  // Sprint 6 (Demo-Readiness) — Platform & Experience gap tables
+  notificationTemplates,
+  notifications,
+  customDashboards,
+  dashboardWidgets,
+  bookmarks,
+  // Sprint 6 (Demo-Readiness) — Integrations & API gap tables
+  integrationConnectors,
+  integrationLogs,
+  apiKeys,
+  webhooks,
+  oauthApps,
+  dataSyncConfigs,
 } from './schema';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -2231,6 +2252,321 @@ async function seed(): Promise<void> {
     );
 
     console.log('  ✓ compliance-audit: 5 policies + acks, 5 trainings + 60 completions, 6 checklists, 6 retention configs, 5 ethics, 4 DSAR');
+
+    // ── People-Analytics: Custom KPIs, Saved Reports, Metric Snapshots ───────
+    // (a) Custom KPI definitions — note targetValue/thresholdLow/High are INTEGER cols
+    await db.insert(analyticsKpis).values([
+      { orgId: org.id, name: 'Revenue per Employee', formula: 'annual_revenue / headcount', description: 'Total annual revenue divided by current headcount.', unit: 'currency', targetValue: 5000000, thresholdLow: 3000000, thresholdHigh: 7000000, alertEnabled: true, scope: 'org' },
+      { orgId: org.id, name: 'Attrition Rate', formula: '(leavers / avg_headcount) * 100', description: 'Voluntary + involuntary exits as a percentage of average headcount.', unit: 'percentage', targetValue: 8, thresholdLow: 0, thresholdHigh: 12, alertEnabled: true, scope: 'org' },
+      { orgId: org.id, name: 'Average Tenure', formula: 'sum(tenure_months) / headcount', description: 'Mean employee tenure across the organization.', unit: 'number', targetValue: 36, thresholdLow: 18, thresholdHigh: 60, alertEnabled: false, scope: 'org' },
+      { orgId: org.id, name: 'Cost per Hire', formula: 'total_recruiting_cost / hires', description: 'Total recruiting spend divided by number of hires.', unit: 'currency', targetValue: 120000, thresholdLow: 50000, thresholdHigh: 200000, alertEnabled: false, scope: 'org' },
+      { orgId: org.id, name: 'Training Hours per Employee', formula: 'total_training_hours / headcount', description: 'Average L&D hours completed per employee per year.', unit: 'number', targetValue: 40, thresholdLow: 20, thresholdHigh: 80, alertEnabled: false, scope: 'org' },
+    ]);
+
+    // (b) Saved reports — sourceModules & selectedFields are NOT-NULL jsonb; createdBy NOT-NULL uuid
+    await db.insert(analyticsReports).values([
+      { orgId: org.id, name: 'Monthly Headcount Report', description: 'Headcount trend by department, refreshed monthly.', reportType: 'line', sourceModules: ['core-hr', 'workforce-planning'], selectedFields: { 'core-hr': ['department', 'headcount'] }, filters: { dateRange: 'last_12_months' }, schedule: { frequency: 'monthly', deliveryEmail: 'hr@acme.com', format: 'pdf' }, isShared: true, createdBy: adminUser.id },
+      { orgId: org.id, name: 'Attrition by Department', description: 'Voluntary vs involuntary attrition split per department.', reportType: 'bar', sourceModules: ['core-hr', 'offboarding-offboarding'], selectedFields: { 'core-hr': ['department', 'exit_type'] }, filters: { dateRange: 'ytd' }, schedule: null, isShared: true, createdBy: adminUser.id },
+      { orgId: org.id, name: 'Leave Utilization Summary', description: 'Leave days taken by type across the org.', reportType: 'pie', sourceModules: ['leave-management'], selectedFields: { 'leave-management': ['leave_type', 'days'] }, filters: null, schedule: { frequency: 'weekly', deliveryEmail: 'hr@acme.com', format: 'csv' }, isShared: false, createdBy: adminUser.id },
+      { orgId: org.id, name: 'Attendance vs Org Average', description: 'Team attendance rate benchmarked against org average.', reportType: 'table', sourceModules: ['attendance'], selectedFields: { attendance: ['employee', 'attendance_rate'] }, filters: { department: 'all' }, schedule: null, isShared: false, createdBy: adminUser.id },
+    ]);
+
+    // (c) Metric snapshots — powers workforce-analytics headcount & attrition trend charts (12 months each)
+    const analyticsSnapshotRows: { orgId: string; snapshotDate: string; metricKey: string; metricValue: number; department: string | null }[] = [];
+    for (let m = 11; m >= 0; m--) {
+      const snapDate = fmt(anchorPlusDays(-30 * m));
+      analyticsSnapshotRows.push({ orgId: org.id, snapshotDate: snapDate, metricKey: 'headcount', metricValue: 16 + (11 - m), department: null });
+      analyticsSnapshotRows.push({ orgId: org.id, snapshotDate: snapDate, metricKey: 'attrition_rate', metricValue: 6 + ((11 - m) % 4), department: null });
+    }
+    await db.insert(analyticsSnapshots).values(analyticsSnapshotRows);
+
+    console.log('  ✓ people-analytics: 5 custom KPIs, 4 saved reports, 24 metric snapshots');
+
+    // ── Demo Company (demo-company module) ──────────────────────────────────────
+    await db
+      .insert(demoOrgs)
+      .values([
+        {
+          orgId: org.id,
+          sandboxName: 'Acme Corp Demo',
+          industryTemplate: 'it-services',
+          employeeCount: 25,
+          status: 'active',
+          lastResetAt: anchorPlusDays(-7),
+          seededModules: ['core-hr', 'attendance', 'leave', 'payroll', 'performance', 'expense', 'learning'],
+        },
+        {
+          orgId: org.id,
+          sandboxName: 'Globex Manufacturing Demo',
+          industryTemplate: 'manufacturing',
+          employeeCount: 50,
+          status: 'active',
+          lastResetAt: anchorPlusDays(-2),
+          seededModules: ['core-hr', 'attendance', 'leave'],
+        },
+      ]);
+
+    const buildDemoStep = (
+      order: number,
+      title: string,
+      tooltipText: string,
+      description: string,
+      targetSelector: string,
+      iconKey: string,
+    ) => ({ order, title, tooltipText, description, targetSelector, iconKey });
+
+    await db.insert(demoTours).values([
+      {
+        orgId: org.id,
+        tourName: 'New Employee Quick Start',
+        targetModule: 'Core HR',
+        assignedPersona: 'all',
+        isPublished: true,
+        completionCount: 18,
+        steps: [
+          buildDemoStep(1, 'Mark Your Attendance', 'Clock in from the attendance widget to start your day.', 'Head to Time & Attendance and clock in. Your hours are tracked automatically.', '#attendance-clock-in', 'attendance'),
+          buildDemoStep(2, 'Apply for Leave', 'Submit a leave request and watch it route for approval.', 'Open Leave Management, pick dates and a leave type, then submit for manager approval.', '#leave-apply-btn', 'leave'),
+          buildDemoStep(3, 'View Your Payslip', 'Download your latest payslip with a full breakdown.', 'Navigate to Payroll Processing to view earnings, deductions, and net pay.', '#payslip-download', 'payslip'),
+          buildDemoStep(4, 'Submit a Timesheet', 'Log work against projects and submit for the week.', 'Use Daily Work Logging to record project hours and submit your weekly timesheet.', '#timesheet-submit', 'timesheet'),
+          buildDemoStep(5, 'Complete a Course', 'Enroll in an assigned course and earn a certificate.', 'Browse Learning & Development, enroll in a course, and complete the modules.', '#course-enroll', 'course'),
+        ],
+      },
+      {
+        orgId: org.id,
+        tourName: 'Manager Approvals Walkthrough',
+        targetModule: 'Leave Management',
+        assignedPersona: 'manager',
+        isPublished: true,
+        completionCount: 9,
+        steps: [
+          buildDemoStep(1, 'Review Pending Leave Requests', 'See all leave requests awaiting your decision.', 'Open the Leave Management manager view to see pending requests from your team.', '#manager-leave-pending', 'leave'),
+          buildDemoStep(2, 'Approve a Timesheet', 'Validate and approve submitted team timesheets.', 'In Daily Work Logging, review submitted timesheets and approve or send back for edits.', '#manager-timesheet-approve', 'timesheet'),
+          buildDemoStep(3, 'Run a Team Report', 'Generate a headcount or attendance report instantly.', 'Use Sample Reports to export team headcount, leave, and attendance summaries.', '#manager-reports', 'attendance'),
+        ],
+      },
+      {
+        orgId: org.id,
+        tourName: 'Employee Self-Service Tour',
+        targetModule: 'Platform & Experience',
+        assignedPersona: 'employee',
+        isPublished: true,
+        completionCount: 14,
+        steps: [
+          buildDemoStep(1, 'Update Your Profile', 'Keep your personal details current.', 'Go to Core HR self-service to update contact info and emergency contacts.', '#profile-edit', 'attendance'),
+          buildDemoStep(2, 'Check Leave Balance', 'See how many leave days you have left.', 'Open Leave Management to view your remaining balance by leave type.', '#leave-balance', 'leave'),
+          buildDemoStep(3, 'Download a Payslip', 'Access any month payslip on demand.', 'Visit Payroll Processing and download the payslip for any pay period.', '#payslip-history', 'payslip'),
+        ],
+      },
+      {
+        orgId: org.id,
+        tourName: 'Admin Configuration Basics (Draft)',
+        targetModule: 'Cold Start Setup',
+        assignedPersona: 'admin',
+        isPublished: false,
+        completionCount: 0,
+        steps: [
+          buildDemoStep(1, 'Activate a Module', 'Turn on the modules your org needs.', 'From the module registry, activate modules and complete their setup steps.', '#module-activate', 'attendance'),
+          buildDemoStep(2, 'Invite Your Team', 'Send invitations to onboard employees.', 'Use Cold Start Setup to bulk-invite employees by email.', '#invite-employees', 'timesheet'),
+        ],
+      },
+    ]);
+
+    const demoSessionPersonas = ['admin', 'manager', 'employee'] as const;
+    const demoSessionModulePool = [
+      'core-hr', 'attendance', 'leave-management', 'payroll-processing',
+      'performance-growth', 'expense-management', 'learning-development', 'talent-acquisition',
+    ];
+    const demoSessionRows = Array.from({ length: 24 }).map((_, i) => {
+      const persona = demoSessionPersonas[i % demoSessionPersonas.length];
+      const startedAt = anchorPlusDays(-(i % 28) - 1);
+      const durationSeconds = 300 + ((i * 137) % 1500); // deterministic 5–30 min
+      const endedAt = new Date(startedAt.getTime() + durationSeconds * 1000);
+      const visitedCount = 2 + (i % 5);
+      const modulesVisited = demoSessionModulePool.slice(i % 3, (i % 3) + visitedCount);
+      return {
+        orgId: org.id,
+        sessionId: `demo-sess-${String(i + 1).padStart(3, '0')}`,
+        persona,
+        startedAt,
+        endedAt,
+        durationSeconds,
+        modulesVisited,
+        converted: i % 4 === 0, // deterministic 25% conversion
+      };
+    });
+    await db.insert(demoSessions).values(demoSessionRows);
+
+    console.log('  ✓ demo-company: 2 demo orgs, 4 tours (3 published), 24 demo sessions');
+
+    // ── Platform & Experience (Demo-Readiness) ──────────────────────────────
+    // Notification templates (admin → Notification Management)
+    await db.insert(notificationTemplates).values([
+      { orgId: org.id, name: 'Leave Approved', eventType: 'leave_approved', channel: 'in_app', subject: 'Your leave request was approved', bodyTemplate: 'Hi {{employeeName}}, your leave from {{fromDate}} to {{toDate}} has been approved.', variables: ['employeeName', 'fromDate', 'toDate'], isEnabled: true, createdBy: adminUser.id },
+      { orgId: org.id, name: 'Leave Rejected', eventType: 'leave_rejected', channel: 'in_app', subject: 'Your leave request was rejected', bodyTemplate: 'Hi {{employeeName}}, your leave request has been rejected. Reason: {{reason}}.', variables: ['employeeName', 'reason'], isEnabled: true, createdBy: adminUser.id },
+      { orgId: org.id, name: 'Payslip Available', eventType: 'payslip_generated', channel: 'email', subject: 'Your payslip for {{month}} is ready', bodyTemplate: 'Hi {{employeeName}}, your payslip for {{month}} is now available to download.', variables: ['employeeName', 'month'], isEnabled: true, createdBy: adminUser.id },
+      { orgId: org.id, name: 'Timesheet Reminder', eventType: 'timesheet_due', channel: 'push', subject: 'Submit your timesheet', bodyTemplate: 'Hi {{employeeName}}, please submit your timesheet for the week ending {{weekEnding}}.', variables: ['employeeName', 'weekEnding'], isEnabled: false, createdBy: adminUser.id },
+      { orgId: org.id, name: 'Onboarding Welcome', eventType: 'onboarding_started', channel: 'email', subject: 'Welcome to Acme Corp!', bodyTemplate: 'Welcome aboard, {{employeeName}}! Your onboarding journey starts now.', variables: ['employeeName'], isEnabled: true, createdBy: adminUser.id },
+    ]);
+
+    // Per-employee notifications (employee → Notification Center; feeds admin analytics)
+    const notifTemplatesData = [
+      { type: 'success', moduleId: 'leave-management', title: 'Leave Approved', message: 'Your leave request has been approved.' },
+      { type: 'info', moduleId: 'payroll-processing', title: 'Payslip Available', message: 'Your latest payslip is ready to download.' },
+      { type: 'warning', moduleId: 'attendance', title: 'Missing Timesheet', message: 'You have not submitted your timesheet for this week.' },
+      { type: 'info', moduleId: 'performance-growth', title: 'Review Scheduled', message: 'Your quarterly performance review has been scheduled.' },
+      { type: 'success', moduleId: 'learning-development', title: 'Course Completed', message: 'Congratulations on completing your assigned course.' },
+    ];
+    const empNotifInserts = empUsers.flatMap((u, i) =>
+      notifTemplatesData.map((t, j) => ({
+        orgId: org.id,
+        userId: u.id,
+        type: t.type,
+        channel: 'in_app',
+        title: t.title,
+        message: t.message,
+        moduleId: t.moduleId,
+        referenceType: 'system',
+        isRead: (i + j) % 3 === 0,
+        readAt: (i + j) % 3 === 0 ? anchorPlusDays(-2) : null,
+        sentAt: anchorPlusDays(-7 + j),
+        createdAt: anchorPlusDays(-7 + j),
+      })),
+    );
+    await db.insert(notifications).values(empNotifInserts);
+
+    // Team announcements (manager → Team Notifications) — one notification per recipient,
+    // grouped by title+sentAt. referenceType/referenceId let the manager list them.
+    const announcementDefs = [
+      { title: 'Team Standup Moved to 10 AM', message: 'Starting next week our daily standup moves to 10:00 AM. Please adjust your calendars.', type: 'info', sentAt: anchorPlusDays(-5) },
+      { title: 'Q3 Goals Finalized', message: 'Our Q3 team goals are now finalized. Review them in the Performance module before Friday.', type: 'success', sentAt: anchorPlusDays(-3) },
+      { title: 'Office Closed for Maintenance', message: 'The office will be closed this Saturday for scheduled maintenance. Work from home that day.', type: 'warning', sentAt: anchorPlusDays(-1) },
+    ];
+    const announcementRecipients = empUsers.slice(0, 6); // sample of the manager's team
+    const announcementInserts = announcementDefs.flatMap((a, ai) =>
+      announcementRecipients.map((u, ri) => ({
+        orgId: org.id,
+        userId: u.id,
+        type: a.type,
+        channel: 'in_app',
+        title: a.title,
+        message: a.message,
+        moduleId: 'platform-experience',
+        referenceId: managerUser.id,
+        referenceType: 'team_announcement',
+        isRead: (ai + ri) % 2 === 0,
+        readAt: (ai + ri) % 2 === 0 ? anchorPlusDays(0) : null,
+        sentAt: a.sentAt,
+        createdAt: a.sentAt,
+      })),
+    );
+    await db.insert(notifications).values(announcementInserts);
+
+    // Custom dashboards + widgets (admin → Platform Customization; manager → Custom Dashboards)
+    const dashboardInserts = await db.insert(customDashboards).values([
+      { orgId: org.id, name: 'HR Overview', description: 'Org-wide headcount, attrition, and hiring snapshot.', createdById: adminUser.id, isDefault: true, isShared: true, layout: { columns: 12 } },
+      { orgId: org.id, name: 'Attendance & Leave', description: 'Daily attendance and pending leave at a glance.', createdById: adminUser.id, isDefault: false, isShared: false, layout: { columns: 12 } },
+      { orgId: org.id, name: 'My Team Performance', description: 'Team goals, reviews, and recognition.', createdById: managerUser.id, isDefault: true, isShared: false, layout: { columns: 12 } },
+      { orgId: org.id, name: 'Team Attendance', description: 'Team attendance and timesheet status.', createdById: managerUser.id, isDefault: false, isShared: true, layout: { columns: 12 } },
+    ]).returning();
+
+    const widgetInserts = dashboardInserts.flatMap((d) => [
+      { orgId: org.id, dashboardId: d.id, widgetType: 'kpi', title: 'Total Headcount', config: { metric: 'headcount' }, position: { x: 0, y: 0 }, size: { w: 3, h: 2 } },
+      { orgId: org.id, dashboardId: d.id, widgetType: 'chart', title: 'Trend (6 months)', config: { metric: 'trend', range: '6m' }, position: { x: 3, y: 0 }, size: { w: 6, h: 4 } },
+      { orgId: org.id, dashboardId: d.id, widgetType: 'list', title: 'Recent Activity', config: { source: 'activity' }, position: { x: 9, y: 0 }, size: { w: 3, h: 4 } },
+    ]);
+    await db.insert(dashboardWidgets).values(widgetInserts);
+
+    // Bookmarks (employee → Search & Navigation; manager quick-actions recent items)
+    const bookmarkDefs = [
+      { title: 'My Leave Balance', moduleId: 'leave-management', path: '/dashboard/modules/leave-management', icon: 'calendar' },
+      { title: 'My Payslips', moduleId: 'payroll-processing', path: '/dashboard/modules/payroll-processing', icon: 'file-text' },
+      { title: 'Employee Directory', moduleId: 'core-hr', path: '/dashboard/modules/core-hr', icon: 'users' },
+      { title: 'My Goals', moduleId: 'performance-growth', path: '/dashboard/modules/performance-growth', icon: 'target' },
+    ];
+    const bookmarkInserts = [...empUsers, managerUser].flatMap((u) =>
+      bookmarkDefs.map((b, j) => ({
+        orgId: org.id,
+        userId: u.id,
+        title: b.title,
+        moduleId: b.moduleId,
+        path: b.path,
+        icon: b.icon,
+        sortOrder: j + 1,
+      })),
+    );
+    await db.insert(bookmarks).values(bookmarkInserts);
+    console.log(`  ✓ platform-experience: 5 templates, ${empNotifInserts.length} notifications, ${announcementDefs.length} announcements, ${dashboardInserts.length} dashboards + ${widgetInserts.length} widgets, ${bookmarkInserts.length} bookmarks`);
+
+    // ── integrations-api (Demo-Readiness) ──────────────────────────────────────
+    const connectorSeed = [
+      { connectorKey: 'slack', connectorName: 'Slack', category: 'communication', description: 'Team messaging, alerts & approval notifications', isEnabled: true, isAuthenticated: true, authType: 'oauth', healthStatus: 'healthy', lastSyncOffset: -1 as number | null, usageCount: 4820, errorMessage: null as string | null },
+      { connectorKey: 'google-workspace', connectorName: 'Google Workspace', category: 'hrms', description: 'Directory, calendar & email sync', isEnabled: true, isAuthenticated: true, authType: 'oauth', healthStatus: 'healthy', lastSyncOffset: -1 as number | null, usageCount: 9120, errorMessage: null as string | null },
+      { connectorKey: 'quickbooks', connectorName: 'QuickBooks', category: 'payroll', description: 'Accounting & payroll ledger sync', isEnabled: true, isAuthenticated: true, authType: 'oauth', healthStatus: 'healthy', lastSyncOffset: -1 as number | null, usageCount: 2310, errorMessage: null as string | null },
+      { connectorKey: 'zoom', connectorName: 'Zoom', category: 'communication', description: 'Video conferencing for interviews & 1:1s', isEnabled: true, isAuthenticated: true, authType: 'oauth', healthStatus: 'healthy', lastSyncOffset: -2 as number | null, usageCount: 760, errorMessage: null as string | null },
+      { connectorKey: 'sap-erp', connectorName: 'SAP ERP', category: 'erp', description: 'Enterprise resource planning data exchange', isEnabled: true, isAuthenticated: true, authType: 'api_key', healthStatus: 'degraded', lastSyncOffset: -2 as number | null, usageCount: 1540, errorMessage: 'Slow response times detected on upstream API' as string | null },
+      { connectorKey: 'jira', connectorName: 'Jira', category: 'hrms', description: 'Project tracking & work-log integration', isEnabled: true, isAuthenticated: false, authType: 'oauth', healthStatus: 'error', lastSyncOffset: -4 as number | null, usageCount: 410, errorMessage: 'OAuth token expired — reconnection required' as string | null },
+      { connectorKey: 'workday', connectorName: 'Workday HRIS', category: 'hrms', description: 'External HRIS employee master sync', isEnabled: false, isAuthenticated: false, authType: 'api_key', healthStatus: 'unknown', lastSyncOffset: null as number | null, usageCount: 0, errorMessage: null as string | null },
+    ];
+    const insertedConnectors = await db
+      .insert(integrationConnectors)
+      .values(
+        connectorSeed.map((c) => ({
+          orgId: org.id,
+          connectorKey: c.connectorKey,
+          connectorName: c.connectorName,
+          category: c.category,
+          description: c.description,
+          isEnabled: c.isEnabled,
+          isAuthenticated: c.isAuthenticated,
+          authType: c.authType,
+          healthStatus: c.healthStatus,
+          healthCheckedAt: c.lastSyncOffset !== null ? anchorPlusDays(c.lastSyncOffset) : null,
+          lastSyncAt: c.lastSyncOffset !== null ? anchorPlusDays(c.lastSyncOffset) : null,
+          errorMessage: c.errorMessage,
+          usageCount: c.usageCount,
+        })),
+      )
+      .returning();
+
+    const connByKey: Record<string, string> = {};
+    for (const row of insertedConnectors) connByKey[row.connectorKey] = row.id;
+
+    await db.insert(integrationLogs).values([
+      { orgId: org.id, connectorId: connByKey['sap-erp'], eventType: 'sync', status: 'failure', message: 'Upstream API responded in 8.2s (threshold 3s)', durationMs: 8200, createdAt: anchorPlusDays(-2) },
+      { orgId: org.id, connectorId: connByKey['jira'], eventType: 'auth', status: 'failure', message: 'OAuth token expired — reconnection required', durationMs: 120, createdAt: anchorPlusDays(-4) },
+      { orgId: org.id, connectorId: connByKey['jira'], eventType: 'sync', status: 'failure', message: 'Authentication required before sync', durationMs: 95, createdAt: anchorPlusDays(-3) },
+      { orgId: org.id, connectorId: connByKey['slack'], eventType: 'sync', status: 'success', message: 'Delivered 42 notifications', durationMs: 340, createdAt: anchorPlusDays(-1) },
+      { orgId: org.id, connectorId: connByKey['google-workspace'], eventType: 'sync', status: 'success', message: 'Synced 20 directory records', durationMs: 510, createdAt: anchorPlusDays(-1) },
+    ]);
+
+    await db.insert(apiKeys).values([
+      { orgId: org.id, name: 'Production Integration', keyPrefix: 'sk_live_a1', keyHash: 'seed_hash_prod_1', scopes: ['read:employees', 'read:leave'], rateLimitPerMin: 1000, ipWhitelist: ['203.0.113.10'], lastUsedAt: anchorPlusDays(-1), usageCount: 142300, rotationReminderDays: 90, expiresAt: anchorPlusDays(200), createdBy: adminUser.id, status: 'active' },
+      { orgId: org.id, name: 'Payroll Sync Bot', keyPrefix: 'sk_live_b2', keyHash: 'seed_hash_payroll_2', scopes: ['read:payroll', 'write:attendance'], rateLimitPerMin: 500, ipWhitelist: null, lastUsedAt: anchorPlusDays(-2), usageCount: 85700, rotationReminderDays: 90, expiresAt: anchorPlusDays(120), createdBy: adminUser.id, status: 'active' },
+      { orgId: org.id, name: 'Reporting Dashboard', keyPrefix: 'sk_live_c3', keyHash: 'seed_hash_report_3', scopes: ['read:employees', 'read:payroll'], rateLimitPerMin: 200, ipWhitelist: null, lastUsedAt: anchorPlusDays(-9), usageCount: 42800, rotationReminderDays: 90, expiresAt: anchorPlusDays(60), createdBy: adminUser.id, status: 'active' },
+      { orgId: org.id, name: 'Legacy API Client', keyPrefix: 'sk_live_d4', keyHash: 'seed_hash_legacy_4', scopes: ['read:employees'], rateLimitPerMin: 100, ipWhitelist: null, lastUsedAt: anchorPlusDays(-120), usageCount: 13771, rotationReminderDays: 90, expiresAt: anchorPlusDays(-30), createdBy: adminUser.id, revokedAt: anchorPlusDays(-30), revokedBy: adminUser.id, status: 'revoked' },
+    ]);
+
+    await db.insert(webhooks).values([
+      { orgId: org.id, name: 'Employee Created Notifier', endpointUrl: 'https://hooks.slack.com/services/T00/B00/abc123', eventType: 'employee.created', secret: 'whsec_seed_1', payloadFormat: 'json', isEnabled: true, retryPolicy: { maxRetries: 3, backoffSeconds: [30, 60, 300] }, lastDeliveryAt: anchorPlusDays(-1), lastDeliveryStatus: 'success', successCount: 142, failureCount: 3 },
+      { orgId: org.id, name: 'Leave Approval Alert', endpointUrl: 'https://api.zapier.com/hooks/catch/123456/leave', eventType: 'leave.approved', secret: 'whsec_seed_2', payloadFormat: 'json', isEnabled: true, retryPolicy: { maxRetries: 3, backoffSeconds: [30, 60, 300] }, lastDeliveryAt: anchorPlusDays(-1), lastDeliveryStatus: 'success', successCount: 87, failureCount: 0 },
+      { orgId: org.id, name: 'Payroll Processed Hook', endpointUrl: 'https://quickbooks.acme.com/webhook/payroll', eventType: 'payroll.processed', secret: 'whsec_seed_3', payloadFormat: 'form', isEnabled: false, retryPolicy: { maxRetries: 3, backoffSeconds: [30, 60, 300] }, lastDeliveryAt: anchorPlusDays(-10), lastDeliveryStatus: 'failure', successCount: 12, failureCount: 1 },
+      { orgId: org.id, name: 'Attendance Sync Trigger', endpointUrl: 'https://erp.acme.com/api/attendance-hook', eventType: 'attendance.synced', secret: 'whsec_seed_4', payloadFormat: 'json', isEnabled: true, retryPolicy: { maxRetries: 3, backoffSeconds: [30, 60, 300] }, lastDeliveryAt: anchorPlusDays(-1), lastDeliveryStatus: 'success', successCount: 1240, failureCount: 5 },
+    ]);
+
+    await db.insert(oauthApps).values([
+      { orgId: org.id, appName: 'HR Analytics Portal', clientId: 'client_abc123', clientSecretHash: 'seed_secret_hash_1', redirectUris: ['https://analytics.acme.com/callback'], scopes: ['read:employees', 'read:payroll'], description: 'Internal analytics dashboard', ownerEmail: 'dev@acme.com', isPublic: false, authorizedUserCount: 24, lastUsedAt: anchorPlusDays(-1), status: 'active' },
+      { orgId: org.id, appName: 'Mobile App (iOS)', clientId: 'client_def456', clientSecretHash: 'seed_secret_hash_2', redirectUris: ['acmehr://oauth/callback'], scopes: ['read:employees', 'read:leave', 'write:attendance'], description: 'Employee self-service mobile app', ownerEmail: 'mobile@acme.com', isPublic: false, authorizedUserCount: 156, lastUsedAt: anchorPlusDays(-1), status: 'active' },
+      { orgId: org.id, appName: 'Slack Bot Integration', clientId: 'client_ghi789', clientSecretHash: 'seed_secret_hash_3', redirectUris: ['https://slack.com/oauth/acme'], scopes: ['read:leave'], description: 'Slack leave-status bot', ownerEmail: 'ops@acme.com', isPublic: false, authorizedUserCount: 89, lastUsedAt: anchorPlusDays(-2), status: 'active' },
+      { orgId: org.id, appName: 'Legacy Dashboard v1', clientId: 'client_jkl012', clientSecretHash: 'seed_secret_hash_4', redirectUris: ['https://old.acme.com/callback'], scopes: ['read:employees'], description: 'Deprecated reporting tool', ownerEmail: 'admin@acme.com', isPublic: false, authorizedUserCount: 0, lastUsedAt: anchorPlusDays(-180), status: 'revoked' },
+    ]);
+
+    await db.insert(dataSyncConfigs).values([
+      { orgId: org.id, connectorId: connByKey['google-workspace'], syncName: 'Employee Directory Import', sourceType: 'connector', targetType: 'employees', frequency: 'daily', isEnabled: true, lastSyncAt: anchorPlusDays(-1), lastSyncStatus: 'success', lastSyncRecordCount: 20, nextSyncAt: anchorPlusDays(1) },
+      { orgId: org.id, connectorId: null, syncName: 'Attendance API Sync', sourceType: 'api', targetType: 'attendance', frequency: 'hourly', isEnabled: true, lastSyncAt: anchorPlusDays(-1), lastSyncStatus: 'success', lastSyncRecordCount: 440, nextSyncAt: anchorPlusDays(1) },
+      { orgId: org.id, connectorId: connByKey['quickbooks'], syncName: 'Payroll QuickBooks Sync', sourceType: 'connector', targetType: 'payroll', frequency: 'weekly', isEnabled: false, lastSyncAt: anchorPlusDays(-8), lastSyncStatus: 'failure', lastSyncRecordCount: 0, nextSyncAt: anchorPlusDays(-1), errorMessage: 'Connector disabled by admin' },
+      { orgId: org.id, connectorId: null, syncName: 'Org Chart Excel Import', sourceType: 'excel', targetType: 'employees', frequency: 'manual', isEnabled: false, lastSyncAt: anchorPlusDays(-30), lastSyncStatus: 'success', lastSyncRecordCount: 20, nextSyncAt: null },
+    ]);
+    console.log('  ✓ integrations-api: 7 connectors (4 healthy/1 degraded/1 error/1 unknown), 5 logs, 4 API keys, 4 webhooks, 4 OAuth apps, 4 data-sync configs');
 
     // ── Done ─────────────────────────────────────────────────────────────────
     console.log('\n✅ Seed complete!\n');

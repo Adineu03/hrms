@@ -193,21 +193,41 @@ export class TeamNotificationsService {
       .orderBy(desc(schema.notifications.createdAt));
 
     // Group by title + message to deduplicate (one notification per member)
-    const grouped = new Map<string, { title: string; message: string; type: string; createdAt: Date; recipientCount: number; readCount: number }>();
+    const grouped = new Map<
+      string,
+      {
+        id: string;
+        title: string;
+        message: string;
+        content: string;
+        priority: string;
+        type: string;
+        createdAt: Date;
+        recipientCount: number;
+        totalRecipients: number;
+        readCount: number;
+      }
+    >();
 
     for (const ann of announcements) {
       const key = `${ann.title}||${ann.sentAt?.toISOString() ?? ann.createdAt.toISOString()}`;
       const existing = grouped.get(key);
       if (existing) {
         existing.recipientCount += 1;
+        existing.totalRecipients += 1;
         if (ann.isRead) existing.readCount += 1;
       } else {
         grouped.set(key, {
+          // Use the first notification's id as a stable group identifier for the UI.
+          id: ann.id,
           title: ann.title,
           message: ann.message,
+          content: ann.message,
+          priority: ann.type,
           type: ann.type,
           createdAt: ann.createdAt,
           recipientCount: 1,
+          totalRecipients: 1,
           readCount: ann.isRead ? 1 : 0,
         });
       }
@@ -236,7 +256,7 @@ export class TeamNotificationsService {
       .where(and(
         eq(schema.notifications.orgId, orgId),
         eq(schema.notifications.isActive, true),
-        sql`${schema.notifications.userId} = ANY(${teamMemberIds})`,
+        inArray(schema.notifications.userId, teamMemberIds),
       ))
       .groupBy(schema.notifications.userId);
 

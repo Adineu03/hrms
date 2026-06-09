@@ -305,7 +305,7 @@ export default function GuidedTourBuilder() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {tour.steps.length} step{tour.steps.length !== 1 ? 's' : ''} · {tour.completionCount} completion{tour.completionCount !== 1 ? 's' : ''}
+                    {(tour.steps ?? []).length} step{(tour.steps ?? []).length !== 1 ? 's' : ''} · {tour.completionCount ?? 0} completion{(tour.completionCount ?? 0) !== 1 ? 's' : ''}
                   </p>
                 </div>
 
@@ -345,7 +345,7 @@ export default function GuidedTourBuilder() {
                   <div className="bg-gray-50 rounded-lg border border-gray-100 p-4">
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Tour Steps</p>
                     <div className="space-y-2">
-                      {tour.steps.map((step, idx) => (
+                      {(tour.steps ?? []).map((step, idx) => (
                         <div key={idx} className="flex items-start gap-3">
                           <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center mt-0.5">
                             {idx + 1}

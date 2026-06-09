@@ -15,7 +15,23 @@ export class OauthAppRegistryService {
       .where(and(eq(schema.oauthApps.orgId, orgId), eq(schema.oauthApps.isActive, true)))
       .orderBy(desc(schema.oauthApps.createdAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    const data = rows.map((r) => ({
+      id: r.id,
+      appName: r.appName ?? '',
+      clientId: r.clientId ?? '',
+      scopes: (r.scopes as string[] | null) ?? [],
+      authorizedUsers: Number(r.authorizedUserCount) || 0,
+      status: (r.status ?? 'active') as 'active' | 'revoked',
+      lastUsed: r.lastUsedAt ? this.fmtDate(r.lastUsedAt) : 'Never',
+      ownerEmail: r.ownerEmail ?? '',
+    }));
+
+    return { data, meta: { total: data.length } };
+  }
+
+  private fmtDate(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
   async createApp(

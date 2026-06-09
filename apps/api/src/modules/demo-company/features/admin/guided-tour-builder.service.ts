@@ -4,9 +4,31 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
 
+interface RawTourStep {
+  order?: number;
+  title?: string;
+  tooltipText?: string;
+  tooltip?: string;
+  targetSelector?: string;
+}
+
 @Injectable()
 export class GuidedTourBuilderService {
   constructor(@Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>) {}
+
+  private personaLabel(persona: string | null | undefined): string {
+    const p = (persona ?? 'all').toLowerCase();
+    return p.charAt(0).toUpperCase() + p.slice(1);
+  }
+
+  private mapSteps(steps: unknown): Array<{ title: string; tooltip: string; targetSelector: string }> {
+    if (!Array.isArray(steps)) return [];
+    return (steps as RawTourStep[]).map((s) => ({
+      title: s?.title ?? '',
+      tooltip: s?.tooltipText ?? s?.tooltip ?? '',
+      targetSelector: s?.targetSelector ?? '',
+    }));
+  }
 
   async getTours(orgId: string) {
     const rows = await this.db
@@ -14,7 +36,18 @@ export class GuidedTourBuilderService {
       .from(schema.demoTours)
       .where(and(eq(schema.demoTours.orgId, orgId), eq(schema.demoTours.isActive, true)))
       .orderBy(desc(schema.demoTours.updatedAt));
-    return { data: rows, meta: { total: rows.length } };
+
+    const data = rows.map((row) => ({
+      id: row.id,
+      name: row.tourName,
+      targetModule: row.targetModule,
+      assignedPersona: this.personaLabel(row.assignedPersona),
+      steps: this.mapSteps(row.steps),
+      published: row.isPublished,
+      completionCount: row.completionCount ?? 0,
+    }));
+
+    return { data, meta: { total: data.length } };
   }
 
   async createTour(

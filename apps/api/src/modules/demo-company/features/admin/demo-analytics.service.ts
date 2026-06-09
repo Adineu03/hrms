@@ -29,13 +29,18 @@ export class DemoAnalyticsService {
     const topModules = Object.entries(moduleVisitCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
-      .map(([moduleKey, visits]) => ({ moduleKey, visits }));
+      .map(([moduleKey, visits]) => ({ moduleKey, visits, name: moduleKey, views: visits }));
+
+    const avgSessionMinutes = Math.round(avgSession / 60);
 
     return {
       data: {
         totalDemosStarted: totalSessions,
+        // Field aliases consumed by the Analytics summary cards UI.
+        demosStartedThisMonth: totalSessions,
         avgSessionDurationSeconds: avgSession,
-        avgSessionDurationMinutes: Math.round(avgSession / 60),
+        avgSessionDurationMinutes: avgSessionMinutes,
+        avgSessionLengthMinutes: avgSessionMinutes,
         topModules,
         sessionsByPersona: {
           admin: sessions.filter((s) => s.persona === 'admin').length,

@@ -15,7 +15,35 @@ export class IntegrationMarketplaceService {
       .where(and(eq(schema.integrationConnectors.orgId, orgId), eq(schema.integrationConnectors.isActive, true)))
       .orderBy(desc(schema.integrationConnectors.createdAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    const data = rows.map((r) => ({
+      id: r.id,
+      name: r.connectorName ?? '',
+      category: this.displayCategory(r.category),
+      health: (r.healthStatus ?? 'unknown') as 'healthy' | 'degraded' | 'error' | 'unknown',
+      enabled: !!r.isEnabled,
+      description: r.description ?? '',
+      logoInitial: this.logoInitial(r.connectorName),
+    }));
+
+    return { data, meta: { total: data.length } };
+  }
+
+  private displayCategory(category: string | null): string {
+    const map: Record<string, string> = {
+      hrms: 'HRMS',
+      payroll: 'Payroll',
+      erp: 'ERP',
+      communication: 'Communication',
+      other: 'Other',
+    };
+    return map[(category ?? '').toLowerCase()] ?? (category ?? 'Other');
+  }
+
+  private logoInitial(name: string | null): string {
+    const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return '?';
+    if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
   }
 
   async createConnector(

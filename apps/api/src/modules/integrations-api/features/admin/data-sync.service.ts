@@ -15,7 +15,23 @@ export class DataSyncService {
       .where(and(eq(schema.dataSyncConfigs.orgId, orgId), eq(schema.dataSyncConfigs.isActive, true)))
       .orderBy(desc(schema.dataSyncConfigs.createdAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    const data = rows.map((r) => ({
+      id: r.id,
+      syncName: r.syncName ?? '',
+      source: r.sourceType ?? '',
+      target: r.targetType ?? '',
+      frequency: r.frequency ?? '',
+      status: (r.isEnabled ? 'enabled' : 'disabled') as 'enabled' | 'disabled',
+      lastSync: r.lastSyncAt ? this.fmtDateTime(r.lastSyncAt) : 'Never',
+      nextSync: r.nextSyncAt ? this.fmtDateTime(r.nextSyncAt) : 'N/A',
+    }));
+
+    return { data, meta: { total: data.length } };
+  }
+
+  private fmtDateTime(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
   async createSyncConfig(

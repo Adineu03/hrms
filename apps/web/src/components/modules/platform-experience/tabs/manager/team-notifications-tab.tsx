@@ -101,7 +101,7 @@ export default function TeamNotificationsTab() {
       setError('');
       await api.post('/platform-experience/manager/team-notifications/announcements', {
         title: formTitle.trim(),
-        content: formContent.trim(),
+        message: formContent.trim(),
         priority: formPriority,
       });
       setSuccess('Announcement created successfully.');

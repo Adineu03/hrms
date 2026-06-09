@@ -32,7 +32,32 @@ export class TeamIntegrationStatusService {
       )
       .orderBy(desc(schema.integrationConnectors.lastSyncAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    const data = rows.map((r) => ({
+      id: r.id,
+      connectorName: r.connectorName ?? '',
+      category: this.displayCategory(r.category),
+      health: (r.healthStatus ?? 'unknown') as 'healthy' | 'degraded' | 'error' | 'unknown',
+      lastSync: r.lastSyncAt ? this.fmtDateTime(r.lastSyncAt) : 'Never',
+      errorMessage: r.errorMessage ?? undefined,
+    }));
+
+    return { data, meta: { total: data.length } };
+  }
+
+  private displayCategory(category: string | null): string {
+    const map: Record<string, string> = {
+      hrms: 'HRMS',
+      payroll: 'Payroll',
+      erp: 'ERP',
+      communication: 'Communication',
+      other: 'Other',
+    };
+    return map[(category ?? '').toLowerCase()] ?? (category ?? 'Other');
+  }
+
+  private fmtDateTime(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
   async flagSyncError(orgId: string, id: string, message: string) {

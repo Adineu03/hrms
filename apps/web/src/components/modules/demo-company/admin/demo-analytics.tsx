@@ -126,8 +126,8 @@ export default function DemoAnalytics() {
                 </span>
               </div>
               <div className="space-y-1.5">
-                {summary.topModules.slice(0, 3).map((m, idx) => (
-                  <div key={m.name} className="flex items-center gap-2">
+                {(summary.topModules ?? []).slice(0, 3).map((m, idx) => (
+                  <div key={m.name ?? idx} className="flex items-center gap-2">
                     <span className="text-xs font-bold text-gray-400 w-4">#{idx + 1}</span>
                     <span className="text-sm text-[#2c2c2c] flex-1 truncate">{m.name}</span>
                     <span className="text-xs text-gray-400">{m.views}</span>

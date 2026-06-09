@@ -98,7 +98,7 @@ export default function ConnectedApps() {
                       Last accessed: {app.lastAccessed} &bull; Authorized: {app.authorizedAt}
                     </div>
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      {app.scopes.map((scope) => (
+                      {(app.scopes ?? []).map((scope) => (
                         <span
                           key={scope}
                           className={`text-xs px-2 py-0.5 rounded-full font-medium ${SCOPE_COLORS[scope] ?? 'bg-gray-100 text-gray-600'}`}

@@ -15,7 +15,24 @@ export class WebhookConfigurationService {
       .where(and(eq(schema.webhooks.orgId, orgId), eq(schema.webhooks.isActive, true)))
       .orderBy(desc(schema.webhooks.createdAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    const data = rows.map((r) => ({
+      id: r.id,
+      name: r.name ?? '',
+      eventType: r.eventType ?? '',
+      endpointUrl: r.endpointUrl ?? '',
+      format: ((r.payloadFormat ?? 'json').toLowerCase() === 'form' ? 'Form' : 'JSON') as 'JSON' | 'Form',
+      enabled: !!r.isEnabled,
+      successCount: Number(r.successCount) || 0,
+      failureCount: Number(r.failureCount) || 0,
+      lastDelivery: r.lastDeliveryAt ? this.fmtDateTime(r.lastDeliveryAt) : 'Never',
+    }));
+
+    return { data, meta: { total: data.length } };
+  }
+
+  private fmtDateTime(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
   async createWebhook(

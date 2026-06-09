@@ -41,7 +41,7 @@ export class QuickActionsService {
       .where(and(
         eq(schema.leaveRequests.orgId, orgId),
         eq(schema.leaveRequests.status, 'pending'),
-                sql`${schema.leaveRequests.employeeId} = ANY(${teamMemberIds})`,
+                inArray(schema.leaveRequests.employeeId, teamMemberIds),
       ));
 
     // Count pending overtime requests from team members
@@ -51,7 +51,7 @@ export class QuickActionsService {
       .where(and(
         eq(schema.overtimeRequests.orgId, orgId),
         eq(schema.overtimeRequests.status, 'pending'),
-                sql`${schema.overtimeRequests.employeeId} = ANY(${teamMemberIds})`,
+                inArray(schema.overtimeRequests.employeeId, teamMemberIds),
       ));
 
     // Count manager's own unread notifications
@@ -236,7 +236,7 @@ export class QuickActionsService {
       .where(and(
         eq(schema.leaveRequests.orgId, orgId),
         eq(schema.leaveRequests.status, 'pending'),
-                sql`${schema.leaveRequests.employeeId} = ANY(${teamMemberIds})`,
+                inArray(schema.leaveRequests.employeeId, teamMemberIds),
       ))
       .orderBy(desc(schema.leaveRequests.createdAt));
 
@@ -252,7 +252,7 @@ export class QuickActionsService {
       .where(and(
         eq(schema.overtimeRequests.orgId, orgId),
         eq(schema.overtimeRequests.status, 'pending'),
-                sql`${schema.overtimeRequests.employeeId} = ANY(${teamMemberIds})`,
+                inArray(schema.overtimeRequests.employeeId, teamMemberIds),
       ))
       .orderBy(desc(schema.overtimeRequests.createdAt));
 

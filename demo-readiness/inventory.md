@@ -12,10 +12,10 @@ _Last survey run: 2026-06-09 · 263 tab-views across 57 module×role views._
 ## Summary
 | | OK | EMPTY | ERROR | Total |
 |---|---|---|---|---|
-| admin | 100 | 6 | 0 | 106 |
-| manager | 71 | 4 | 1 | 76 |
-| employee | 79 | 2 | 0 | 81 |
-| **All** | **250** | **12** | **1** | **263** |
+| admin | 106 | 0 | 0 | 106 |
+| manager | 76 | 0 | 0 | 76 |
+| employee | 81 | 0 | 0 | 81 |
+| **All** | **263** | **0** | **0** | **263** |
 
 <details><summary>⚠️ Module×role views with no tab bar / special screen (1)</summary>
 
@@ -23,7 +23,7 @@ _Last survey run: 2026-06-09 · 263 tab-views across 57 module×role views._
 
 </details>
 
-## Triaged backlog — EMPTY / ERROR by sprint cluster (13 of 263)
+## Triaged backlog — EMPTY / ERROR by sprint cluster (0 of 263)
 
 ### Sprint 1 — cold-start-setup, core-hr, leave-management  · 0 to fix (🔴 0 / ⚠️ 0)
 _All green._
@@ -40,22 +40,8 @@ _All green._
 ### Sprint 5 — engagement-culture, compliance-audit, workforce-planning  · 0 to fix (🔴 0 / ⚠️ 0)
 _All green._
 
-### Sprint 6 — integrations-api, people-analytics, platform-experience, demo-company  · 13 to fix (🔴 1 / ⚠️ 12)
-| Module | Role | Tab | Status | Notes |
-|---|---|---|---|---|
-| integrations-api | manager | Integration Status | ⚠️ EMPTY | empty-text matched: "No integrations configured yet" |
-| people-analytics | admin | Custom Metrics & KPIs | ⚠️ EMPTY | empty-text matched: "No custom KPIs defined yet" |
-| people-analytics | admin | Report Builder | ⚠️ EMPTY | empty-text matched: "No reports yet" |
-| platform-experience | admin | Notification Management | ⚠️ EMPTY | empty-text matched: "No notification templates created yet" |
-| platform-experience | admin | Platform Customization | ⚠️ EMPTY | empty-text matched: "No dashboards created yet" |
-| platform-experience | manager | Team Notifications | ⚠️ EMPTY | empty-text matched: "No announcements sent yet" |
-| platform-experience | manager | Custom Dashboards | ⚠️ EMPTY | empty-text matched: "No custom dashboards created yet" |
-| platform-experience | manager | Quick Actions | 🔴 ERROR | api: 500 GET /api/v1/platform-experience/manager/quick-actions \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
-| platform-experience | employee | Notifications | ⚠️ EMPTY | empty-text matched: "No notifications found" |
-| platform-experience | employee | Search & Navigation | ⚠️ EMPTY | empty-text matched: "No bookmarks saved yet" |
-| demo-company | admin | Demo Org | ⚠️ EMPTY | empty-text matched: "No demo organizations yet" |
-| demo-company | admin | Tour Builder | ⚠️ EMPTY | empty-text matched: "No tours created yet" |
-| demo-company | manager | Demo Walkthrough | ⚠️ EMPTY | empty-text matched: "No walkthrough steps available" |
+### Sprint 6 — integrations-api, people-analytics, platform-experience, demo-company  · 0 to fix (🔴 0 / ⚠️ 0)
+_All green._
 
 ## Detail (all 263 tab-views)
 
@@ -290,37 +276,37 @@ _All green._
 | integrations-api | admin | OAuth Apps | OK | — | [png](../apps/web/e2e/screenshots/admin/integrations-api/3-OAuth_Apps.png) |
 | integrations-api | admin | Data Sync | OK | — | [png](../apps/web/e2e/screenshots/admin/integrations-api/4-Data_Sync.png) |
 | integrations-api | admin | API Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/integrations-api/5-API_Analytics.png) |
-| integrations-api | manager | Integration Status | ⚠️ EMPTY | empty-text matched: "No integrations configured yet" | [png](../apps/web/e2e/screenshots/manager/integrations-api/0-Integration_Status.png) |
+| integrations-api | manager | Integration Status | OK | — | [png](../apps/web/e2e/screenshots/manager/integrations-api/0-Integration_Status.png) |
 | integrations-api | manager | Team Data Export | OK | — | [png](../apps/web/e2e/screenshots/manager/integrations-api/1-Team_Data_Export.png) |
 | integrations-api | employee | Connected Apps | OK | — | [png](../apps/web/e2e/screenshots/employee/integrations-api/0-Connected_Apps.png) |
 | integrations-api | employee | My Data Export | OK | — | [png](../apps/web/e2e/screenshots/employee/integrations-api/1-My_Data_Export.png) |
 | people-analytics | admin | HR Dashboards | OK | — | [png](../apps/web/e2e/screenshots/admin/people-analytics/0-HR_Dashboards.png) |
 | people-analytics | admin | Workforce Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/people-analytics/1-Workforce_Analytics.png) |
 | people-analytics | admin | Compliance Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/people-analytics/2-Compliance_Analytics.png) |
-| people-analytics | admin | Custom Metrics & KPIs | ⚠️ EMPTY | empty-text matched: "No custom KPIs defined yet" | [png](../apps/web/e2e/screenshots/admin/people-analytics/3-Custom_Metrics__KPIs.png) |
-| people-analytics | admin | Report Builder | ⚠️ EMPTY | empty-text matched: "No reports yet" | [png](../apps/web/e2e/screenshots/admin/people-analytics/4-Report_Builder.png) |
+| people-analytics | admin | Custom Metrics & KPIs | OK | — | [png](../apps/web/e2e/screenshots/admin/people-analytics/3-Custom_Metrics__KPIs.png) |
+| people-analytics | admin | Report Builder | OK | — | [png](../apps/web/e2e/screenshots/admin/people-analytics/4-Report_Builder.png) |
 | people-analytics | manager | Team Analytics | OK | — | [png](../apps/web/e2e/screenshots/manager/people-analytics/0-Team_Analytics.png) |
 | people-analytics | manager | Performance Insights | OK | — | [png](../apps/web/e2e/screenshots/manager/people-analytics/1-Performance_Insights.png) |
 | people-analytics | manager | Leave & Attendance Trends | OK | — | [png](../apps/web/e2e/screenshots/manager/people-analytics/2-Leave__Attendance_Trends.png) |
 | people-analytics | employee | My Analytics | OK | — | [png](../apps/web/e2e/screenshots/employee/people-analytics/0-My_Analytics.png) |
 | people-analytics | employee | Peer Benchmarks | OK | — | [png](../apps/web/e2e/screenshots/employee/people-analytics/1-Peer_Benchmarks.png) |
-| platform-experience | admin | Notification Management | ⚠️ EMPTY | empty-text matched: "No notification templates created yet" | [png](../apps/web/e2e/screenshots/admin/platform-experience/0-Notification_Management.png) |
-| platform-experience | admin | Platform Customization | ⚠️ EMPTY | empty-text matched: "No dashboards created yet" | [png](../apps/web/e2e/screenshots/admin/platform-experience/1-Platform_Customization.png) |
+| platform-experience | admin | Notification Management | OK | — | [png](../apps/web/e2e/screenshots/admin/platform-experience/0-Notification_Management.png) |
+| platform-experience | admin | Platform Customization | OK | — | [png](../apps/web/e2e/screenshots/admin/platform-experience/1-Platform_Customization.png) |
 | platform-experience | admin | Search & Navigation | OK | — | [png](../apps/web/e2e/screenshots/admin/platform-experience/2-Search__Navigation.png) |
 | platform-experience | admin | System Administration | OK | — | [png](../apps/web/e2e/screenshots/admin/platform-experience/3-System_Administration.png) |
-| platform-experience | manager | Team Notifications | ⚠️ EMPTY | empty-text matched: "No announcements sent yet" | [png](../apps/web/e2e/screenshots/manager/platform-experience/0-Team_Notifications.png) |
-| platform-experience | manager | Custom Dashboards | ⚠️ EMPTY | empty-text matched: "No custom dashboards created yet" | [png](../apps/web/e2e/screenshots/manager/platform-experience/1-Custom_Dashboards.png) |
-| platform-experience | manager | Quick Actions | 🔴 ERROR | api: 500 GET /api/v1/platform-experience/manager/quick-actions \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals \| 500 GET /api/v1/platform-experience/manager/quick-actions/pending-approvals; console: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | [png](../apps/web/e2e/screenshots/manager/platform-experience/2-Quick_Actions.png) |
-| platform-experience | employee | Notifications | ⚠️ EMPTY | empty-text matched: "No notifications found" | [png](../apps/web/e2e/screenshots/employee/platform-experience/0-Notifications.png) |
+| platform-experience | manager | Team Notifications | OK | — | [png](../apps/web/e2e/screenshots/manager/platform-experience/0-Team_Notifications.png) |
+| platform-experience | manager | Custom Dashboards | OK | — | [png](../apps/web/e2e/screenshots/manager/platform-experience/1-Custom_Dashboards.png) |
+| platform-experience | manager | Quick Actions | OK | — | [png](../apps/web/e2e/screenshots/manager/platform-experience/2-Quick_Actions.png) |
+| platform-experience | employee | Notifications | OK | — | [png](../apps/web/e2e/screenshots/employee/platform-experience/0-Notifications.png) |
 | platform-experience | employee | Self-Service | OK | — | [png](../apps/web/e2e/screenshots/employee/platform-experience/1-Self-Service.png) |
-| platform-experience | employee | Search & Navigation | ⚠️ EMPTY | empty-text matched: "No bookmarks saved yet" | [png](../apps/web/e2e/screenshots/employee/platform-experience/2-Search__Navigation.png) |
+| platform-experience | employee | Search & Navigation | OK | — | [png](../apps/web/e2e/screenshots/employee/platform-experience/2-Search__Navigation.png) |
 | platform-experience | employee | Preferences | OK | — | [png](../apps/web/e2e/screenshots/employee/platform-experience/3-Preferences.png) |
-| demo-company | admin | Demo Org | ⚠️ EMPTY | empty-text matched: "No demo organizations yet" | [png](../apps/web/e2e/screenshots/admin/demo-company/0-Demo_Org.png) |
+| demo-company | admin | Demo Org | OK | — | [png](../apps/web/e2e/screenshots/admin/demo-company/0-Demo_Org.png) |
 | demo-company | admin | Seed Data | OK | — | [png](../apps/web/e2e/screenshots/admin/demo-company/1-Seed_Data.png) |
 | demo-company | admin | Personas | OK | — | [png](../apps/web/e2e/screenshots/admin/demo-company/2-Personas.png) |
-| demo-company | admin | Tour Builder | ⚠️ EMPTY | empty-text matched: "No tours created yet" | [png](../apps/web/e2e/screenshots/admin/demo-company/3-Tour_Builder.png) |
+| demo-company | admin | Tour Builder | OK | — | [png](../apps/web/e2e/screenshots/admin/demo-company/3-Tour_Builder.png) |
 | demo-company | admin | Analytics | OK | — | [png](../apps/web/e2e/screenshots/admin/demo-company/4-Analytics.png) |
-| demo-company | manager | Demo Walkthrough | ⚠️ EMPTY | empty-text matched: "No walkthrough steps available" | [png](../apps/web/e2e/screenshots/manager/demo-company/0-Demo_Walkthrough.png) |
+| demo-company | manager | Demo Walkthrough | OK | — | [png](../apps/web/e2e/screenshots/manager/demo-company/0-Demo_Walkthrough.png) |
 | demo-company | manager | Sample Reports | OK | — | [png](../apps/web/e2e/screenshots/manager/demo-company/1-Sample_Reports.png) |
 | demo-company | employee | Onboarding Tour | OK | — | [png](../apps/web/e2e/screenshots/employee/demo-company/0-Onboarding_Tour.png) |
 | demo-company | employee | Feature Highlights | OK | — | [png](../apps/web/e2e/screenshots/employee/demo-company/1-Feature_Highlights.png) |

@@ -27,10 +27,12 @@ const INDUSTRY_TEMPLATES = [
 
 const EMPLOYEE_COUNTS = [10, 25, 50];
 
-const STATUS_BADGE: Record<DemoOrg['status'], string> = {
+const STATUS_BADGE: Record<string, string> = {
   active: 'bg-green-100 text-green-700',
   seeding: 'bg-yellow-100 text-yellow-700',
+  resetting: 'bg-yellow-100 text-yellow-700',
   error: 'bg-red-100 text-red-700',
+  deleted: 'bg-gray-100 text-gray-600',
 };
 
 export default function DemoOrgManagement() {
@@ -255,8 +257,8 @@ export default function DemoOrgManagement() {
                   </td>
                   <td className="px-5 py-4 text-gray-600">{org.employeeCount}</td>
                   <td className="px-5 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[org.status]}`}>
-                      {org.status.charAt(0).toUpperCase() + org.status.slice(1)}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[org.status] ?? STATUS_BADGE.active}`}>
+                      {((org.status ?? '').charAt(0).toUpperCase() + (org.status ?? '').slice(1)) || 'Active'}
                     </span>
                   </td>
                   <td className="px-5 py-4 text-gray-500 text-xs">{formatDate(org.lastResetAt)}</td>

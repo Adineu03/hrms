@@ -242,7 +242,7 @@ export default function ApiKeyManagement() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {key.scopes.map((s) => (
+                      {(key.scopes ?? []).map((s) => (
                         <span key={s} className="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full">
                           {s}
                         </span>

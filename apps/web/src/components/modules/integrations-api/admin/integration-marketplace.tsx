@@ -71,7 +71,7 @@ export default function IntegrationMarketplace() {
   };
 
   const filtered = connectors.filter((c) => {
-    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = (c.name ?? '').toLowerCase().includes(search.toLowerCase());
     const matchesCategory = category === 'All' || c.category === category;
     return matchesSearch && matchesCategory;
   });

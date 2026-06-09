@@ -27,9 +27,8 @@ interface Dashboard {
 
 interface Widget {
   id: string;
-  name: string;
-  type: string;
-  position: number;
+  title: string;
+  widgetType: string;
 }
 
 export default function PlatformCustomizationTab() {
@@ -276,15 +275,14 @@ export default function PlatformCustomizationTab() {
               {widgets.map((w) => (
                 <div key={w.id} className="bg-background rounded-xl border border-border p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="text-sm font-medium text-text">{w.name}</h4>
+                    <h4 className="text-sm font-medium text-text">{w.title}</h4>
                     <button onClick={() => handleDeleteWidget(w.id)} className="p-1 text-text-muted hover:text-red-600 transition-colors" title="Remove">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 capitalize">
-                    {w.type?.replace('_', ' ') || '—'}
+                    {(w.widgetType ?? '').replace('_', ' ') || '—'}
                   </span>
-                  <p className="text-xs text-text-muted mt-2">Position: {w.position || 0}</p>
                 </div>
               ))}
             </div>

@@ -42,7 +42,23 @@ export class ApiKeyManagementService {
       .where(and(eq(schema.apiKeys.orgId, orgId), eq(schema.apiKeys.isActive, true)))
       .orderBy(desc(schema.apiKeys.createdAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    const data = rows.map((r) => ({
+      id: r.id,
+      name: r.name ?? '',
+      keyPrefix: r.keyPrefix ?? '',
+      scopes: (r.scopes as string[] | null) ?? [],
+      rateLimit: Number(r.rateLimitPerMin) || 0,
+      lastUsed: r.lastUsedAt ? this.fmtDate(r.lastUsedAt) : 'Never',
+      expires: r.expiresAt ? this.fmtDate(r.expiresAt) : 'Never',
+      status: (r.status ?? 'active') as 'active' | 'revoked',
+    }));
+
+    return { data, meta: { total: data.length } };
+  }
+
+  private fmtDate(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
   async createApiKey(

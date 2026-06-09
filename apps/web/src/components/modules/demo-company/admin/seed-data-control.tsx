@@ -60,10 +60,11 @@ export default function SeedDataControl() {
         if (Array.isArray(raw)) {
           setStatuses(raw);
         } else if (raw?.seededModules) {
+          const seeded = Array.isArray(raw.seededModules) ? (raw.seededModules as string[]) : [];
           setStatuses(
             MODULES.map((m) => ({
               module: m.id,
-              status: (raw.seededModules as string[]).includes(m.id) ? 'done' as const : 'idle' as const,
+              status: seeded.includes(m.id) ? 'done' as const : 'idle' as const,
               lastRunAt: raw.lastRunAt || null,
             }))
           );
@@ -79,7 +80,25 @@ export default function SeedDataControl() {
     api.get('/demo-company/admin/seed-data-control/log')
       .then((r) => {
         const raw = r.data.data ?? r.data;
-        setLogs(Array.isArray(raw) ? raw : raw?.logs ?? []);
+        const rawLogs: any[] = Array.isArray(raw) ? raw : raw?.logs ?? [];
+        // Normalize backend log rows (one per seeded module) into the SeedLog shape.
+        const normalized: SeedLog[] = rawLogs.map((l, idx) => ({
+          id: String(l?.id ?? idx),
+          runAt: l?.runAt ?? l?.seededAt ?? '',
+          modules: Array.isArray(l?.modules)
+            ? l.modules
+            : l?.moduleKey
+              ? [String(l.moduleKey)]
+              : [],
+          dateRange: Number(l?.dateRange) || 0,
+          status: l?.status === 'running' || l?.status === 'failed' ? l.status : 'done',
+          message:
+            l?.message ??
+            (l?.moduleKey
+              ? `Seeded ${l.moduleKey}${l?.sandboxName ? ` in ${l.sandboxName}` : ''}`
+              : 'Seed job recorded'),
+        }));
+        setLogs(normalized);
       })
       .catch(() => {})
       .finally(() => setLogsLoading(false));
@@ -272,7 +291,8 @@ export default function SeedDataControl() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <p className="text-sm font-medium text-[#2c2c2c]">
-                        {log.modules.join(', ')} — {log.dateRange} days
+                        {(log.modules ?? []).join(', ') || 'Seed job'}
+                        {log.dateRange > 0 ? ` — ${log.dateRange} days` : ''}
                       </p>
                       <span className="text-xs text-gray-400">{formatDate(log.runAt)}</span>
                     </div>
