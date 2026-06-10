@@ -15,8 +15,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const port = config.get('API_PORT', 3001);
-  await app.listen(port);
-  console.log(`HRMS API running on http://localhost:${port}`);
+  // Railway (and most PaaS) inject PORT; fall back to API_PORT for local dev.
+  const port = config.get('PORT') || config.get('API_PORT', 3001);
+  await app.listen(port, '0.0.0.0');
+  console.log(`HRMS API running on port ${port}`);
 }
 bootstrap();
