@@ -21,6 +21,13 @@ export class LeaveReportsController {
     return orgId;
   }
 
+  @Get('ai-insight')
+  @Roles('super_admin', 'admin')
+  async getAiInsight() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.leaveReportsService.getAiInsight(orgId);
+  }
+
   @Get('departments')
   @Roles('super_admin', 'admin')
   async getDepartments() {

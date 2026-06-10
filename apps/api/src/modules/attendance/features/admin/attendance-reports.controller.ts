@@ -40,6 +40,13 @@ export class AttendanceReportsController {
     });
   }
 
+  @Get('ai-insight')
+  @Roles('super_admin', 'admin')
+  async getAiInsight() {
+    const orgId = this.getOrgIdOrThrow();
+    return this.attendanceReportsService.getAiInsight(orgId);
+  }
+
   @Get('departments')
   @Roles('super_admin', 'admin')
   async getDepartmentOptions() {

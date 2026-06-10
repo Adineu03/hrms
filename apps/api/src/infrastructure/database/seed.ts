@@ -16,7 +16,7 @@ dotenv.config(); // fallback to CWD/.env
 
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { faker } from '@faker-js/faker';
 
@@ -43,6 +43,7 @@ import {
   reimbursementClaims,
   policyViolations,
   auditEvidence,
+  timerSessions,
   onboardingWorkflows,
   onboardingWorkflowTasks,
   offboardingWorkflows,
@@ -2346,9 +2347,9 @@ async function seed(): Promise<void> {
 
     // (b) Saved reports — sourceModules & selectedFields are NOT-NULL jsonb; createdBy NOT-NULL uuid
     await db.insert(analyticsReports).values([
-      { orgId: org.id, name: 'Monthly Headcount Report', description: 'Headcount trend by department, refreshed monthly.', reportType: 'line', sourceModules: ['core-hr', 'workforce-planning'], selectedFields: { 'core-hr': ['department', 'headcount'] }, filters: { dateRange: 'last_12_months' }, schedule: { frequency: 'monthly', deliveryEmail: 'hr@acme.com', format: 'pdf' }, isShared: true, createdBy: adminUser.id },
+      { orgId: org.id, name: 'Monthly Headcount Report', description: 'Headcount trend by department, refreshed monthly.', reportType: 'line', sourceModules: ['core-hr', 'workforce-planning'], selectedFields: { 'core-hr': ['department', 'headcount'] }, filters: { dateRange: 'last_12_months', sample: true }, schedule: { frequency: 'monthly', deliveryEmail: 'hr@acme.com', format: 'pdf' }, isShared: true, createdBy: adminUser.id },
       { orgId: org.id, name: 'Attrition by Department', description: 'Voluntary vs involuntary attrition split per department.', reportType: 'bar', sourceModules: ['core-hr', 'offboarding-offboarding'], selectedFields: { 'core-hr': ['department', 'exit_type'] }, filters: { dateRange: 'ytd' }, schedule: null, isShared: true, createdBy: adminUser.id },
-      { orgId: org.id, name: 'Leave Utilization Summary', description: 'Leave days taken by type across the org.', reportType: 'pie', sourceModules: ['leave-management'], selectedFields: { 'leave-management': ['leave_type', 'days'] }, filters: null, schedule: { frequency: 'weekly', deliveryEmail: 'hr@acme.com', format: 'csv' }, isShared: false, createdBy: adminUser.id },
+      { orgId: org.id, name: 'Leave Utilization Summary', description: 'Leave days taken by type across the org.', reportType: 'pie', sourceModules: ['leave-management'], selectedFields: { 'leave-management': ['leave_type', 'days'] }, filters: { sample: true }, schedule: { frequency: 'weekly', deliveryEmail: 'hr@acme.com', format: 'csv' }, isShared: false, createdBy: adminUser.id },
       { orgId: org.id, name: 'Attendance vs Org Average', description: 'Team attendance rate benchmarked against org average.', reportType: 'table', sourceModules: ['attendance'], selectedFields: { attendance: ['employee', 'attendance_rate'] }, filters: { department: 'all' }, schedule: null, isShared: false, createdBy: adminUser.id },
     ]);
 
@@ -3462,6 +3463,60 @@ async function seed(): Promise<void> {
       })),
     );
     console.log('  ✓ emp01 expense history: +3 (approved/reimbursed/rejected)');
+
+    // ── #54: completed timer sessions for emp01 (NEVER seed a running/paused
+    //    timer — history + the Convert action are the demo story). Weekday
+    //    offsets: anchor is a Tuesday → -1 Mon, -4 Fri, -5 Thu. ──────────────
+    const [emp01LatestEntry] = await db
+      .select({ id: timesheetEntries.id })
+      .from(timesheetEntries)
+      .where(and(eq(timesheetEntries.orgId, org.id), eq(timesheetEntries.employeeId, empUsers[0].id)))
+      .orderBy(desc(timesheetEntries.date))
+      .limit(1);
+
+    await db.insert(timerSessions).values([
+      {
+        orgId: org.id, employeeId: empUsers[0].id,
+        projectId: projectRows[0].id, taskCategoryId: taskCategoryRows[0].id,
+        description: 'Billing API v2 — pagination + rate-limit handling',
+        startTime: atTime(-1, 9, 15), endTime: atTime(-1, 11, 45),
+        totalPausedSeconds: '0', isRunning: false, isPaused: false,
+        isBillable: true, linkedEntryId: emp01LatestEntry?.id ?? null, metadata: {},
+      },
+      {
+        orgId: org.id, employeeId: empUsers[0].id,
+        projectId: projectRows[0].id, taskCategoryId: taskCategoryRows[2].id,
+        description: 'PR reviews for the search-migration branch',
+        startTime: atTime(-1, 13, 0), endTime: atTime(-1, 14, 30),
+        totalPausedSeconds: '0', isRunning: false, isPaused: false,
+        isBillable: false, metadata: {},
+      },
+      {
+        orgId: org.id, employeeId: empUsers[0].id,
+        projectId: projectRows[1].id, taskCategoryId: taskCategoryRows[0].id,
+        description: 'Webhook retry queue — implementation',
+        startTime: atTime(-4, 9, 30), endTime: atTime(-4, 12, 0),
+        totalPausedSeconds: '600', isRunning: false, isPaused: false,
+        isBillable: true, metadata: {},
+      },
+      {
+        orgId: org.id, employeeId: empUsers[0].id,
+        projectId: projectRows[1].id, taskCategoryId: taskCategoryRows[4].id,
+        description: 'Runbook + API docs for the webhook service',
+        startTime: atTime(-4, 14, 15), endTime: atTime(-4, 16, 0),
+        totalPausedSeconds: '0', isRunning: false, isPaused: false,
+        isBillable: false, metadata: {},
+      },
+      {
+        orgId: org.id, employeeId: empUsers[0].id,
+        projectId: projectRows[0].id, taskCategoryId: taskCategoryRows[3].id,
+        description: 'Regression pass on the payments sandbox',
+        startTime: atTime(-5, 10, 0), endTime: atTime(-5, 11, 10),
+        totalPausedSeconds: '300', isRunning: false, isPaused: false,
+        isBillable: true, metadata: {},
+      },
+    ]);
+    console.log('  ✓ Timer sessions (emp01): 5 completed, 1 converted');
 
     // ── Done ─────────────────────────────────────────────────────────────────
     console.log('\n✅ Seed complete!\n');

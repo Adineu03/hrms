@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Plus, Trash2, FileBarChart, Calendar } from 'lucide-react';
+import { Plus, Trash2, FileBarChart, Calendar, Info } from 'lucide-react';
 import type { AnalyticsReportData } from '@hrms/shared';
 
 const CHART_TYPES = ['table', 'bar', 'line', 'pie'];
@@ -53,6 +53,18 @@ export default function ReportBuilder() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-start gap-3 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+        <span className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-50 mt-0.5">
+          <Info className="h-3.5 w-3.5 text-indigo-600" />
+        </span>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          Compose reusable HR reports by combining data from one or more modules and picking a chart type.
+          Reports marked <span className="font-medium text-gray-700">Shared</span> appear for managers in their analytics view;
+          scheduled reports are delivered automatically by email as CSV or PDF. The reports tagged{' '}
+          <span className="font-medium text-gray-700">Sample</span> below are pre-built examples — use them as starting points.
+        </p>
+      </div>
+
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-[#2c2c2c]">Report Library</h3>
         <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
@@ -102,8 +114,14 @@ export default function ReportBuilder() {
                 <FileBarChart className="h-4 w-4 text-indigo-400" />
                 <div className="font-semibold text-[#2c2c2c] text-sm">{r.name}</div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
+              {r.description && (
+                <p className="text-xs text-gray-500 leading-snug mb-2 line-clamp-2">{r.description}</p>
+              )}
+              <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
                 <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded">{r.reportType}</span>
+                {(r.filters as Record<string, unknown> | null)?.sample === true && (
+                  <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded">Sample</span>
+                )}
                 {r.isShared && <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded">Shared</span>}
                 {r.schedule && <Calendar className="h-3 w-3" />}
               </div>

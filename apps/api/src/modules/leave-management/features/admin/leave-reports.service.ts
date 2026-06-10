@@ -1,17 +1,63 @@
 import {
   Inject,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { eq, and, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { AiCoreService } from '../../../../shared/ai/ai-core.service';
+
+// One short insight per org, cached so the demo (and the survey crawler) never
+// waits on repeat OpenAI calls.
+const AI_INSIGHT_TTL_MS = 30 * 60 * 1000;
+const aiInsightCache = new Map<string, { text: string; at: number }>();
 
 @Injectable()
 export class LeaveReportsService {
+  private readonly logger = new Logger(LeaveReportsService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly ai: AiCoreService,
   ) {}
+
+  /**
+   * One-line AI insight for the Reports & Analytics tab. FAIL-SOFT by contract:
+   * always HTTP 200 with { insight: string | null } — never an error response.
+   */
+  async getAiInsight(orgId: string) {
+    try {
+      const cached = aiInsightCache.get(orgId);
+      if (cached && Date.now() - cached.at < AI_INSIGHT_TTL_MS) {
+        return { data: { insight: cached.text } };
+      }
+      if (!this.ai.isReady()) return { data: { insight: null } };
+
+      const [utilization, pending] = await Promise.all([
+        this.getUtilization(orgId, {}),
+        this.getPendingApproval(orgId, {}),
+      ]);
+
+      const aggregates = { utilization, pendingApprovals: pending };
+
+      const text = await this.ai.generateText({
+        name: 'leave-reports-insight',
+        instructions:
+          'You are an HR analytics assistant. In ONE sentence (max 30 words), state the single most notable, actionable insight from these leave-management aggregates. Plain text, no preamble, no markdown.',
+        text: JSON.stringify(aggregates).slice(0, 4000),
+      });
+
+      const insight = (text || '').trim();
+      if (!insight) return { data: { insight: null } };
+      aiInsightCache.set(orgId, { text: insight, at: Date.now() });
+      return { data: { insight } };
+    } catch (err) {
+      this.logger.debug(`AI insight unavailable: ${String(err)}`);
+      return { data: { insight: null } };
+    }
+  }
 
   async getDepartments(orgId: string) {
     const rows = await this.db

@@ -553,6 +553,11 @@ export class TimerService {
       projectCode: row.projectCode,
       projectColor: row.projectColor,
       categoryName: row.categoryName,
+      // Aliases the Timer tab's history table renders
+      taskCategory: row.categoryName,
+      duration: base.activeSeconds,
+      billable: base.isBillable,
+      converted: !!row.timer.linkedEntryId,
     };
   }
 }

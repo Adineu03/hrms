@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { AiInsightBanner } from '@/components/ui/ai-insight-banner';
 import {
   Loader2,
   AlertCircle,
@@ -187,6 +188,8 @@ export default function LeaveReportsTab() {
           {error}
         </div>
       )}
+
+      <AiInsightBanner endpoint="/leave-management/admin/reports/ai-insight" />
 
       {/* Report Type Selector */}
       <div className="bg-card border border-border rounded-lg p-4 space-y-4">

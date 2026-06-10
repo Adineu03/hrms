@@ -1,17 +1,77 @@
 import {
   Inject,
   Injectable,
+  Logger,
 } from '@nestjs/common';
-import { eq, and, sql, count } from 'drizzle-orm';
+import { eq, and, sql, count, max } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { AiCoreService } from '../../../../shared/ai/ai-core.service';
+
+// One short insight per org, cached so the demo (and the survey crawler) never
+// waits on repeat OpenAI calls. TTL keeps it fresh enough for a live walk.
+const AI_INSIGHT_TTL_MS = 30 * 60 * 1000;
+const aiInsightCache = new Map<string, { text: string; at: number }>();
 
 @Injectable()
 export class AttendanceReportsService {
+  private readonly logger = new Logger(AttendanceReportsService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly ai: AiCoreService,
   ) {}
+
+  /**
+   * One-line AI insight for the Reports & Analytics tab. FAIL-SOFT by contract:
+   * always HTTP 200 with { insight: string | null } — a missing API key, an
+   * OpenAI error, or empty data must never surface an error to the tab.
+   */
+  async getAiInsight(orgId: string) {
+    try {
+      const cached = aiInsightCache.get(orgId);
+      if (cached && Date.now() - cached.at < AI_INSIGHT_TTL_MS) {
+        return { data: { insight: cached.text } };
+      }
+      if (!this.ai.isReady()) return { data: { insight: null } };
+
+      const [latest] = await this.db
+        .select({ d: max(schema.attendanceRecords.date) })
+        .from(schema.attendanceRecords)
+        .where(eq(schema.attendanceRecords.orgId, orgId));
+      if (!latest?.d) return { data: { insight: null } };
+
+      const windowStart = new Date(latest.d + 'T00:00:00Z');
+      windowStart.setUTCDate(windowStart.getUTCDate() - 30);
+      const summary = await this.getDailySummary(orgId, { date: latest.d });
+      const lateComers = await this.getLateComers(orgId, {
+        startDate: windowStart.toISOString().slice(0, 10),
+        endDate: latest.d,
+      });
+
+      const aggregates = {
+        asOfDate: latest.d,
+        latestDay: summary,
+        lateComersLast30Days: (lateComers?.data ?? []).slice(0, 5),
+      };
+
+      const text = await this.ai.generateText({
+        name: 'attendance-reports-insight',
+        instructions:
+          'You are an HR analytics assistant. In ONE sentence (max 30 words), state the single most notable, actionable insight from these attendance aggregates. Plain text, no preamble, no markdown.',
+        text: JSON.stringify(aggregates).slice(0, 4000),
+      });
+
+      const insight = (text || '').trim();
+      if (!insight) return { data: { insight: null } };
+      aiInsightCache.set(orgId, { text: insight, at: Date.now() });
+      return { data: { insight } };
+    } catch (err) {
+      this.logger.debug(`AI insight unavailable: ${String(err)}`);
+      return { data: { insight: null } };
+    }
+  }
 
   async getDailySummary(
     orgId: string,
