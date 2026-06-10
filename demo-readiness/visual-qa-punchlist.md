@@ -6,6 +6,8 @@
 
 > **Fix Sprint 2 status (2026-06-10):** **#67 done** — three role-tiered dashboards (admin org-wide / manager direct-reports / employee personal) on the Hybrid A+B design: KPI cards with deltas + sparklines + count-up, recharts trend/donut/bar panels, actionable row-3 widgets (manager approvals queue with inline Review deep-links), skeletons on load, matte-token palette. Backend: role-aware `GET /api/v1/dashboard/overview` computed deterministically from the locked seed (no seed changes). Screenshot script: `apps/web/e2e/dashboard-shots.mjs`.
 
+> **Fix Sprint 3 status (2026-06-10):** live-verification found **already cleared by Sprints 1–2:** #15, #23, #27, #44 (org chart works via hierarchy), #46, #47. **Fixed this sprint:** crashes/bugs — #1 (edit panel + PATCH wired), #7 (all 5 report types compute real aggregates), #8 (correlation join fan-out + camelCase), #45 (payslip history + tax summary, no more "coming soon"), #51 (insights compute from seeded history), #55 (3 internal postings), #59 (self-review filter), #42 (download returns real CSV; PDF button removed); seed gaps — #6, #9, #10 (all 4 tabs), #11–#14, #17, #24, #26, #28, #33, #35, #37, #39+#40 (NEW `policy_violations` + `audit_evidence` tables), #48–#50, #52, #53, #56–#58, #60, #64, #65 (emp01 given approved/reimbursed/rejected expense history — service was correct, data was thin). **Cleared by role-scoping (Sprint 1):** #36, #61, #62, #63. **Left for Sprint 4 cut/by-design:** #3, #5 (AI-in-reports), #18 (report-builder UX), #54 (timer live-use).
+
 Status legend — **Type:** Blank · Unrealistic · Layout · WrongNumber · BrokenAction · Copy
 **Severity:** 🔴 High (demo-blocker) · 🟠 Med · 🟡 Low
 

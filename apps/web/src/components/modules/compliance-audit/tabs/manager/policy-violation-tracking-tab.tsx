@@ -23,6 +23,17 @@ interface ViolationHistory {
   violations: PolicyViolation[];
 }
 
+interface TeamMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface PolicyOption {
+  id: string;
+  title: string;
+}
+
 const severityColors: Record<string, string> = {
   minor: 'bg-yellow-100 text-yellow-700',
   major: 'bg-orange-100 text-orange-700',
@@ -30,6 +41,10 @@ const severityColors: Record<string, string> = {
 };
 
 const disciplinaryStatusColors: Record<string, string> = {
+  open: 'bg-yellow-100 text-yellow-700',
+  under_review: 'bg-orange-100 text-orange-700',
+  action_taken: 'bg-blue-100 text-blue-700',
+  closed: 'bg-green-100 text-green-700',
   pending: 'bg-yellow-100 text-yellow-700',
   warning_issued: 'bg-orange-100 text-orange-700',
   suspended: 'bg-red-100 text-red-700',
@@ -40,6 +55,8 @@ const disciplinaryStatusColors: Record<string, string> = {
 
 export default function PolicyViolationTrackingTab() {
   const [violations, setViolations] = useState<PolicyViolation[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [policies, setPolicies] = useState<PolicyOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -60,6 +77,7 @@ export default function PolicyViolationTrackingTab() {
 
   useEffect(() => {
     fetchViolations();
+    fetchReferenceData();
   }, []);
 
   const fetchViolations = async () => {
@@ -73,6 +91,17 @@ export default function PolicyViolationTrackingTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchReferenceData = async () => {
+    const [teamRes, policyRes] = await Promise.all([
+      api.get('/core-hr/manager/team').catch(() => ({ data: [] })),
+      api.get('/compliance-audit/employee/policy-acknowledgment').catch(() => ({ data: [] })),
+    ]);
+    const teamRaw = teamRes.data?.data || teamRes.data;
+    setTeamMembers(Array.isArray(teamRaw) ? teamRaw : []);
+    const policyRaw = policyRes.data?.data || policyRes.data;
+    setPolicies(Array.isArray(policyRaw) ? policyRaw : []);
   };
 
   const handleCreate = async () => {
@@ -158,24 +187,30 @@ export default function PolicyViolationTrackingTab() {
             <h3 className="text-sm font-semibold text-[#2c2c2c] mb-3">Record New Violation</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Employee ID *</label>
-                <input
-                  type="text"
+                <label className="block text-xs font-medium text-gray-600 mb-1">Employee *</label>
+                <select
                   value={form.employeeId}
                   onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Employee ID"
-                />
+                >
+                  <option value="">Select team member</option>
+                  {teamMembers.map((m) => (
+                    <option key={m.id} value={m.id}>{`${m.firstName} ${m.lastName}`.trim()}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Policy ID</label>
-                <input
-                  type="text"
+                <label className="block text-xs font-medium text-gray-600 mb-1">Related Policy</label>
+                <select
                   value={form.policyId}
                   onChange={(e) => setForm({ ...form, policyId: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Policy ID (optional)"
-                />
+                >
+                  <option value="">None (optional)</option>
+                  {policies.map((p) => (
+                    <option key={p.id} value={p.id}>{p.title}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Violation Type *</label>
@@ -304,13 +339,16 @@ export default function PolicyViolationTrackingTab() {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h3 className="text-base font-semibold text-[#2c2c2c] mb-3">Employee Violation History</h3>
         <div className="flex items-center gap-3 mb-4">
-          <input
-            type="text"
+          <select
             value={historyEmployeeId}
             onChange={(e) => setHistoryEmployeeId(e.target.value)}
-            placeholder="Enter Employee ID"
             className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
+          >
+            <option value="">Select team member</option>
+            {teamMembers.map((m) => (
+              <option key={m.id} value={m.id}>{`${m.firstName} ${m.lastName}`.trim()}</option>
+            ))}
+          </select>
           <button
             onClick={fetchHistory}
             disabled={loadingHistory || !historyEmployeeId}

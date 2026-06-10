@@ -1,8 +1,9 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { eq, and, desc, sql, inArray } from 'drizzle-orm';
+import { eq, and, desc, like, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { buildUserNameMap } from '../../../../shared/database/user-names.util';
 import { AiCoreService } from '../../../../shared/ai/ai-core.service';
 
 @Injectable()
@@ -53,34 +54,34 @@ Base everything strictly on the provided items — do NOT invent feedback, names
   }
 
   async getTeamFeedback(orgId: string, managerId: string) {
+    const emptyStats = { total: 0, newCount: 0, respondedCount: 0, escalatedCount: 0, anonymousCount: 0 };
     const teamMemberIds = await this.getTeamMemberIds(orgId, managerId);
 
     if (!teamMemberIds.length) {
-      return { data: [], meta: { total: 0 } };
+      return { data: [], meta: { total: 0, stats: emptyStats } };
     }
 
-    // Get feedback survey responses from team members
+    // Feedback-type surveys only — pulse results already live on the Team Engagement tab.
     const feedbackSurveys = await this.db
-      .select()
+      .select({ id: schema.surveys.id })
       .from(schema.surveys)
       .where(and(
         eq(schema.surveys.orgId, orgId),
         eq(schema.surveys.isActive, true),
-        inArray(schema.surveys.type, ['feedback', 'pulse']),
+        eq(schema.surveys.type, 'feedback'),
       ));
 
     const surveyIds = feedbackSurveys.map((s) => s.id);
 
     if (!surveyIds.length) {
-      return { data: [], meta: { total: 0 } };
+      return { data: [], meta: { total: 0, stats: emptyStats } };
     }
 
     const responses = await this.db
       .select({
         response: schema.surveyResponses,
         surveyTitle: schema.surveys.title,
-        surveyType: schema.surveys.type,
-        isAnonymous: schema.surveys.isAnonymous,
+        surveyIsAnonymous: schema.surveys.isAnonymous,
       })
       .from(schema.surveyResponses)
       .leftJoin(schema.surveys, eq(schema.surveyResponses.surveyId, schema.surveys.id))
@@ -92,16 +93,47 @@ Base everything strictly on the provided items — do NOT invent feedback, names
       ))
       .orderBy(desc(schema.surveyResponses.submittedAt));
 
-    return {
-      data: responses.map((r) => ({
-        ...r.response,
+    const nameMap = await buildUserNameMap(this.db, responses.map((r) => r.response.respondentId));
+
+    // Shape rows for the tab. `answers` is a mixed log: question answers
+    // ({ questionId, value }), an optional { type: 'meta', category, anonymous } entry,
+    // and the entries appended by respondToFeedback / escalateFeedback — which is
+    // exactly what drives the derived `status`.
+    const items = responses.map((r) => {
+      const answers: any[] = Array.isArray(r.response.answers) ? (r.response.answers as any[]) : [];
+      const meta = answers.find((a) => a?.type === 'meta');
+      const managerResponse = answers.find((a) => a?.type === 'manager_response');
+      const escalation = answers.find((a) => a?.type === 'escalation');
+      const status = escalation ? 'escalated' : managerResponse ? 'responded' : 'new';
+      const message = answers
+        .filter((a) => a?.questionId && typeof a.value === 'string' && a.value.trim())
+        .map((a) => a.value.trim())
+        .join(' ');
+      const isAnonymous = Boolean(r.surveyIsAnonymous) || meta?.anonymous === true;
+      return {
+        id: r.response.id,
+        employeeName: isAnonymous ? null : (nameMap.get(r.response.respondentId ?? '') ?? 'Unknown'),
+        category: typeof meta?.category === 'string' && meta.category ? meta.category : 'general',
+        message: message || '—',
+        isAnonymous,
+        status,
+        managerResponse: typeof managerResponse?.response === 'string' ? managerResponse.response : null,
+        escalationReason: typeof escalation?.reason === 'string' ? escalation.reason : null,
         surveyTitle: r.surveyTitle,
-        surveyType: r.surveyType,
-        isAnonymous: r.isAnonymous,
-        respondentId: r.isAnonymous ? null : r.response.respondentId,
-      })),
-      meta: { total: responses.length },
+        createdAt: r.response.submittedAt ?? r.response.createdAt,
+      };
+    });
+
+    // Cards are computed from the very rows the table renders, so they always agree.
+    const stats = {
+      total: items.length,
+      newCount: items.filter((i) => i.status === 'new').length,
+      respondedCount: items.filter((i) => i.status === 'responded').length,
+      escalatedCount: items.filter((i) => i.status === 'escalated').length,
+      anonymousCount: items.filter((i) => i.isAnonymous).length,
     };
+
+    return { data: items, meta: { total: items.length, stats } };
   }
 
   async respondToFeedback(orgId: string, managerId: string, responseId: string, responseText: string) {
@@ -176,34 +208,56 @@ Base everything strictly on the provided items — do NOT invent feedback, names
   }
 
   async getSuggestionTracking(orgId: string, managerId: string) {
+    const emptyStats = { total: 0, newCount: 0, underReviewCount: 0, plannedCount: 0, implementedCount: 0, totalVotes: 0 };
     const teamMemberIds = await this.getTeamMemberIds(orgId, managerId);
 
     if (!teamMemberIds.length) {
-      return { data: [], meta: { total: 0 } };
+      return { data: [], meta: { total: 0, stats: emptyStats } };
     }
 
-    // Get posts that are suggestions/shoutouts from team members
-    const suggestions = await this.db
-      .select({
-        post: schema.socialPosts,
-        authorName: sql<string>`concat(${schema.users.firstName}, ' ', coalesce(${schema.users.lastName}, ''))`,
-      })
+    // Suggestions are social posts following the employee submit-suggestion convention
+    // ("[Suggestion: <title>] <description>", see survey-participation.service.ts),
+    // optionally extended with "[Status: <status>]". Votes = post likes.
+    const posts = await this.db
+      .select()
       .from(schema.socialPosts)
-      .leftJoin(schema.users, eq(schema.socialPosts.authorId, schema.users.id))
       .where(and(
         eq(schema.socialPosts.orgId, orgId),
         eq(schema.socialPosts.isActive, true),
         inArray(schema.socialPosts.authorId, teamMemberIds),
-        inArray(schema.socialPosts.type, ['shoutout', 'announcement']),
+        eq(schema.socialPosts.type, 'announcement'),
+        like(schema.socialPosts.content, '[Suggestion:%'),
       ))
       .orderBy(desc(schema.socialPosts.createdAt));
 
-    return {
-      data: suggestions.map((s) => ({
-        ...s.post,
-        authorName: s.authorName,
-      })),
-      meta: { total: suggestions.length },
+    const nameMap = await buildUserNameMap(this.db, posts.map((p) => p.authorId));
+
+    const items = posts.map((p) => {
+      const match = /^\[Suggestion:\s*([^\]]+)\]\s*(?:\[Status:\s*([^\]]+)\]\s*)?([\s\S]*)$/i.exec(p.content ?? '');
+      const title = match?.[1]?.trim() || 'Suggestion';
+      const status = match?.[2]?.trim().toLowerCase().replace(/[\s-]+/g, '_') || 'new';
+      const description = match?.[3]?.trim() || '';
+      return {
+        id: p.id,
+        title,
+        description,
+        submittedBy: nameMap.get(p.authorId) ?? 'Unknown',
+        isAnonymous: false,
+        status,
+        votes: Number(p.likesCount) || 0,
+        createdAt: p.createdAt,
+      };
+    });
+
+    const stats = {
+      total: items.length,
+      newCount: items.filter((i) => i.status === 'new').length,
+      underReviewCount: items.filter((i) => i.status === 'under_review').length,
+      plannedCount: items.filter((i) => i.status === 'planned').length,
+      implementedCount: items.filter((i) => i.status === 'implemented').length,
+      totalVotes: items.reduce((s, i) => s + i.votes, 0),
     };
+
+    return { data: items, meta: { total: items.length, stats } };
   }
 }

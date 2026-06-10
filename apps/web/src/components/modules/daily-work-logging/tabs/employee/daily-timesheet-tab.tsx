@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -75,6 +75,9 @@ export default function DailyTimesheetTab() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEntry, setNewEntry] = useState(defaultNewEntry);
 
+  // Auto-jump (once) to the latest day that has entries when today is empty.
+  const autoJumpedRef = useRef(false);
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -85,15 +88,30 @@ export default function DailyTimesheetTab() {
         api.get('/daily-work-logging/employee/timesheet/categories').catch(() => null),
       ]);
       const entriesData = entriesRes?.data;
-      setEntries(
-        Array.isArray(entriesData)
-          ? entriesData
-          : Array.isArray(entriesData?.entries)
-            ? entriesData.entries
-            : Array.isArray(entriesData?.data)
-              ? entriesData.data
-              : []
-      );
+      const entryList = Array.isArray(entriesData)
+        ? entriesData
+        : Array.isArray(entriesData?.entries)
+          ? entriesData.entries
+          : Array.isArray(entriesData?.data)
+            ? entriesData.data
+            : [];
+      setEntries(entryList);
+
+      // Fallback: if the default date has no entries, jump to the most recent
+      // date that does (only once — manual date picking stays in control after).
+      const latestEntryDate = entriesData?.latestEntryDate;
+      if (
+        !autoJumpedRef.current &&
+        entryList.length === 0 &&
+        typeof latestEntryDate === 'string' &&
+        latestEntryDate &&
+        latestEntryDate !== selectedDate
+      ) {
+        autoJumpedRef.current = true;
+        setSelectedDate(latestEntryDate);
+      } else {
+        autoJumpedRef.current = true;
+      }
       const projData = projectsRes?.data;
       setProjects(
         Array.isArray(projData)

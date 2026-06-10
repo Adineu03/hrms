@@ -4,10 +4,11 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, desc, asc, gte, lte } from 'drizzle-orm';
+import { eq, and, or, desc, asc, gte, lte, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { buildUserNameMap } from '../../../../shared/database/user-names.util';
 
 @Injectable()
 export class ShiftViewService {
@@ -204,9 +205,59 @@ export class ShiftViewService {
 
   // ── Swap Request ──────────────────────────────────────────────────────
   async createSwapRequest(orgId: string, userId: string, data: Record<string, any>) {
-    if (!data.targetEmployeeId || !data.targetShiftId || !data.swapDate) {
+    // Accept both the API payload (targetEmployeeId/targetShiftId/swapDate) and
+    // the lightweight UI payload (targetEmployee name + date).
+    const swapDate: string | undefined = data.swapDate || data.date;
+    let targetEmployeeId: string | undefined = data.targetEmployeeId;
+
+    if (!targetEmployeeId && data.targetEmployee) {
+      const wanted = String(data.targetEmployee).trim().toLowerCase();
+      const colleagues = await this.db
+        .select({
+          id: schema.users.id,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName,
+        })
+        .from(schema.users)
+        .where(and(eq(schema.users.orgId, orgId), eq(schema.users.isActive, true)));
+
+      const fullName = (u: { firstName: string; lastName: string | null }) =>
+        `${u.firstName} ${u.lastName ?? ''}`.trim().toLowerCase();
+      const match =
+        colleagues.find((u) => fullName(u) === wanted) ??
+        colleagues.find((u) => u.id !== userId && fullName(u).includes(wanted));
+
+      if (!match) {
+        throw new NotFoundException(`No colleague found matching "${data.targetEmployee}"`);
+      }
+      targetEmployeeId = match.id;
+    }
+
+    if (targetEmployeeId === userId) {
+      throw new BadRequestException('You cannot swap a shift with yourself');
+    }
+
+    let targetShiftId: string | undefined = data.targetShiftId;
+    if (!targetShiftId && targetEmployeeId) {
+      // Default to the colleague's current shift
+      const [targetAssignment] = await this.db
+        .select({ shiftId: schema.employeeShiftAssignments.shiftId })
+        .from(schema.employeeShiftAssignments)
+        .where(
+          and(
+            eq(schema.employeeShiftAssignments.orgId, orgId),
+            eq(schema.employeeShiftAssignments.employeeId, targetEmployeeId),
+            eq(schema.employeeShiftAssignments.isCurrent, true),
+          ),
+        )
+        .limit(1);
+      targetShiftId = targetAssignment?.shiftId;
+    }
+
+    if (!targetEmployeeId || !targetShiftId || !swapDate) {
       throw new BadRequestException('targetEmployeeId, targetShiftId, and swapDate are required');
     }
+    data = { ...data, targetEmployeeId, targetShiftId, swapDate };
 
     // Get requester's current shift
     const [myAssignment] = await this.db
@@ -272,22 +323,57 @@ export class ShiftViewService {
 
   // ── List Swap Requests ────────────────────────────────────────────────
   async listSwapRequests(orgId: string, userId: string, status?: string) {
-    let query = this.db
+    // Include both directions: requests I raised AND requests targeting me
+    const rows = await this.db
       .select()
       .from(schema.shiftSwapRequests)
       .where(
         and(
           eq(schema.shiftSwapRequests.orgId, orgId),
-          eq(schema.shiftSwapRequests.requesterId, userId),
+          or(
+            eq(schema.shiftSwapRequests.requesterId, userId),
+            eq(schema.shiftSwapRequests.targetEmployeeId, userId),
+          ),
           ...(status ? [eq(schema.shiftSwapRequests.status, status)] : []),
         ),
       )
       .orderBy(desc(schema.shiftSwapRequests.createdAt));
 
-    const rows = await query;
+    // Enrich with counterpart/user names and shift names
+    const nameMap = await buildUserNameMap(
+      this.db,
+      rows.flatMap((r) => [r.requesterId, r.targetEmployeeId]),
+    );
+
+    const shiftIds = [
+      ...new Set(rows.flatMap((r) => [r.requesterShiftId, r.targetShiftId])),
+    ];
+    const shiftNameMap = new Map<string, string>();
+    if (shiftIds.length > 0) {
+      const shiftRows = await this.db
+        .select({ id: schema.shifts.id, name: schema.shifts.name })
+        .from(schema.shifts)
+        .where(inArray(schema.shifts.id, shiftIds));
+      for (const s of shiftRows) shiftNameMap.set(s.id, s.name);
+    }
 
     return {
-      swapRequests: rows.map((r) => this.toSwapDto(r)),
+      swapRequests: rows.map((r) => {
+        const direction = r.requesterId === userId ? 'outgoing' : 'incoming';
+        return {
+          ...this.toSwapDto(r),
+          date: r.swapDate,
+          direction,
+          requesterName: nameMap.get(r.requesterId) ?? 'Unknown',
+          targetEmployeeName: nameMap.get(r.targetEmployeeId) ?? 'Unknown',
+          counterpartName:
+            direction === 'outgoing'
+              ? nameMap.get(r.targetEmployeeId) ?? 'Unknown'
+              : nameMap.get(r.requesterId) ?? 'Unknown',
+          requesterShiftName: shiftNameMap.get(r.requesterShiftId) ?? 'Unknown',
+          targetShiftName: shiftNameMap.get(r.targetShiftId) ?? 'Unknown',
+        };
+      }),
     };
   }
 

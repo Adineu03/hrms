@@ -61,6 +61,9 @@ interface TrendEntry {
 
 type ReportType = 'utilization' | 'project-allocation' | 'productivity' | 'compliance' | 'trends';
 
+// Drizzle numeric columns serialize as strings — never call .toFixed() on raw API values.
+const num = (v: unknown): number => Number(v) || 0;
+
 export default function TimesheetReportsTab() {
   const [activeReport, setActiveReport] = useState<ReportType>('utilization');
   const [isLoading, setIsLoading] = useState(true);
@@ -83,27 +86,32 @@ export default function TimesheetReportsTab() {
       switch (report) {
         case 'utilization': {
           const res = await api.get('/daily-work-logging/admin/reports/utilization');
-          setUtilization(Array.isArray(res.data) ? res.data : res.data?.data || []);
+          const data = Array.isArray(res.data) ? res.data : res.data?.data;
+          setUtilization(Array.isArray(data) ? data : []);
           break;
         }
         case 'project-allocation': {
           const res = await api.get('/daily-work-logging/admin/reports/project-allocation');
-          setProjectAllocation(Array.isArray(res.data) ? res.data : res.data?.data || []);
+          const data = Array.isArray(res.data) ? res.data : res.data?.data;
+          setProjectAllocation(Array.isArray(data) ? data : []);
           break;
         }
         case 'productivity': {
           const res = await api.get('/daily-work-logging/admin/reports/productivity');
-          setProductivity(res.data?.data || res.data);
+          const data = res.data?.data ?? res.data;
+          setProductivity(data && typeof data === 'object' && !Array.isArray(data) ? data : null);
           break;
         }
         case 'compliance': {
           const res = await api.get('/daily-work-logging/admin/reports/compliance');
-          setCompliance(Array.isArray(res.data) ? res.data : res.data?.data || []);
+          const data = Array.isArray(res.data) ? res.data : res.data?.data;
+          setCompliance(Array.isArray(data) ? data : []);
           break;
         }
         case 'trends': {
           const res = await api.get('/daily-work-logging/admin/reports/trends');
-          setTrends(Array.isArray(res.data) ? res.data : res.data?.data || []);
+          const data = Array.isArray(res.data) ? res.data : res.data?.data;
+          setTrends(Array.isArray(data) ? data : []);
           break;
         }
       }
@@ -176,16 +184,16 @@ export default function TimesheetReportsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {utilization.map((entry) => (
-                    <tr key={entry.employeeId} className="bg-card hover:bg-background/50 transition-colors">
+                  {utilization.map((entry, idx) => (
+                    <tr key={entry.employeeId || `util-${idx}`} className="bg-card hover:bg-background/50 transition-colors">
                       <td className="px-4 py-3 text-sm text-text font-medium">{entry.employeeName}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{entry.totalHours.toFixed(1)}</td>
-                      <td className="px-4 py-3 text-sm text-green-700 font-medium">{entry.billableHours.toFixed(1)}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{entry.nonBillableHours.toFixed(1)}</td>
+                      <td className="px-4 py-3 text-sm text-text-muted">{num(entry.totalHours).toFixed(1)}</td>
+                      <td className="px-4 py-3 text-sm text-green-700 font-medium">{num(entry.billableHours).toFixed(1)}</td>
+                      <td className="px-4 py-3 text-sm text-text-muted">{num(entry.nonBillableHours).toFixed(1)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1">{renderProgressBar(entry.utilization)}</div>
-                          <span className="text-xs font-medium text-text w-10 text-right">{entry.utilization.toFixed(0)}%</span>
+                          <div className="flex-1">{renderProgressBar(num(entry.utilization))}</div>
+                          <span className="text-xs font-medium text-text w-10 text-right">{num(entry.utilization).toFixed(0)}%</span>
                         </div>
                       </td>
                     </tr>
@@ -217,25 +225,25 @@ export default function TimesheetReportsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {projectAllocation.map((entry) => (
-                    <tr key={entry.projectId} className="bg-card hover:bg-background/50 transition-colors">
+                  {projectAllocation.map((entry, idx) => (
+                    <tr key={entry.projectId || `proj-${idx}`} className="bg-card hover:bg-background/50 transition-colors">
                       <td className="px-4 py-3 text-sm text-text font-medium">{entry.projectName}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{entry.budgetHours.toFixed(1)}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{entry.actualHours.toFixed(1)}</td>
+                      <td className="px-4 py-3 text-sm text-text-muted">{num(entry.budgetHours).toFixed(1)}</td>
+                      <td className="px-4 py-3 text-sm text-text-muted">{num(entry.actualHours).toFixed(1)}</td>
                       <td className="px-4 py-3 text-sm">
-                        <span className={entry.variance >= 0 ? 'text-green-700' : 'text-red-700'}>
-                          {entry.variance >= 0 ? '+' : ''}{entry.variance.toFixed(1)}
+                        <span className={num(entry.variance) >= 0 ? 'text-green-700' : 'text-red-700'}>
+                          {num(entry.variance) >= 0 ? '+' : ''}{num(entry.variance).toFixed(1)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="flex-1">
                             {renderProgressBar(
-                              entry.percentUsed,
-                              entry.percentUsed > 100 ? 'bg-red-500' : entry.percentUsed > 80 ? 'bg-yellow-500' : 'bg-primary'
+                              num(entry.percentUsed),
+                              num(entry.percentUsed) > 100 ? 'bg-red-500' : num(entry.percentUsed) > 80 ? 'bg-yellow-500' : 'bg-primary'
                             )}
                           </div>
-                          <span className="text-xs font-medium text-text w-10 text-right">{entry.percentUsed.toFixed(0)}%</span>
+                          <span className="text-xs font-medium text-text w-10 text-right">{num(entry.percentUsed).toFixed(0)}%</span>
                         </div>
                       </td>
                     </tr>
@@ -261,42 +269,42 @@ export default function TimesheetReportsTab() {
                   <Clock className="h-4 w-4 text-blue-600" />
                   <span className="text-xs font-medium text-blue-700 uppercase tracking-wider">Avg Hours/Day</span>
                 </div>
-                <p className="text-2xl font-bold text-blue-700">{productivity.avgHoursPerDay.toFixed(1)}</p>
+                <p className="text-2xl font-bold text-blue-700">{num(productivity.avgHoursPerDay).toFixed(1)}</p>
               </div>
               <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="h-4 w-4 text-green-600" />
                   <span className="text-xs font-medium text-green-700 uppercase tracking-wider">Billable Ratio</span>
                 </div>
-                <p className="text-2xl font-bold text-green-700">{productivity.avgBillableRatio.toFixed(0)}%</p>
+                <p className="text-2xl font-bold text-green-700">{num(productivity.avgBillableRatio).toFixed(0)}%</p>
               </div>
               <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
                 <div className="flex items-center gap-2 mb-1">
                   <Users className="h-4 w-4 text-purple-600" />
                   <span className="text-xs font-medium text-purple-700 uppercase tracking-wider">Total Employees</span>
                 </div>
-                <p className="text-2xl font-bold text-purple-700">{productivity.totalEmployees}</p>
+                <p className="text-2xl font-bold text-purple-700">{num(productivity.totalEmployees)}</p>
               </div>
               <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
                 <div className="flex items-center gap-2 mb-1">
                   <BarChart3 className="h-4 w-4 text-indigo-600" />
                   <span className="text-xs font-medium text-indigo-700 uppercase tracking-wider">Total Hours (Month)</span>
                 </div>
-                <p className="text-2xl font-bold text-indigo-700">{productivity.totalHoursThisMonth.toFixed(0)}</p>
+                <p className="text-2xl font-bold text-indigo-700">{num(productivity.totalHoursThisMonth).toFixed(0)}</p>
               </div>
               <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="h-4 w-4 text-orange-600" />
                   <span className="text-xs font-medium text-orange-700 uppercase tracking-wider">Avg Utilization</span>
                 </div>
-                <p className="text-2xl font-bold text-orange-700">{productivity.avgUtilization.toFixed(0)}%</p>
+                <p className="text-2xl font-bold text-orange-700">{num(productivity.avgUtilization).toFixed(0)}%</p>
               </div>
               <div className="bg-teal-50 rounded-lg p-4 border border-teal-200">
                 <div className="flex items-center gap-2 mb-1">
                   <CheckCircle2 className="h-4 w-4 text-teal-600" />
                   <span className="text-xs font-medium text-teal-700 uppercase tracking-wider">On-Time Rate</span>
                 </div>
-                <p className="text-2xl font-bold text-teal-700">{productivity.onTimeSubmissionRate.toFixed(0)}%</p>
+                <p className="text-2xl font-bold text-teal-700">{num(productivity.onTimeSubmissionRate).toFixed(0)}%</p>
               </div>
             </div>
           )}
@@ -322,22 +330,22 @@ export default function TimesheetReportsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {compliance.map((entry) => (
-                    <tr key={entry.employeeId} className="bg-card hover:bg-background/50 transition-colors">
+                  {compliance.map((entry, idx) => (
+                    <tr key={entry.employeeId || `comp-${idx}`} className="bg-card hover:bg-background/50 transition-colors">
                       <td className="px-4 py-3 text-sm text-text font-medium">{entry.employeeName}</td>
-                      <td className="px-4 py-3 text-sm text-green-700">{entry.submittedOnTime}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{entry.totalSubmissions}</td>
-                      <td className="px-4 py-3 text-sm text-yellow-700">{entry.lateCount}</td>
-                      <td className="px-4 py-3 text-sm text-red-700">{entry.missingCount}</td>
+                      <td className="px-4 py-3 text-sm text-green-700">{num(entry.submittedOnTime)}</td>
+                      <td className="px-4 py-3 text-sm text-text-muted">{num(entry.totalSubmissions)}</td>
+                      <td className="px-4 py-3 text-sm text-yellow-700">{num(entry.lateCount)}</td>
+                      <td className="px-4 py-3 text-sm text-red-700">{num(entry.missingCount)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="flex-1">
                             {renderProgressBar(
-                              entry.onTimeRate,
-                              entry.onTimeRate >= 90 ? 'bg-green-500' : entry.onTimeRate >= 70 ? 'bg-yellow-500' : 'bg-red-500'
+                              num(entry.onTimeRate),
+                              num(entry.onTimeRate) >= 90 ? 'bg-green-500' : num(entry.onTimeRate) >= 70 ? 'bg-yellow-500' : 'bg-red-500'
                             )}
                           </div>
-                          <span className="text-xs font-medium text-text w-10 text-right">{entry.onTimeRate.toFixed(0)}%</span>
+                          <span className="text-xs font-medium text-text w-10 text-right">{num(entry.onTimeRate).toFixed(0)}%</span>
                         </div>
                       </td>
                     </tr>
@@ -370,13 +378,13 @@ export default function TimesheetReportsTab() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {trends.map((entry, idx) => {
-                    const billablePercent = entry.totalHours > 0 ? (entry.billableHours / entry.totalHours) * 100 : 0;
+                    const billablePercent = num(entry.totalHours) > 0 ? (num(entry.billableHours) / num(entry.totalHours)) * 100 : 0;
                     return (
-                      <tr key={idx} className="bg-card hover:bg-background/50 transition-colors">
+                      <tr key={entry.week || idx} className="bg-card hover:bg-background/50 transition-colors">
                         <td className="px-4 py-3 text-sm text-text font-medium">{entry.week}</td>
-                        <td className="px-4 py-3 text-sm text-text-muted">{entry.totalHours.toFixed(1)}</td>
-                        <td className="px-4 py-3 text-sm text-green-700">{entry.billableHours.toFixed(1)}</td>
-                        <td className="px-4 py-3 text-sm text-text-muted">{entry.avgPerEmployee.toFixed(1)}</td>
+                        <td className="px-4 py-3 text-sm text-text-muted">{num(entry.totalHours).toFixed(1)}</td>
+                        <td className="px-4 py-3 text-sm text-green-700">{num(entry.billableHours).toFixed(1)}</td>
+                        <td className="px-4 py-3 text-sm text-text-muted">{num(entry.avgPerEmployee).toFixed(1)}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <div className="flex-1">{renderProgressBar(billablePercent, 'bg-green-500')}</div>

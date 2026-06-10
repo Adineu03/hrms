@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, ne } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -9,13 +9,16 @@ export class SelfReviewService {
   constructor(@Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>) {}
 
   async getCurrentSelfReview(orgId: string, userId: string) {
+    // The employee's assignment in the active cycle carries the self-review fields
+    // (selfRating/selfComments/achievements) regardless of reviewerType — the seed
+    // creates one combined assignment per employee with reviewerType 'manager'.
     const [row] = await this.db.select({ assignment: schema.reviewAssignments, cycle: schema.reviewCycles })
       .from(schema.reviewAssignments)
       .innerJoin(schema.reviewCycles, eq(schema.reviewAssignments.cycleId, schema.reviewCycles.id))
-      .where(and(eq(schema.reviewAssignments.orgId, orgId), eq(schema.reviewAssignments.employeeId, userId), eq(schema.reviewAssignments.reviewerType, 'self'), eq(schema.reviewAssignments.isActive, true), eq(schema.reviewCycles.status, 'active')))
+      .where(and(eq(schema.reviewAssignments.orgId, orgId), eq(schema.reviewAssignments.employeeId, userId), eq(schema.reviewAssignments.isActive, true), eq(schema.reviewCycles.status, 'active')))
       .orderBy(desc(schema.reviewCycles.createdAt)).limit(1);
     if (!row) return null;
-    return { ...row.assignment, cycleName: row.cycle.name, cycleType: row.cycle.type, ratingScale: row.cycle.ratingScaleType, startDate: row.cycle.startDate, endDate: row.cycle.endDate };
+    return { ...row.assignment, cycleName: row.cycle.name, cycleType: row.cycle.type, ratingScale: row.cycle.ratingScaleType, startDate: row.cycle.startDate, endDate: row.cycle.endDate, deadline: row.cycle.endDate };
   }
 
   async getReviewCycles(orgId: string, userId: string) {
@@ -48,12 +51,13 @@ export class SelfReviewService {
   }
 
   async getPreviousSelfReviews(orgId: string, userId: string) {
+    // Previous = assignments belonging to cycles that are no longer active.
     const rows = await this.db.select({ assignment: schema.reviewAssignments, cycle: schema.reviewCycles })
       .from(schema.reviewAssignments)
       .innerJoin(schema.reviewCycles, eq(schema.reviewAssignments.cycleId, schema.reviewCycles.id))
-      .where(and(eq(schema.reviewAssignments.orgId, orgId), eq(schema.reviewAssignments.employeeId, userId), eq(schema.reviewAssignments.reviewerType, 'self'), eq(schema.reviewAssignments.isActive, true)))
+      .where(and(eq(schema.reviewAssignments.orgId, orgId), eq(schema.reviewAssignments.employeeId, userId), eq(schema.reviewAssignments.isActive, true), ne(schema.reviewCycles.status, 'active')))
       .orderBy(desc(schema.reviewCycles.startDate));
-    return { data: rows.map(r => ({ ...r.assignment, cycleName: r.cycle.name })) };
+    return { data: rows.map(r => ({ ...r.assignment, cycleName: r.cycle.name, submittedAt: r.assignment.updatedAt, comments: r.assignment.selfComments })) };
   }
 
   async getGoalDataForReview(orgId: string, userId: string, reviewId: string) {

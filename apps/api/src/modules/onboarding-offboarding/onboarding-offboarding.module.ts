@@ -16,6 +16,7 @@ import { OffboardingAnalyticsController } from './features/admin/offboarding-ana
 import { OffboardingAnalyticsService } from './features/admin/offboarding-analytics.service';
 import { CompliancePolicyMgmtController } from './features/admin/compliance-policy-mgmt.controller';
 import { CompliancePolicyMgmtService } from './features/admin/compliance-policy-mgmt.service';
+import { AdminLookupsController } from './features/admin/admin-lookups.controller';
 
 // Manager features
 import { TeamOnboardingController } from './features/manager/team-onboarding.controller';
@@ -57,6 +58,7 @@ import { PostJoiningSupportService } from './features/employee/post-joining-supp
     OnboardingAnalyticsController,
     OffboardingAnalyticsController,
     CompliancePolicyMgmtController,
+    AdminLookupsController,
     // Manager
     TeamOnboardingController,
     TeamOffboardingController,

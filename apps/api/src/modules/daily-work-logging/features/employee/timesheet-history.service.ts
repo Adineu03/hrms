@@ -38,13 +38,29 @@ export class TimesheetHistoryService {
     ];
 
     if (filters.status) {
-      conditions.push(eq(schema.timesheetSubmissions.status, filters.status));
+      // The UI exposes "pending" — stored as "submitted" in the DB.
+      const statusFilter = filters.status === 'pending' ? 'submitted' : filters.status;
+      conditions.push(eq(schema.timesheetSubmissions.status, statusFilter));
     }
     if (filters.from) {
       conditions.push(gte(schema.timesheetSubmissions.periodStart, filters.from));
     }
     if (filters.to) {
       conditions.push(lte(schema.timesheetSubmissions.periodEnd, filters.to));
+    }
+    if (filters.projectId) {
+      // Free-text project filter: submissions whose period contains entries
+      // logged against a matching project name.
+      conditions.push(sql`EXISTS (
+        SELECT 1
+        FROM timesheet_entries te
+        JOIN projects p ON p.id = te.project_id AND p.org_id = te.org_id
+        WHERE te.org_id = ${schema.timesheetSubmissions.orgId}
+          AND te.employee_id = ${schema.timesheetSubmissions.employeeId}
+          AND te.date >= ${schema.timesheetSubmissions.periodStart}
+          AND te.date <= ${schema.timesheetSubmissions.periodEnd}
+          AND p.name ILIKE ${'%' + filters.projectId + '%'}
+      )` as any);
     }
 
     const whereClause = and(...conditions)!;
@@ -64,8 +80,21 @@ export class TimesheetHistoryService {
 
     const total = parseInt(countResult?.total || '0', 10);
 
+    const items = submissions.map((s) => {
+      const base = this.toSubmissionListDto(s);
+      return {
+        ...base,
+        // Tab-friendly fields (server-side response transform).
+        period: `${this.formatShortDate(s.periodStart)} – ${this.formatShortDate(s.periodEnd, true)}`,
+        status: base.status === 'submitted' ? 'pending' : base.status,
+        entries: [],
+        approvalChain: [],
+      };
+    });
+
     return {
-      submissions: submissions.map((s) => this.toSubmissionListDto(s)),
+      data: items,
+      submissions: items,
       pagination: {
         page,
         limit,
@@ -94,14 +123,16 @@ export class TimesheetHistoryService {
     }
 
     // Get all entries linked to this submission
-    const entries = await this.db
-      .select({
-        entry: schema.timesheetEntries,
-        projectName: schema.projects.name,
-        projectCode: schema.projects.code,
-        projectColor: schema.projects.color,
-        categoryName: schema.taskCategories.name,
-      })
+    const entrySelect = {
+      entry: schema.timesheetEntries,
+      projectName: schema.projects.name,
+      projectCode: schema.projects.code,
+      projectColor: schema.projects.color,
+      categoryName: schema.taskCategories.name,
+    };
+
+    let entries = await this.db
+      .select(entrySelect)
       .from(schema.timesheetEntries)
       .leftJoin(schema.projects, eq(schema.timesheetEntries.projectId, schema.projects.id))
       .leftJoin(schema.taskCategories, eq(schema.timesheetEntries.taskCategoryId, schema.taskCategories.id))
@@ -113,6 +144,25 @@ export class TimesheetHistoryService {
         ),
       )
       .orderBy(asc(schema.timesheetEntries.date), asc(schema.timesheetEntries.startTime));
+
+    // Fallback: entries may not be linked via submissionId (seeded data) —
+    // fall back to the employee's entries within the submission period.
+    if (entries.length === 0) {
+      entries = await this.db
+        .select(entrySelect)
+        .from(schema.timesheetEntries)
+        .leftJoin(schema.projects, eq(schema.timesheetEntries.projectId, schema.projects.id))
+        .leftJoin(schema.taskCategories, eq(schema.timesheetEntries.taskCategoryId, schema.taskCategories.id))
+        .where(
+          and(
+            eq(schema.timesheetEntries.orgId, orgId),
+            eq(schema.timesheetEntries.employeeId, employeeId),
+            gte(schema.timesheetEntries.date, submission.periodStart),
+            lte(schema.timesheetEntries.date, submission.periodEnd),
+          ),
+        )
+        .orderBy(asc(schema.timesheetEntries.date), asc(schema.timesheetEntries.startTime));
+    }
 
     // Get approver details if available
     let approverName: string | null = null;
@@ -131,6 +181,7 @@ export class TimesheetHistoryService {
     return {
       ...this.toSubmissionDetailDto(submission),
       approverName,
+      approvalChain: this.buildApprovalChain(submission, approverName),
       entries: entries.map((e) => ({
         id: e.entry.id,
         date: e.entry.date,
@@ -142,12 +193,16 @@ export class TimesheetHistoryService {
         categoryName: e.categoryName,
         startTime: e.entry.startTime,
         endTime: e.entry.endTime,
-        hours: Number(e.entry.hours),
+        hours: Number(e.entry.hours) || 0,
         description: e.entry.description,
         isBillable: e.entry.isBillable,
         tags: e.entry.tags,
         activityType: e.entry.activityType,
         status: e.entry.status,
+        // Tab-friendly aliases
+        project: e.projectName ?? '—',
+        taskCategory: e.categoryName ?? '—',
+        billable: e.entry.isBillable,
       })),
     };
   }
@@ -311,11 +366,26 @@ export class TimesheetHistoryService {
 
   // ── Hour Summary ────────────────────────────────────────────────────────
   async getSummary(orgId: string, employeeId: string, filters: { from?: string; to?: string }) {
-    // Default to last 12 weeks
+    // Default to last 12 weeks, anchored at the latest date that has data
+    // (current-period fallback — the seeded window ends in the past).
     const now = new Date();
-    const to = filters.to || now.toISOString().slice(0, 10);
-    const fromDefault = new Date(now);
-    fromDefault.setDate(fromDefault.getDate() - 84); // 12 weeks
+    const today = now.toISOString().slice(0, 10);
+
+    const [latestRow] = await this.db
+      .select({ latest: sql<string | null>`MAX(${schema.timesheetEntries.date})` })
+      .from(schema.timesheetEntries)
+      .where(
+        and(
+          eq(schema.timesheetEntries.orgId, orgId),
+          eq(schema.timesheetEntries.employeeId, employeeId),
+        ),
+      );
+    const latest = latestRow?.latest ?? null;
+
+    const to = filters.to || (latest && latest > today ? latest : today);
+    const anchor = latest ?? today;
+    const fromDefault = new Date(`${anchor}T00:00:00Z`);
+    fromDefault.setUTCDate(fromDefault.getUTCDate() - 84); // 12 weeks
     const from = filters.from || fromDefault.toISOString().slice(0, 10);
 
     // Get weekly summaries from submissions
@@ -373,8 +443,22 @@ export class TimesheetHistoryService {
     const grandTotalHours = weeklySummary.reduce((s, w) => s + w.totalHours, 0);
     const grandBillableHours = weeklySummary.reduce((s, w) => s + w.billableHours, 0);
 
+    // Card stats computed from actual logged entries over the window
+    // (submissions alone under-count — not every logged week is submitted).
+    const round1 = (n: number) => Math.round((Number(n) || 0) * 10) / 10;
+    const totalHoursLogged = round1(monthlySummary.reduce((s, m) => s + m.totalHours, 0));
+    const totalBillableHours = round1(monthlySummary.reduce((s, m) => s + m.billableHours, 0));
+    const approvedCount = submissions.filter((s) => s.status === 'approved').length;
+    const approvalRate =
+      submissions.length > 0 ? Math.round((approvedCount / submissions.length) * 100) : 0;
+
     return {
       period: { from, to },
+      // Tab-friendly top-level stats (server-side response transform)
+      totalSubmissions: submissions.length,
+      totalHoursLogged,
+      totalBillableHours,
+      approvalRate,
       weeklySummary,
       monthlySummary,
       grandTotal: {
@@ -541,6 +625,69 @@ export class TimesheetHistoryService {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
+
+  /** "2026-06-02" → "Jun 2" (or "Jun 2, 2026" with withYear). */
+  private formatShortDate(dateStr: string, withYear = false): string {
+    const d = new Date(`${dateStr}T00:00:00Z`);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      ...(withYear ? { year: 'numeric' } : {}),
+      timeZone: 'UTC',
+    });
+  }
+
+  /**
+   * Display-ready approval chain. Uses the stored chain when present,
+   * otherwise synthesizes a single step from the submission's approval state.
+   */
+  private buildApprovalChain(
+    row: typeof schema.timesheetSubmissions.$inferSelect,
+    approverName: string | null,
+  ): Array<{ level: number; approver: string; action: string; comment: string; timestamp: string }> {
+    const stored = Array.isArray(row.approvalChain) ? (row.approvalChain as any[]) : [];
+    if (stored.length > 0) {
+      return stored.map((step: any, i: number) => ({
+        level: Number(step?.level) || i + 1,
+        approver: step?.approver || step?.approverName || approverName || 'Reporting Manager',
+        action: step?.action || step?.status || 'pending',
+        comment: step?.comment ?? '',
+        timestamp:
+          step?.timestamp || step?.actedAt || row.updatedAt?.toISOString() || '',
+      }));
+    }
+
+    const meta = (row.metadata ?? {}) as Record<string, any>;
+    if (row.status === 'approved') {
+      return [{
+        level: 1,
+        approver: approverName || 'Reporting Manager',
+        action: 'approved',
+        comment: row.approverComment || '',
+        timestamp: (row.approvedAt ?? row.updatedAt).toISOString(),
+      }];
+    }
+    if (row.status === 'rejected') {
+      return [{
+        level: 1,
+        approver: approverName || 'Reporting Manager',
+        action: 'rejected',
+        comment: row.rejectionReason || meta.disputeReason || '',
+        timestamp: (row.rejectedAt ?? row.submittedAt ?? row.updatedAt).toISOString(),
+      }];
+    }
+    if (row.status === 'submitted') {
+      return [{
+        level: 1,
+        approver: approverName || 'Reporting Manager',
+        action: 'pending',
+        comment: '',
+        timestamp: (row.submittedAt ?? row.updatedAt).toISOString(),
+      }];
+    }
+    return [];
+  }
 
   private toSubmissionListDto(row: typeof schema.timesheetSubmissions.$inferSelect) {
     return {

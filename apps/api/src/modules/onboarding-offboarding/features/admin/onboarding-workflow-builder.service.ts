@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -48,8 +48,33 @@ export class OnboardingWorkflowBuilderService {
     const offset = (page - 1) * limit;
     const paginated = rows.slice(offset, offset + limit);
 
+    // Load tasks for the paginated workflows so the list view can expand them inline
+    const workflowIds = paginated.map((r) => r.workflow.id);
+    const tasksByWorkflow = new Map<string, any[]>();
+    if (workflowIds.length > 0) {
+      const taskRows = await this.db
+        .select()
+        .from(schema.onboardingWorkflowTasks)
+        .where(
+          and(
+            inArray(schema.onboardingWorkflowTasks.workflowId, workflowIds),
+            eq(schema.onboardingWorkflowTasks.orgId, orgId),
+            eq(schema.onboardingWorkflowTasks.isActive, true),
+          ),
+        )
+        .orderBy(schema.onboardingWorkflowTasks.sortOrder);
+      for (const t of taskRows) {
+        const list = tasksByWorkflow.get(t.workflowId) ?? [];
+        list.push(this.toTaskDto(t));
+        tasksByWorkflow.set(t.workflowId, list);
+      }
+    }
+
     return {
-      data: paginated.map((r) => this.toWorkflowDto(r)),
+      data: paginated.map((r) => ({
+        ...this.toWorkflowDto(r),
+        tasks: tasksByWorkflow.get(r.workflow.id) ?? [],
+      })),
       meta: {
         total: rows.length,
         page,
@@ -69,11 +94,12 @@ export class OnboardingWorkflowBuilderService {
         name: data.name,
         description: data.description ?? null,
         workflowType: data.workflowType ?? 'onboarding',
-        departmentId: data.departmentId ?? null,
-        designationId: data.designationId ?? null,
-        locationId: data.locationId ?? null,
+        // `|| null` (not `?? null`): the form sends '' for unset uuid fields
+        departmentId: data.departmentId || null,
+        designationId: data.designationId || null,
+        locationId: data.locationId || null,
         employmentType: data.employmentType ?? null,
-        gradeId: data.gradeId ?? null,
+        gradeId: data.gradeId || null,
         isTemplate: data.isTemplate ?? true,
         taskCount: tasks.length,
         conditionalRules: data.conditionalRules ?? [],
@@ -92,9 +118,9 @@ export class OnboardingWorkflowBuilderService {
           title: task.title,
           description: task.description ?? null,
           taskType: task.taskType ?? 'general',
-          taskOwner: task.taskOwner ?? 'hr',
+          taskOwner: task.taskOwner ?? task.assigneeRole ?? 'hr',
           sortOrder: task.sortOrder ?? index,
-          deadlineDays: task.deadlineDays ?? 7,
+          deadlineDays: task.deadlineDays ?? task.dayOffset ?? 7,
           isMandatory: task.isMandatory ?? true,
           isConditional: task.isConditional ?? false,
           conditionRules: task.conditionRules ?? {},
@@ -141,7 +167,7 @@ export class OnboardingWorkflowBuilderService {
       )
       .orderBy(schema.onboardingWorkflowTasks.sortOrder);
 
-    return { ...this.toWorkflowDto(row), tasks };
+    return { ...this.toWorkflowDto(row), tasks: tasks.map((t) => this.toTaskDto(t)) };
   }
 
   async updateWorkflow(orgId: string, id: string, data: Record<string, any>) {
@@ -162,6 +188,10 @@ export class OnboardingWorkflowBuilderService {
 
     for (const field of allowedFields) {
       if (data[field] !== undefined) updates[field] = data[field];
+    }
+    // The form sends '' for unset uuid dropdowns — normalize to null
+    for (const uuidField of ['departmentId', 'designationId', 'locationId', 'gradeId']) {
+      if (updates[uuidField] === '') updates[uuidField] = null;
     }
 
     await this.db
@@ -206,9 +236,9 @@ export class OnboardingWorkflowBuilderService {
         title: data.title,
         description: data.description ?? null,
         taskType: data.taskType ?? 'general',
-        taskOwner: data.taskOwner ?? 'hr',
+        taskOwner: data.taskOwner ?? data.assigneeRole ?? 'hr',
         sortOrder: data.sortOrder ?? (workflow.taskCount + 1),
-        deadlineDays: data.deadlineDays ?? 7,
+        deadlineDays: data.deadlineDays ?? data.dayOffset ?? 7,
         isMandatory: data.isMandatory ?? true,
         isConditional: data.isConditional ?? false,
         conditionRules: data.conditionRules ?? {},
@@ -253,6 +283,9 @@ export class OnboardingWorkflowBuilderService {
     for (const field of allowedFields) {
       if (data[field] !== undefined) updates[field] = data[field];
     }
+    // Frontend aliases: assigneeRole -> taskOwner, dayOffset -> deadlineDays
+    if (data.assigneeRole !== undefined && data.taskOwner === undefined) updates.taskOwner = data.assigneeRole;
+    if (data.dayOffset !== undefined && data.deadlineDays === undefined) updates.deadlineDays = data.dayOffset;
 
     await this.db
       .update(schema.onboardingWorkflowTasks)
@@ -352,6 +385,32 @@ export class OnboardingWorkflowBuilderService {
     }
 
     return this.getWorkflow(orgId, cloned.id);
+  }
+
+  private toTaskDto(t: typeof schema.onboardingWorkflowTasks.$inferSelect) {
+    return {
+      id: t.id,
+      workflowId: t.workflowId,
+      title: t.title,
+      description: t.description ?? '',
+      taskType: t.taskType,
+      taskOwner: t.taskOwner,
+      // Frontend-facing aliases
+      assigneeRole: t.taskOwner,
+      dayOffset: Number(t.deadlineDays) || 0,
+      sortOrder: t.sortOrder,
+      deadlineDays: t.deadlineDays,
+      isMandatory: t.isMandatory,
+      isConditional: t.isConditional,
+      conditionRules: t.conditionRules ?? {},
+      documentRequired: t.documentRequired,
+      documentType: t.documentType,
+      trainingModuleId: t.trainingModuleId,
+      metadata: t.metadata ?? {},
+      isActive: t.isActive,
+      createdAt: t.createdAt.toISOString(),
+      updatedAt: t.updatedAt.toISOString(),
+    };
   }
 
   private toWorkflowDto(row: {

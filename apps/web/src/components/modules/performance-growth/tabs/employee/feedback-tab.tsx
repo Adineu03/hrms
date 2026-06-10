@@ -46,6 +46,15 @@ interface KudosEntry {
   createdAt: string;
 }
 
+interface FeedbackGiven {
+  id: string;
+  toName: string;
+  type: string;
+  category: string;
+  content: string;
+  createdAt: string;
+}
+
 interface Colleague {
   id: string;
   firstName: string;
@@ -79,6 +88,7 @@ export default function FeedbackTab() {
   const [received, setReceived] = useState<FeedbackReceived[]>([]);
   const [requests, setRequests] = useState<FeedbackRequest[]>([]);
   const [kudos, setKudos] = useState<KudosEntry[]>([]);
+  const [given, setGiven] = useState<FeedbackGiven[]>([]);
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,11 +115,12 @@ export default function FeedbackTab() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [rcvRes, reqRes, kudosRes, colRes] = await Promise.all([
+      const [rcvRes, reqRes, kudosRes, givenRes, colRes] = await Promise.all([
         api.get('/performance-growth/employee/feedback').catch(() => ({ data: [] })),
         api.get('/performance-growth/employee/feedback/requests').catch(() => ({ data: [] })),
         api.get('/performance-growth/employee/feedback/wall').catch(() => ({ data: [] })),
         api.get('/performance-growth/employee/feedback/given').catch(() => ({ data: [] })),
+        api.get('/performance-growth/employee/feedback/colleagues').catch(() => ({ data: [] })),
       ]);
       const rcvData = rcvRes.data?.data ?? rcvRes.data;
       setReceived(Array.isArray(rcvData) ? rcvData : []);
@@ -117,6 +128,8 @@ export default function FeedbackTab() {
       setRequests(Array.isArray(reqData) ? reqData : []);
       const kudosData = kudosRes.data?.data ?? kudosRes.data;
       setKudos(Array.isArray(kudosData) ? kudosData : []);
+      const givenData = givenRes.data?.data ?? givenRes.data;
+      setGiven(Array.isArray(givenData) ? givenData : []);
       const colData = colRes.data?.data ?? colRes.data;
       setColleagues(Array.isArray(colData) ? colData : []);
     } catch {
@@ -354,6 +367,32 @@ export default function FeedbackTab() {
                 >
                   Submit Feedback
                 </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Given */}
+      {given.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-text">Feedback Given ({given.length})</h3>
+          <div className="space-y-3">
+            {given.map((fb) => (
+              <div key={fb.id} className="bg-card border border-border rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm text-text font-medium">To {fb.toName}</span>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${TYPE_STYLES[fb.type] || 'bg-gray-100 text-gray-600'}`}>
+                    {fb.type}
+                  </span>
+                  {fb.category && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                      {fb.category.replace(/_/g, ' ')}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-text mb-2">{fb.content}</p>
+                <span className="text-[10px] text-text-muted">{new Date(fb.createdAt).toLocaleDateString()}</span>
               </div>
             ))}
           </div>

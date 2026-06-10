@@ -82,6 +82,8 @@ export * from './platform-experience';
 export * from './payroll-processing';
 export * from './expense-management';
 export * from './compliance-audit';
+export * from './policy-violations';
+export * from './audit-evidence';
 export * from './workforce-planning';
 export * from './integrations-api';
 export * from './people-analytics';

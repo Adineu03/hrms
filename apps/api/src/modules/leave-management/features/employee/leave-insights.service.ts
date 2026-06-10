@@ -94,6 +94,22 @@ export class LeaveInsightsService {
       trendDirection = 'stable';
     }
 
+    // Attendance correlation for the summary card (days present this year)
+    const attendance = await this.db
+      .select({ status: schema.attendanceRecords.status })
+      .from(schema.attendanceRecords)
+      .where(
+        and(
+          eq(schema.attendanceRecords.orgId, orgId),
+          eq(schema.attendanceRecords.employeeId, userId),
+          gte(schema.attendanceRecords.date, startDate),
+          lte(schema.attendanceRecords.date, endDate),
+        ),
+      );
+    const attendanceDays = attendance.filter(
+      (a) => a.status === 'present' || a.status === 'late' || a.status === 'wfh',
+    ).length;
+
     return {
       year,
       totalEntitled,
@@ -104,6 +120,11 @@ export class LeaveInsightsService {
       avgPerMonth,
       trendDirection,
       totalRequests: requests.length,
+      // Aliases + extras consumed by the employee Insights tab
+      utilizationPercent: utilizationPercentage,
+      averagePerMonth: avgPerMonth,
+      attendanceDays,
+      leaveDays: totalDaysUsed,
     };
   }
 
@@ -115,6 +136,7 @@ export class LeaveInsightsService {
 
     const results = await this.db
       .select({
+        leaveTypeId: schema.leaveTypes.id,
         leaveTypeName: schema.leaveTypes.name,
         leaveTypeCode: schema.leaveTypes.code,
         leaveTypeColor: schema.leaveTypes.color,
@@ -132,36 +154,87 @@ export class LeaveInsightsService {
         ),
       );
 
+    // Entitlements per leave type (from the balances table) for used/entitled bars
+    const balances = await this.db
+      .select({
+        leaveTypeId: schema.leaveBalances.leaveTypeId,
+        entitled: schema.leaveBalances.entitled,
+        leaveTypeName: schema.leaveTypes.name,
+        leaveTypeCode: schema.leaveTypes.code,
+        leaveTypeColor: schema.leaveTypes.color,
+      })
+      .from(schema.leaveBalances)
+      .innerJoin(schema.leaveTypes, eq(schema.leaveBalances.leaveTypeId, schema.leaveTypes.id))
+      .where(
+        and(
+          eq(schema.leaveBalances.orgId, orgId),
+          eq(schema.leaveBalances.employeeId, userId),
+          eq(schema.leaveBalances.year, year),
+        ),
+      );
+
     // Aggregate by leave type
-    const typeMap: Record<string, { name: string; code: string; color: string; totalDays: number }> = {};
+    const typeMap: Record<
+      string,
+      { id: string; name: string; code: string; color: string; totalDays: number; entitled: number }
+    > = {};
     let grandTotal = 0;
+
+    for (const b of balances) {
+      typeMap[b.leaveTypeId] = {
+        id: b.leaveTypeId,
+        name: b.leaveTypeName,
+        code: b.leaveTypeCode,
+        color: b.leaveTypeColor || '#4F46E5',
+        totalDays: 0,
+        entitled: Number(b.entitled) || 0,
+      };
+    }
 
     for (const r of results) {
       const days = Number(r.totalDays);
       grandTotal += days;
 
-      if (!typeMap[r.leaveTypeName]) {
-        typeMap[r.leaveTypeName] = {
+      if (!typeMap[r.leaveTypeId]) {
+        typeMap[r.leaveTypeId] = {
+          id: r.leaveTypeId,
           name: r.leaveTypeName,
           code: r.leaveTypeCode,
           color: r.leaveTypeColor || '#4F46E5',
           totalDays: 0,
+          entitled: 0,
         };
       }
-      typeMap[r.leaveTypeName].totalDays += days;
+      typeMap[r.leaveTypeId].totalDays += days;
     }
 
     // Build pie chart data with percentages
     const breakdown = Object.values(typeMap)
       .map((t) => ({
-        ...t,
+        name: t.name,
+        code: t.code,
+        color: t.color,
+        totalDays: t.totalDays,
         percentage: grandTotal > 0 ? Math.round((t.totalDays / grandTotal) * 100) : 0,
       }))
       .sort((a, b) => b.totalDays - a.totalDays);
 
+    // Tab-facing shape: per-type used vs entitled bars
+    const data = Object.values(typeMap)
+      .map((t) => ({
+        leaveTypeId: t.id,
+        leaveTypeName: t.name,
+        color: t.color,
+        used: t.totalDays,
+        entitled: t.entitled,
+        percent: t.entitled > 0 ? Math.round((t.totalDays / t.entitled) * 100) : 0,
+      }))
+      .sort((a, b) => b.used - a.used);
+
     return {
       year,
       breakdown,
+      data,
       totalDaysUsed: grandTotal,
       mostUsedType: breakdown.length > 0 ? breakdown[0].name : null,
     };
@@ -221,7 +294,20 @@ export class LeaveInsightsService {
       return { month: m.month, movingAvg: Math.round(avg * 10) / 10 };
     });
 
-    return { months, movingAverage: movingAvg };
+    const MONTH_NAMES = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+
+    // Tab-facing shape: { month, monthName, daysUsed }
+    const data = months.map((m) => ({
+      month: m.month,
+      monthName: MONTH_NAMES[parseInt(m.month.slice(5, 7), 10) - 1] ?? m.month,
+      daysUsed: m.totalDays,
+      requestCount: m.requestCount,
+    }));
+
+    return { months, movingAverage: movingAvg, data };
   }
 
   // ── Remaining Leave Projection ──────────────────────────────────────────
@@ -294,11 +380,35 @@ export class LeaveInsightsService {
       };
     });
 
+    const MONTH_NAMES = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+
+    // Tab-facing shape: { leaveTypeName, currentRate, projectedExhaustMonth/Year, remainingDays }
+    const data = projections.map((p) => {
+      let projectedExhaustMonth: string | null = null;
+      let projectedExhaustYear: number | null = null;
+      if (p.estimatedExhaustionDate) {
+        const d = new Date(p.estimatedExhaustionDate);
+        projectedExhaustMonth = MONTH_NAMES[d.getMonth()];
+        projectedExhaustYear = d.getFullYear();
+      }
+      return {
+        leaveTypeName: p.leaveTypeName,
+        currentRate: p.avgMonthlyUsage,
+        projectedExhaustMonth,
+        projectedExhaustYear,
+        remainingDays: p.available,
+      };
+    });
+
     return {
       year,
       currentMonth,
       remainingMonths,
       projections,
+      data,
     };
   }
 
@@ -369,12 +479,20 @@ export class LeaveInsightsService {
     // Overall health
     const overallUsageRate = totalEntitled > 0 ? (totalUsed / totalEntitled) * 100 : 0;
     let overallStatus: 'green' | 'yellow' | 'red';
+    let overallLabel: string;
+    let overallMessage: string;
     if (overallUsageRate < 60) {
       overallStatus = 'green';
+      overallLabel = 'Healthy';
+      overallMessage = 'Your leave balance is in good shape for the rest of the year.';
     } else if (overallUsageRate < 85) {
       overallStatus = 'yellow';
+      overallLabel = 'Watch';
+      overallMessage = 'Balance is getting low — plan remaining leave carefully.';
     } else {
       overallStatus = 'red';
+      overallLabel = 'Low Balance';
+      overallMessage = 'Balance critically low — very little leave remaining this year.';
     }
 
     return {
@@ -385,6 +503,11 @@ export class LeaveInsightsService {
       redCount: indicators.filter((i) => i.status === 'red').length,
       yellowCount: indicators.filter((i) => i.status === 'yellow').length,
       greenCount: indicators.filter((i) => i.status === 'green').length,
+      // Flat shape consumed by the employee Insights tab health card
+      status: overallStatus,
+      label: overallLabel,
+      message: overallMessage,
+      usageRate: Math.round(overallUsageRate),
     };
   }
 

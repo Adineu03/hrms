@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Header, Param, UnauthorizedException } from '@nestjs/common';
 import { Roles } from '../../../../shared/auth/decorators/roles.decorator';
 import { TenantService } from '../../../../shared/multi-tenancy/tenant.service';
 import { SampleReportsService } from './sample-reports.service';
@@ -29,7 +29,8 @@ export class SampleReportsController {
   }
 
   @Get(':reportId/download')
-  async downloadReport(@Param('reportId') reportId: string) {
-    return this.service.downloadReport(this.getOrgIdOrThrow(), this.getUserIdOrThrow(), reportId);
+  @Header('Content-Type', 'text/csv')
+  async downloadReport(@Param('reportId') reportId: string): Promise<string> {
+    return this.service.downloadReportCsv(this.getOrgIdOrThrow(), this.getUserIdOrThrow(), reportId);
   }
 }

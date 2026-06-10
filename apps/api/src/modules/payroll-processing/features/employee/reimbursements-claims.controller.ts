@@ -35,9 +35,10 @@ export class ReimbursementsClaimsController {
     @Body()
     dto: {
       type: string;
-      amount: string;
+      amount: string | number;
       description: string;
       receiptUrl?: string;
+      receiptName?: string;
     },
   ) {
     const orgId = this.getOrgIdOrThrow();

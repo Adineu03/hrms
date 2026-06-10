@@ -36,7 +36,10 @@ export class TimesheetHistoryController {
     @Query('status') status?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
     @Query('projectId') projectId?: string,
+    @Query('project') project?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -44,9 +47,9 @@ export class TimesheetHistoryController {
     const userId = this.getUserIdOrThrow();
     return this.timesheetHistoryService.listSubmissions(orgId, userId, {
       status,
-      from,
-      to,
-      projectId,
+      from: from ?? fromDate,
+      to: to ?? toDate,
+      projectId: projectId ?? project,
       page,
       limit,
     });

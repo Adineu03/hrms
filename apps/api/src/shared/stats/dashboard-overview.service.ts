@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, desc, eq, gt, gte, inArray, isNotNull, lte, max, sum } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, gte, inArray, isNotNull, lte, max, ne, sum } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../infrastructure/database/database.module';
 import * as schema from '../../infrastructure/database/schema';
@@ -188,7 +188,8 @@ export class DashboardOverviewService {
           createdAt: schema.auditLogs.createdAt,
         })
         .from(schema.auditLogs)
-        .where(eq(schema.auditLogs.orgId, orgId))
+        // DSARs live in audit_logs too (action='data_request') — they'd dominate the feed.
+        .where(and(eq(schema.auditLogs.orgId, orgId), ne(schema.auditLogs.action, 'data_request')))
         .orderBy(desc(schema.auditLogs.createdAt))
         .limit(8),
       this.db

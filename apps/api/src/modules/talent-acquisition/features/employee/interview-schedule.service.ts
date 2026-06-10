@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, desc, sql, or, ilike, gte, lt } from 'drizzle-orm';
+import { eq, and, desc, sql, or, ilike, gte, lt, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -48,6 +48,7 @@ export class InterviewScheduleService {
         stageName: schema.recruitmentPipelineStages.name,
         stageType: schema.recruitmentPipelineStages.stageType,
         postingTitle: schema.jobPostings.title,
+        departmentName: schema.departments.name,
       })
       .from(schema.interviews)
       .leftJoin(
@@ -62,10 +63,18 @@ export class InterviewScheduleService {
         schema.jobPostings,
         eq(schema.applications.jobPostingId, schema.jobPostings.id),
       )
+      .innerJoin(
+        schema.jobRequisitions,
+        eq(schema.applications.requisitionId, schema.jobRequisitions.id),
+      )
+      .leftJoin(
+        schema.departments,
+        eq(schema.jobRequisitions.departmentId, schema.departments.id),
+      )
       .where(
         and(
           eq(schema.interviews.orgId, orgId),
-          sql`${schema.interviews.candidateId} = ANY(${candidateIds}::uuid[])`,
+          inArray(schema.interviews.candidateId, candidateIds),
           or(
             eq(schema.interviews.status, 'scheduled'),
             eq(schema.interviews.status, 'confirmed'),
@@ -123,7 +132,7 @@ export class InterviewScheduleService {
         and(
           eq(schema.interviews.id, interviewId),
           eq(schema.interviews.orgId, orgId),
-          sql`${schema.interviews.candidateId} = ANY(${candidateIds}::uuid[])`,
+          inArray(schema.interviews.candidateId, candidateIds),
         ),
       )
       .limit(1);
@@ -147,7 +156,7 @@ export class InterviewScheduleService {
           lastName: schema.users.lastName,
         })
         .from(schema.users)
-        .where(sql`${schema.users.id} = ANY(${panelUserIds}::uuid[])`);
+        .where(inArray(schema.users.id, panelUserIds));
 
       panelDetails = panelMembers.map((m) => {
         const user = panelUsers.find((u) => u.id === m.userId);
@@ -302,6 +311,7 @@ export class InterviewScheduleService {
         stageName: schema.recruitmentPipelineStages.name,
         stageType: schema.recruitmentPipelineStages.stageType,
         postingTitle: schema.jobPostings.title,
+        departmentName: schema.departments.name,
       })
       .from(schema.interviews)
       .leftJoin(
@@ -316,10 +326,18 @@ export class InterviewScheduleService {
         schema.jobPostings,
         eq(schema.applications.jobPostingId, schema.jobPostings.id),
       )
+      .innerJoin(
+        schema.jobRequisitions,
+        eq(schema.applications.requisitionId, schema.jobRequisitions.id),
+      )
+      .leftJoin(
+        schema.departments,
+        eq(schema.jobRequisitions.departmentId, schema.departments.id),
+      )
       .where(
         and(
           eq(schema.interviews.orgId, orgId),
-          sql`${schema.interviews.candidateId} = ANY(${candidateIds}::uuid[])`,
+          inArray(schema.interviews.candidateId, candidateIds),
           or(
             eq(schema.interviews.status, 'completed'),
             eq(schema.interviews.status, 'cancelled'),
@@ -354,7 +372,7 @@ export class InterviewScheduleService {
         and(
           eq(schema.interviews.id, interviewId),
           eq(schema.interviews.orgId, orgId),
-          sql`${schema.interviews.candidateId} = ANY(${candidateIds}::uuid[])`,
+          inArray(schema.interviews.candidateId, candidateIds),
         ),
       )
       .limit(1);
@@ -368,26 +386,67 @@ export class InterviewScheduleService {
 
   // ── DTO Mapper ────────────────────────────────────────────────────────
 
+  private formatTime(d: Date): string {
+    return d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata',
+    });
+  }
+
   private toInterviewDto(row: {
     interview: typeof schema.interviews.$inferSelect;
     stageName: string | null;
     stageType: string | null;
     postingTitle: string;
+    departmentName?: string | null;
   }) {
+    const scheduledAt = row.interview.scheduledAt;
+    const durationMin = Number(row.interview.duration) || 60;
+    const endAt = scheduledAt
+      ? new Date(scheduledAt.getTime() + durationMin * 60 * 1000)
+      : null;
+    const metadata = (row.interview.metadata as Record<string, any>) || {};
+    const panel = Array.isArray(row.interview.panelMembers)
+      ? (row.interview.panelMembers as Array<Record<string, any>>)
+      : [];
+
     return {
       id: row.interview.id,
       applicationId: row.interview.applicationId,
       candidateId: row.interview.candidateId,
       postingTitle: row.postingTitle,
-      stageName: row.stageName,
+      // Aliases consumed by the Interview Schedule tab
+      positionTitle: row.postingTitle,
+      department: row.departmentName || 'General',
+      date: scheduledAt?.toISOString() || null,
+      startTime: scheduledAt ? this.formatTime(scheduledAt) : '',
+      endTime: endAt ? this.formatTime(endAt) : '',
+      type: row.interview.interviewType,
+      videoLink:
+        metadata.videoLink ||
+        (row.interview.interviewType === 'video' &&
+        typeof row.interview.location === 'string' &&
+        row.interview.location.startsWith('http')
+          ? row.interview.location
+          : null),
+      panelMembers: panel.map((m, idx) => ({
+        id: m.userId || String(idx),
+        name: m.name || 'Panel Member',
+        role: m.role || 'Interviewer',
+      })),
+      checklist: Array.isArray(metadata.checklist) ? metadata.checklist : null,
+      notes: row.interview.notes || null,
+      stageName: row.stageName || 'Interview',
       stageType: row.stageType,
-      scheduledAt: row.interview.scheduledAt?.toISOString() || null,
-      duration: row.interview.duration,
+      scheduledAt: scheduledAt?.toISOString() || null,
+      duration: durationMin,
       location: row.interview.location,
       interviewType: row.interview.interviewType,
       status: row.interview.status,
       decision: row.interview.decision,
-      rescheduleCount: row.interview.rescheduleCount,
+      rescheduleCount: Number(row.interview.rescheduleCount) || 0,
       createdAt: row.interview.createdAt.toISOString(),
       updatedAt: row.interview.updatedAt.toISOString(),
     };

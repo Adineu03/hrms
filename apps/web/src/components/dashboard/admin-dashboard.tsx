@@ -7,7 +7,7 @@ import { DashboardHeader } from './dashboard-header';
 import { KpiCard } from './kpi-card';
 import { WidgetCard, WidgetEmpty } from './widget-card';
 import { TrendAreaChart, DonutChart } from './lazy-charts';
-import { CHART_COLORS, type AdminOverview } from './types';
+import { CATEGORICAL_COLORS, CHART_COLORS, type AdminOverview } from './types';
 
 const ACTION_LABEL: Record<string, string> = {
   create: 'created',
@@ -60,23 +60,22 @@ export function AdminDashboard({ data }: { data: AdminOverview }) {
           <TrendAreaChart data={charts.headcountTrend} zoomYAxis />
         </div>
         <div className="dash-rise lg:col-span-2 bg-card rounded-2xl border border-border shadow-sm p-5" style={{ ['--rise-delay' as string]: '180ms' }}>
-          <h3 className="text-sm font-semibold text-text mb-3">People by department</h3>
-          <div className="flex items-center gap-4">
+          <h3 className="text-sm font-semibold text-text mb-2">People by department</h3>
+          <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <DonutChart
                 data={charts.departmentDistribution.map((d) => ({ name: d.name, value: d.value }))}
+                height={170}
                 centerLabel={String(deptTotal)}
                 centerSub="employees"
               />
             </div>
-            <div className="space-y-2 text-sm shrink-0">
+            <div className="space-y-1.5 text-sm shrink-0">
               {charts.departmentDistribution.map((d, i) => (
                 <div key={d.name} className="flex items-center gap-2">
                   <span
                     className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
-                    style={{
-                      backgroundColor: [CHART_COLORS.primary, CHART_COLORS.primaryTint, CHART_COLORS.accent, CHART_COLORS.accentTint, CHART_COLORS.muted][i % 5],
-                    }}
+                    style={{ backgroundColor: CATEGORICAL_COLORS[i % CATEGORICAL_COLORS.length] }}
                   />
                   <span className="text-text truncate max-w-[120px]">{d.name}</span>
                   <span className="text-text-muted">{d.value}</span>
@@ -87,7 +86,7 @@ export function AdminDashboard({ data }: { data: AdminOverview }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <WidgetCard title="Approvals waiting" badge={kpis.pendingApprovals.value} accent="primary" delayMs={240}>
           <div className="space-y-2.5">
             {widgets.pendingApprovals.map((a) => (
@@ -110,14 +109,16 @@ export function AdminDashboard({ data }: { data: AdminOverview }) {
             <WidgetEmpty icon={FileClock} title="No activity yet" description="Audit events will appear here." />
           ) : (
             <div className="space-y-2.5">
-              {widgets.recentActivity.slice(0, 5).map((a) => (
-                <div key={a.id} className="text-sm leading-snug">
-                  <span className="text-text font-medium">{a.userName}</span>{' '}
-                  <span className="text-text-muted">{ACTION_LABEL[a.action] ?? a.action}</span>{' '}
-                  <span className="text-text">{a.entity.replace(/_/g, ' ')}</span>
-                  <div className="text-xs text-text-muted mt-0.5" title={formatDateTime(a.createdAt)}>
-                    {timeAgo(a.createdAt, data.effectiveDate)}
+              {widgets.recentActivity.slice(0, 6).map((a) => (
+                <div key={a.id} className="flex items-baseline justify-between gap-2 text-sm leading-snug">
+                  <div className="min-w-0 truncate">
+                    <span className="text-text font-medium">{a.userName}</span>{' '}
+                    <span className="text-text-muted">{ACTION_LABEL[a.action] ?? a.action}</span>{' '}
+                    <span className="text-text">{a.entity.replace(/_/g, ' ')}</span>
                   </div>
+                  <span className="shrink-0 text-xs text-text-muted" title={formatDateTime(a.createdAt)}>
+                    {timeAgo(a.createdAt, data.effectiveDate)}
+                  </span>
                 </div>
               ))}
             </div>

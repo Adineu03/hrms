@@ -38,6 +38,7 @@ export class CompoffMgmtService {
         earnedDate: r.earnedDate,
         reason: r.reason,
         workType: r.workType,
+        days: Number(r.daysEarned),
         daysEarned: Number(r.daysEarned),
         daysUsed: Number(r.daysUsed),
         daysAvailable: Number(r.daysAvailable),
@@ -182,20 +183,20 @@ export class CompoffMgmtService {
     let totalCancelled = 0;
 
     for (const r of records) {
-      const earned = Number(r.daysEarned);
-      const used = Number(r.daysUsed);
-      const available = Number(r.daysAvailable);
+      const earned = Number(r.daysEarned) || 0;
+      const used = Number(r.daysUsed) || 0;
+      const available = Number(r.daysAvailable) || 0;
 
       totalEarned += earned;
+      // Days actually consumed, regardless of the record's current status
+      totalUsed += used;
 
-      if (r.status === 'used') {
-        totalUsed += used;
-      } else if (r.status === 'expired') {
-        totalExpired += earned;
+      if (r.status === 'expired') {
+        // Whatever was left unconsumed when the record expired
+        totalExpired += available > 0 ? available : Math.max(0, earned - used);
       } else if (r.status === 'cancelled') {
         totalCancelled += earned;
-      } else if (r.status === 'active') {
-        totalUsed += used;
+      } else if (r.status === 'active' || r.status === 'approved') {
         totalAvailable += available;
       }
     }
@@ -207,6 +208,12 @@ export class CompoffMgmtService {
       totalExpired,
       totalCancelled,
       activeRecords: records.filter((r) => r.status === 'active').length,
+      // Flat aliases consumed by the employee Comp-off tab balance cards
+      earned: totalEarned,
+      used: totalUsed,
+      expired: totalExpired,
+      available: totalAvailable,
+      cancelled: totalCancelled,
     };
   }
 
@@ -264,6 +271,7 @@ export class CompoffMgmtService {
           earnedDate: r.earnedDate,
           reason: r.reason,
           workType: r.workType,
+          days: Number(r.daysAvailable),
           daysAvailable: Number(r.daysAvailable),
           expiryDate: r.expiryDate,
           daysUntilExpiry,

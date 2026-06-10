@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, desc, sql, or, ilike } from 'drizzle-orm';
+import { eq, and, desc, sql, or, ilike, inArray, ne } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -27,6 +27,7 @@ export class InternalJobBoardService {
       page?: number;
       limit?: number;
     },
+    employeeId?: string,
   ) {
     const page = filters.page || 1;
     const limit = filters.limit || 20;
@@ -100,13 +101,52 @@ export class InternalJobBoardService {
       )
       .where(and(...conditions));
 
+    // Personalize: which postings has this employee already applied to / bookmarked?
+    let appliedPostingIds = new Set<string>();
+    let bookmarkedPostingIds = new Set<string>();
+    if (employeeId) {
+      const myApps = await this.db
+        .select({ jobPostingId: schema.applications.jobPostingId })
+        .from(schema.applications)
+        .where(
+          and(
+            eq(schema.applications.orgId, orgId),
+            eq(schema.applications.internalEmployeeId, employeeId),
+            eq(schema.applications.isActive, true),
+            ne(schema.applications.status, 'withdrawn'),
+          ),
+        );
+      appliedPostingIds = new Set(myApps.map((a) => a.jobPostingId));
+      bookmarkedPostingIds = new Set(await this.getBookmarkedIds(orgId, employeeId));
+    }
+
     return {
-      data: rows.map((r) => this.toJobListDto(r)),
+      data: rows.map((r) =>
+        this.toJobListDto(r, {
+          isApplied: appliedPostingIds.has(r.posting.id),
+          isBookmarked: bookmarkedPostingIds.has(r.posting.id),
+        }),
+      ),
       total: countResult?.count || 0,
       page,
       limit,
       totalPages: Math.ceil((countResult?.count || 0) / limit),
     };
+  }
+
+  private async getBookmarkedIds(orgId: string, employeeId: string): Promise<string[]> {
+    const [profile] = await this.db
+      .select({ onboardingProgress: schema.employeeProfiles.onboardingProgress })
+      .from(schema.employeeProfiles)
+      .where(
+        and(
+          eq(schema.employeeProfiles.orgId, orgId),
+          eq(schema.employeeProfiles.userId, employeeId),
+        ),
+      )
+      .limit(1);
+    const progress = (profile?.onboardingProgress as Record<string, any>) || {};
+    return Array.isArray(progress.bookmarkedJobs) ? progress.bookmarkedJobs : [];
   }
 
   // ── Get Job Posting Detail ────────────────────────────────────────────
@@ -393,14 +433,14 @@ export class InternalJobBoardService {
       .limit(1);
 
     if (!profile) {
-      return { bookmarks: [] };
+      return { data: [], bookmarks: [], total: 0 };
     }
 
     const currentProgress = (profile.onboardingProgress as Record<string, any>) || {};
     const bookmarkedJobs: string[] = currentProgress.bookmarkedJobs || [];
 
     if (bookmarkedJobs.length === 0) {
-      return { bookmarks: [] };
+      return { data: [], bookmarks: [], total: 0 };
     }
 
     const rows = await this.db
@@ -421,13 +461,15 @@ export class InternalJobBoardService {
       .where(
         and(
           eq(schema.jobPostings.orgId, orgId),
-          sql`${schema.jobPostings.id} = ANY(${bookmarkedJobs}::uuid[])`,
+          inArray(schema.jobPostings.id, bookmarkedJobs),
         ),
       )
       .orderBy(desc(schema.jobPostings.publishedAt));
 
+    const mapped = rows.map((r) => this.toJobListDto(r, { isBookmarked: true }));
     return {
-      bookmarks: rows.map((r) => this.toJobListDto(r)),
+      data: mapped,
+      bookmarks: mapped,
       total: rows.length,
     };
   }
@@ -480,6 +522,8 @@ export class InternalJobBoardService {
       .orderBy(desc(schema.jobPostings.publishedAt))
       .limit(50);
 
+    const bookmarkedIds = new Set(await this.getBookmarkedIds(orgId, employeeId));
+
     // Score and sort by skill match
     const scored = rows.map((r) => {
       const postingSkills = (r.posting.skills as string[]) || [];
@@ -493,7 +537,7 @@ export class InternalJobBoardService {
           ? Math.round((matchCount / postingSkills.length) * 100)
           : 0;
       return {
-        ...this.toJobListDto(r),
+        ...this.toJobListDto(r, { isBookmarked: bookmarkedIds.has(r.posting.id) }),
         matchScore,
         matchedSkills: employeeSkills.filter((s) =>
           postingSkills.some(
@@ -505,20 +549,35 @@ export class InternalJobBoardService {
 
     // Sort by match score descending, return top matches
     scored.sort((a, b) => b.matchScore - a.matchScore);
+    const top = scored.slice(0, 20);
 
     return {
-      recommendations: scored.slice(0, 20),
+      data: top,
+      recommendations: top,
       basedOnSkills: employeeSkills,
     };
   }
 
   // ── DTO Mappers ───────────────────────────────────────────────────────
 
-  private toJobListDto(row: {
-    posting: typeof schema.jobPostings.$inferSelect;
-    requisition: typeof schema.jobRequisitions.$inferSelect;
-    departmentName: string | null;
-  }) {
+  /** Split a free-text column into display bullet lines (always an array). */
+  private toLines(text: string | null | undefined): string[] {
+    if (!text) return [];
+    return text
+      .split(/\r?\n|•/)
+      .map((line) => line.replace(/^[-*\s]+/, '').trim())
+      .filter(Boolean);
+  }
+
+  private toJobListDto(
+    row: {
+      posting: typeof schema.jobPostings.$inferSelect;
+      requisition: typeof schema.jobRequisitions.$inferSelect;
+      departmentName: string | null;
+    },
+    flags: { isApplied?: boolean; isBookmarked?: boolean } = {},
+  ) {
+    const locationDetails = (row.posting.locationDetails as Record<string, any>) || {};
     return {
       id: row.posting.id,
       title: row.posting.title,
@@ -526,18 +585,26 @@ export class InternalJobBoardService {
       postingType: row.posting.postingType,
       departmentId: row.requisition.departmentId,
       departmentName: row.departmentName,
+      department: row.departmentName || 'General',
       locationId: row.requisition.locationId,
+      location: locationDetails.city || locationDetails.location || 'Bengaluru',
       gradeId: row.requisition.gradeId,
       employmentType: row.requisition.employmentType,
-      skills: row.posting.skills,
+      skills: Array.isArray(row.posting.skills) ? row.posting.skills : [],
       experience: row.posting.experience,
+      requirements: this.toLines(row.posting.requirements),
+      responsibilities: this.toLines(row.posting.responsibilities),
+      benefits: this.toLines(row.posting.benefits),
       salaryVisible: row.posting.salaryVisible,
       salaryDisplay: row.posting.salaryDisplay,
       applicationDeadline: row.posting.applicationDeadline,
-      viewCount: row.posting.viewCount,
-      applicationCount: row.posting.applicationCount,
+      viewCount: Number(row.posting.viewCount) || 0,
+      applicationCount: Number(row.posting.applicationCount) || 0,
+      postedDate: (row.posting.publishedAt ?? row.posting.createdAt).toISOString(),
       publishedAt: row.posting.publishedAt?.toISOString() || null,
       createdAt: row.posting.createdAt.toISOString(),
+      isApplied: flags.isApplied ?? false,
+      isBookmarked: flags.isBookmarked ?? false,
     };
   }
 
@@ -548,9 +615,6 @@ export class InternalJobBoardService {
   }) {
     return {
       ...this.toJobListDto(row),
-      requirements: row.posting.requirements,
-      responsibilities: row.posting.responsibilities,
-      benefits: row.posting.benefits,
       qualifications: row.posting.qualifications,
       locationDetails: row.posting.locationDetails,
       requisitionTitle: row.requisition.title,

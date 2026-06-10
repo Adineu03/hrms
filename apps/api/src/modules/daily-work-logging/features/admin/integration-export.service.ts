@@ -179,65 +179,109 @@ export class IntegrationExportService {
     orgId: string,
     filters: { startDate?: string; endDate?: string; departmentId?: string },
   ) {
-    const startDate =
-      filters.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const endDate = filters.endDate ?? new Date().toISOString().split('T')[0];
+    // Current-period fallback: anchor the default window at the latest date
+    // that actually has timesheet data (the seed ends in the past).
+    const today = new Date().toISOString().split('T')[0];
+    let endDate = filters.endDate;
+    if (!endDate) {
+      const [latestRow] = await this.db
+        .select({ latest: sql<string | null>`MAX(${schema.timesheetEntries.date})` })
+        .from(schema.timesheetEntries)
+        .where(eq(schema.timesheetEntries.orgId, orgId));
+      endDate = latestRow?.latest ?? today;
+    }
+    let startDate = filters.startDate;
+    if (!startDate) {
+      const d = new Date(`${endDate}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() - 29);
+      startDate = d.toISOString().split('T')[0];
+    }
 
-    // Compare timesheet hours with attendance records
+    // Compare timesheet hours with attendance records.
+    // Aggregated in independent subqueries to avoid join fan-out
+    // (a direct double LEFT JOIN multiplies SUMs by the row count of the other table).
     const correlation = await this.db.execute(sql`
       SELECT
         u.id AS employee_id,
         u.first_name,
         u.last_name,
         d.name AS department_name,
-        COALESCE(SUM(CAST(te.hours AS numeric)), 0) AS timesheet_hours,
-        COALESCE(SUM(ar.total_work_minutes), 0) / 60.0 AS attendance_hours,
-        COALESCE(SUM(CAST(te.hours AS numeric)), 0)
-          - COALESCE(SUM(ar.total_work_minutes), 0) / 60.0 AS variance_hours,
-        CASE WHEN COALESCE(SUM(ar.total_work_minutes), 0) > 0
-          THEN ROUND(
-            ABS(
-              COALESCE(SUM(CAST(te.hours AS numeric)), 0) -
-              COALESCE(SUM(ar.total_work_minutes), 0) / 60.0
-            ) / (COALESCE(SUM(ar.total_work_minutes), 0) / 60.0) * 100,
-            2
-          )
-          ELSE 0
-        END AS variance_percentage,
-        COUNT(DISTINCT te.date) AS timesheet_days,
-        COUNT(DISTINCT ar.date) AS attendance_days
+        COALESCE(t.total_hours, 0) AS timesheet_hours,
+        COALESCE(t.days_logged, 0) AS timesheet_days,
+        COALESCE(a.total_hours, 0) AS attendance_hours,
+        COALESCE(a.days_present, 0) AS attendance_days
       FROM users u
       LEFT JOIN employee_profiles ep ON ep.user_id = u.id AND ep.org_id = u.org_id
       LEFT JOIN departments d ON d.id = ep.department_id AND d.org_id = u.org_id
-      LEFT JOIN timesheet_entries te ON te.employee_id = u.id AND te.org_id = u.org_id
-        AND te.date >= ${startDate}
-        AND te.date <= ${endDate}
-        AND te.status != 'draft'
-      LEFT JOIN attendance_records ar ON ar.employee_id = u.id AND ar.org_id = u.org_id
-        AND ar.date >= ${startDate}
-        AND ar.date <= ${endDate}
-        AND ar.status IN ('present', 'late')
+      LEFT JOIN (
+        SELECT te.employee_id,
+          SUM(CAST(te.hours AS numeric)) AS total_hours,
+          COUNT(DISTINCT te.date) AS days_logged
+        FROM timesheet_entries te
+        WHERE te.org_id = ${orgId}
+          AND te.date >= ${startDate}
+          AND te.date <= ${endDate}
+          AND te.status != 'draft'
+        GROUP BY te.employee_id
+      ) t ON t.employee_id = u.id
+      LEFT JOIN (
+        SELECT ar.employee_id,
+          SUM(ar.total_work_minutes) / 60.0 AS total_hours,
+          COUNT(DISTINCT ar.date) AS days_present
+        FROM attendance_records ar
+        WHERE ar.org_id = ${orgId}
+          AND ar.date >= ${startDate}
+          AND ar.date <= ${endDate}
+          AND ar.status IN ('present', 'late')
+        GROUP BY ar.employee_id
+      ) a ON a.employee_id = u.id
       WHERE u.org_id = ${orgId}
         AND u.is_active = true
         ${filters.departmentId ? sql`AND ep.department_id = ${filters.departmentId}` : sql``}
-      GROUP BY u.id, u.first_name, u.last_name, d.name
-      HAVING (
-        COALESCE(SUM(CAST(te.hours AS numeric)), 0) > 0
-        OR COALESCE(SUM(ar.total_work_minutes), 0) > 0
-      )
-      ORDER BY variance_hours DESC
+        AND (COALESCE(t.total_hours, 0) > 0 OR COALESCE(a.total_hours, 0) > 0)
+      ORDER BY u.first_name, u.last_name
     `);
 
-    // Flag high-variance employees (variance > 10%)
-    const flagged = (correlation as any[]).filter(
-      (r: any) => parseFloat(r.variance_percentage || '0') > 10,
-    );
+    const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
+
+    // Transform to the shape the Integration & Export tab expects (camelCase).
+    const data = (correlation as unknown as any[]).map((r: any) => {
+      const timesheetHours = round2(r.timesheet_hours);
+      const attendanceHours = round2(r.attendance_hours);
+      const variance = round2(timesheetHours - attendanceHours);
+      const variancePercentage =
+        attendanceHours > 0
+          ? Math.round((Math.abs(variance) / attendanceHours) * 10000) / 100
+          : 100;
+      let status: 'match' | 'mismatch' | 'missing';
+      if (timesheetHours === 0 || attendanceHours === 0) {
+        status = 'missing';
+      } else if (variancePercentage <= 10) {
+        status = 'match';
+      } else {
+        status = 'mismatch';
+      }
+      return {
+        employeeId: r.employee_id,
+        employeeName: `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || 'Unknown',
+        departmentName: r.department_name ?? null,
+        timesheetHours,
+        attendanceHours,
+        variance,
+        variancePercentage,
+        timesheetDays: Number(r.timesheet_days) || 0,
+        attendanceDays: Number(r.attendance_days) || 0,
+        status,
+      };
+    });
+
+    const flagged = data.filter((r) => r.status !== 'match');
 
     return {
       period: { startDate, endDate },
-      totalEmployeesCompared: (correlation as any[]).length,
+      totalEmployeesCompared: data.length,
       flaggedCount: flagged.length,
-      data: correlation,
+      data,
       flaggedEmployees: flagged,
     };
   }

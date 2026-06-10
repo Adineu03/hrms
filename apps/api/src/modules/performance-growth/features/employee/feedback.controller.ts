@@ -21,6 +21,9 @@ export class FeedbackController {
   @Get('wall') @Roles('super_admin', 'admin', 'manager', 'employee')
   async getWall() { return this.service.getFeedbackWall(this.getOrgIdOrThrow()); }
 
+  @Get('colleagues') @Roles('super_admin', 'admin', 'manager', 'employee')
+  async getColleagues() { return this.service.getColleagues(this.getOrgIdOrThrow(), this.getUserIdOrThrow()); }
+
   @Post() @Roles('super_admin', 'admin', 'manager', 'employee')
   async give(@Body() body: Record<string, any>) { return this.service.giveFeedback(this.getOrgIdOrThrow(), this.getUserIdOrThrow(), body); }
 

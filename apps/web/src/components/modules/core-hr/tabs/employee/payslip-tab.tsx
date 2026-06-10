@@ -8,8 +8,8 @@ import {
   DollarSign,
   FileText,
   AlertCircle,
-  Info,
 } from 'lucide-react';
+import { formatINR, formatDate } from '@/lib/format';
 
 interface SalaryComponent {
   name: string;
@@ -33,14 +33,74 @@ interface RawComponent {
   calculationType?: 'percentage' | 'fixed';
 }
 
+interface Payslip {
+  id: string;
+  month: number;
+  year: number;
+  grossEarnings: string | number | null;
+  totalDeductions: string | number | null;
+  netPay: string | number | null;
+  status?: string | null;
+}
+
+interface YtdSummary {
+  year: number;
+  monthsProcessed: number;
+  ytdEarnings: { grossEarnings: string };
+  ytdDeductions: { incomeTax: string; totalDeductions: string };
+  ytdNetPay: string;
+}
+
+interface TaxDeclaration {
+  id: string;
+  fiscalYear: string;
+  taxRegime: string;
+  totalDeclared: string | number | null;
+  status: string;
+  submittedAt: string | null;
+}
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const formatPeriod = (month: number, year: number) =>
+  `${MONTH_NAMES[month - 1] ?? `Month ${month}`} ${year}`;
+
 export default function PayslipTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [salaryStructure, setSalaryStructure] = useState<SalaryStructure | null>(null);
+  const [payslips, setPayslips] = useState<Payslip[]>([]);
+  const [ytdSummary, setYtdSummary] = useState<YtdSummary | null>(null);
+  const [declarations, setDeclarations] = useState<TaxDeclaration[]>([]);
 
   useEffect(() => {
     fetchSalaryStructure();
+    fetchPayrollData();
   }, []);
+
+  // Payslips + tax data come from the payroll-processing module's employee
+  // endpoints (house pattern: cross-module API calls from the frontend).
+  const fetchPayrollData = async () => {
+    const [payslipsRes, ytdRes, declarationsRes] = await Promise.allSettled([
+      api.get('/payroll-processing/employee/payslips'),
+      api.get('/payroll-processing/employee/payslips/ytd-summary'),
+      api.get('/payroll-processing/employee/tax/declarations'),
+    ]);
+    if (payslipsRes.status === 'fulfilled') {
+      const rows = payslipsRes.value.data?.data;
+      setPayslips(Array.isArray(rows) ? rows : []);
+    }
+    if (ytdRes.status === 'fulfilled') {
+      setYtdSummary(ytdRes.value.data?.data ?? null);
+    }
+    if (declarationsRes.status === 'fulfilled') {
+      const rows = declarationsRes.value.data?.data;
+      setDeclarations(Array.isArray(rows) ? rows : []);
+    }
+  };
 
   const fetchSalaryStructure = async () => {
     setIsLoading(true);
@@ -217,38 +277,188 @@ export default function PayslipTab() {
 
       <hr className="border-border" />
 
-      {/* Payslip History Stub */}
+      {/* Payslip History */}
       <div>
         <h3 className="text-lg font-semibold text-text mb-4 flex items-center gap-2">
           <FileText className="h-5 w-5" />
           Payslip History
         </h3>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-          <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm text-blue-800 font-medium">Coming Soon</p>
-            <p className="text-xs text-blue-700 mt-0.5">
-              Payslip history will be available when the Payroll module is activated.
+
+        {payslips.length > 0 ? (
+          <div className="border border-border rounded-xl overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-background border-b border-border">
+                  <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                    Period
+                  </th>
+                  <th className="text-right text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                    Gross Earnings
+                  </th>
+                  <th className="text-right text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                    Deductions
+                  </th>
+                  <th className="text-right text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                    Net Pay
+                  </th>
+                  <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {payslips.map((ps) => (
+                  <tr key={ps.id} className="bg-card hover:bg-background/50 transition-colors">
+                    <td className="px-4 py-3 text-sm text-text font-medium">
+                      {formatPeriod(ps.month, ps.year)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text text-right font-mono">
+                      {formatINR(Number(ps.grossEarnings) || 0)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-red-700 text-right font-mono">
+                      -{formatINR(Number(ps.totalDeductions) || 0)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-text text-right font-mono font-semibold">
+                      {formatINR(Number(ps.netPay) || 0)}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                          ps.status === 'published'
+                            ? 'bg-green-50 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {ps.status ?? 'generated'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-background rounded-lg border border-border">
+            <FileText className="h-10 w-10 text-text-muted mx-auto mb-3" />
+            <p className="text-sm font-medium text-text">No payslips available yet.</p>
+            <p className="text-xs text-text-muted mt-1">
+              Payslips will appear here once payroll has been processed for you.
             </p>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Tax Summary Stub */}
+      <hr className="border-border" />
+
+      {/* Tax Summary */}
       <div>
         <h3 className="text-lg font-semibold text-text mb-4 flex items-center gap-2">
           <Receipt className="h-5 w-5" />
           Tax Summary
         </h3>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-          <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm text-blue-800 font-medium">Coming Soon</p>
-            <p className="text-xs text-blue-700 mt-0.5">
-              Tax summary and declarations will be available when the Payroll module is activated.
+
+        {ytdSummary && ytdSummary.monthsProcessed > 0 ? (
+          <div className="space-y-4">
+            <p className="text-sm text-text-muted">
+              Year-to-date figures for {ytdSummary.year} ({ytdSummary.monthsProcessed} month
+              {ytdSummary.monthsProcessed === 1 ? '' : 's'} processed).
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="bg-background rounded-lg border border-border p-4">
+                <p className="text-xs text-text-muted mb-1">YTD Gross Earnings</p>
+                <p className="text-lg font-semibold text-text font-mono">
+                  {formatINR(Number(ytdSummary.ytdEarnings?.grossEarnings) || 0)}
+                </p>
+              </div>
+              <div className="bg-background rounded-lg border border-border p-4">
+                <p className="text-xs text-text-muted mb-1">YTD Income Tax (TDS)</p>
+                <p className="text-lg font-semibold text-text font-mono">
+                  {formatINR(Number(ytdSummary.ytdDeductions?.incomeTax) || 0)}
+                </p>
+              </div>
+              <div className="bg-background rounded-lg border border-border p-4">
+                <p className="text-xs text-text-muted mb-1">YTD Total Deductions</p>
+                <p className="text-lg font-semibold text-text font-mono">
+                  {formatINR(Number(ytdSummary.ytdDeductions?.totalDeductions) || 0)}
+                </p>
+              </div>
+              <div className="bg-background rounded-lg border border-border p-4">
+                <p className="text-xs text-text-muted mb-1">YTD Net Pay</p>
+                <p className="text-lg font-semibold text-accent font-mono">
+                  {formatINR(Number(ytdSummary.ytdNetPay) || 0)}
+                </p>
+              </div>
+            </div>
+
+            {declarations.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-text mb-2">Investment Declarations</h4>
+                <div className="border border-border rounded-xl overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-background border-b border-border">
+                        <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                          Fiscal Year
+                        </th>
+                        <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                          Tax Regime
+                        </th>
+                        <th className="text-right text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                          Total Declared
+                        </th>
+                        <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                          Status
+                        </th>
+                        <th className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">
+                          Submitted
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {declarations.map((decl) => (
+                        <tr key={decl.id} className="bg-card hover:bg-background/50 transition-colors">
+                          <td className="px-4 py-3 text-sm text-text font-medium">
+                            {decl.fiscalYear}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-text-muted capitalize">
+                            {decl.taxRegime} regime
+                          </td>
+                          <td className="px-4 py-3 text-sm text-text text-right font-mono">
+                            {formatINR(Number(decl.totalDeclared) || 0)}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                                decl.status === 'verified'
+                                  ? 'bg-green-50 text-green-700'
+                                  : decl.status === 'rejected'
+                                    ? 'bg-red-50 text-red-700'
+                                    : 'bg-yellow-50 text-yellow-700'
+                              }`}
+                            >
+                              {decl.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-text-muted">
+                            {formatDate(decl.submittedAt)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-background rounded-lg border border-border">
+            <Receipt className="h-10 w-10 text-text-muted mx-auto mb-3" />
+            <p className="text-sm font-medium text-text">No tax data for this year yet.</p>
+            <p className="text-xs text-text-muted mt-1">
+              Your year-to-date tax summary will appear here once payroll has been processed.
             </p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

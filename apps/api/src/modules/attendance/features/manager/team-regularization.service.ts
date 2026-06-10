@@ -6,6 +6,7 @@ import * as schema from '../../../../infrastructure/database/schema';
 import { users } from '../../../../infrastructure/database/schema/users';
 import { employeeProfiles } from '../../../../infrastructure/database/schema/employee-profiles';
 import { attendanceRegularizations } from '../../../../infrastructure/database/schema/attendance-regularizations';
+import { buildUserNameMap } from '../../../../shared/database/user-names.util';
 
 @Injectable()
 export class TeamRegularizationService {
@@ -14,6 +15,14 @@ export class TeamRegularizationService {
   ) {}
 
   private toDto(row: Record<string, any>) {
+    // Derive a direct evidence link (evidence is a jsonb array of urls/objects)
+    const evidenceArr = Array.isArray(row.evidence) ? row.evidence : [];
+    const firstEvidence = evidenceArr[0];
+    const evidenceUrl =
+      typeof firstEvidence === 'string'
+        ? firstEvidence
+        : (firstEvidence?.url ?? null);
+
     return {
       id: row.id,
       employeeId: row.employeeId,
@@ -24,10 +33,15 @@ export class TeamRegularizationService {
       reason: row.reason,
       reasonCode: row.reasonCode,
       evidence: row.evidence,
+      evidenceUrl,
       status: row.status,
       reviewedBy: row.reviewedBy,
       reviewedAt: row.reviewedAt,
       reviewerComment: row.reviewerComment,
+      // Tab-friendly aliases (audit column in history view)
+      processedAt: row.reviewedAt,
+      processedBy: row.reviewerName ?? null,
+      approverComment: row.reviewerComment,
       slaDeadline: row.slaDeadline,
       createdAt: row.createdAt,
     };
@@ -68,7 +82,16 @@ export class TeamRegularizationService {
     ];
 
     if (filters.status) {
-      conditions.push(eq(attendanceRegularizations.status, filters.status));
+      // Support comma-separated status lists, e.g. "approved,rejected" (history view)
+      const statuses = filters.status
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (statuses.length === 1) {
+        conditions.push(eq(attendanceRegularizations.status, statuses[0]));
+      } else if (statuses.length > 1) {
+        conditions.push(inArray(attendanceRegularizations.status, statuses));
+      }
     }
 
     // Get total count
@@ -106,10 +129,16 @@ export class TeamRegularizationService {
       .limit(limit)
       .offset(offset);
 
+    const reviewerNames = await buildUserNameMap(
+      this.db,
+      rows.map((r) => r.reviewedBy),
+    );
+
     const data = rows.map((r) =>
       this.toDto({
         ...r,
         employeeName: `${r.firstName} ${r.lastName ?? ''}`.trim(),
+        reviewerName: r.reviewedBy ? reviewerNames.get(r.reviewedBy) ?? null : null,
       }),
     );
 
@@ -284,10 +313,16 @@ export class TeamRegularizationService {
       .where(and(...conditions))
       .orderBy(desc(attendanceRegularizations.createdAt));
 
+    const reviewerNames = await buildUserNameMap(
+      this.db,
+      rows.map((r) => r.reviewedBy),
+    );
+
     const data = rows.map((r) =>
       this.toDto({
         ...r,
         employeeName: `${r.firstName} ${r.lastName ?? ''}`.trim(),
+        reviewerName: r.reviewedBy ? reviewerNames.get(r.reviewedBy) ?? null : null,
       }),
     );
 

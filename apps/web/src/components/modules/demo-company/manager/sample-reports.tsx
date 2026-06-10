@@ -175,20 +175,12 @@ export default function SampleReports() {
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => handleDownload(report.id, 'pdf')}
+                  onClick={() => handleDownload(report.id, 'csv')}
                   disabled={!!downloading}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                 >
                   <Download className="h-4 w-4" />
-                  {isPdfLoading ? 'Downloading...' : 'Download PDF'}
-                </button>
-                <button
-                  onClick={() => handleDownload(report.id, 'csv')}
-                  disabled={!!downloading}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                >
-                  <FileText className="h-4 w-4" />
-                  {isCsvLoading ? 'Downloading...' : 'Download CSV'}
+                  {isPdfLoading || isCsvLoading ? 'Downloading...' : 'Download CSV'}
                 </button>
               </div>
             </div>

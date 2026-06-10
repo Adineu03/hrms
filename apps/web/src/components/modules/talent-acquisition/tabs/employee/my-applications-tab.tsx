@@ -22,6 +22,7 @@ import {
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-50 text-blue-700',
   screening: 'bg-yellow-50 text-yellow-700',
+  interviewing: 'bg-indigo-50 text-indigo-700',
   in_progress: 'bg-indigo-50 text-indigo-700',
   shortlisted: 'bg-purple-50 text-purple-700',
   offered: 'bg-green-50 text-green-700',

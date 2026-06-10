@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -99,14 +99,17 @@ export default function TimesheetHistoryTab() {
         api.get(`/daily-work-logging/employee/history?${params.toString()}`),
         api.get('/daily-work-logging/employee/history/summary'),
       ]);
-      setSubmissions(Array.isArray(histRes.data) ? histRes.data : histRes.data?.data || []);
+      const histData = Array.isArray(histRes.data)
+        ? histRes.data
+        : histRes.data?.data ?? histRes.data?.submissions;
+      setSubmissions(Array.isArray(histData) ? histData : []);
       const sumData = sumRes.data?.data || sumRes.data;
       if (sumData) {
         setSummary({
-          totalSubmissions: sumData.totalSubmissions || 0,
-          totalHoursLogged: sumData.totalHoursLogged || 0,
-          totalBillableHours: sumData.totalBillableHours || 0,
-          approvalRate: sumData.approvalRate || 0,
+          totalSubmissions: Number(sumData.totalSubmissions) || 0,
+          totalHoursLogged: Number(sumData.totalHoursLogged) || 0,
+          totalBillableHours: Number(sumData.totalBillableHours) || 0,
+          approvalRate: Number(sumData.approvalRate) || 0,
         });
       }
     } catch {
@@ -288,17 +291,19 @@ export default function TimesheetHistoryTab() {
           </thead>
           <tbody className="divide-y divide-border">
             {submissions.map((sub) => (
-              <>
-                <tr key={sub.id} className="bg-card hover:bg-background/50 transition-colors">
+              <Fragment key={sub.id}>
+                <tr className="bg-card hover:bg-background/50 transition-colors">
                   <td className="px-4 py-3 text-sm text-text font-medium">{sub.period}</td>
-                  <td className="px-4 py-3 text-sm text-text">{sub.totalHours.toFixed(1)}</td>
-                  <td className="px-4 py-3 text-sm text-green-700">{sub.billableHours.toFixed(1)}</td>
+                  <td className="px-4 py-3 text-sm text-text">{(Number(sub.totalHours) || 0).toFixed(1)}</td>
+                  <td className="px-4 py-3 text-sm text-green-700">{(Number(sub.billableHours) || 0).toFixed(1)}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[sub.status]}`}>
-                      {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[sub.status] || 'bg-gray-100 text-gray-600'}`}>
+                      {(sub.status || 'unknown').charAt(0).toUpperCase() + (sub.status || 'unknown').slice(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-text-muted">{new Date(sub.submittedAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-xs text-text-muted">
+                    {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString() : '—'}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       {sub.status === 'rejected' && (
@@ -339,7 +344,7 @@ export default function TimesheetHistoryTab() {
                   </td>
                 </tr>
                 {expandedId === sub.id && (
-                  <tr key={`${sub.id}-detail`} className="bg-background/30">
+                  <tr className="bg-background/30">
                     <td colSpan={7} className="px-8 py-4">
                       {/* Entries */}
                       {sub.entries && sub.entries.length > 0 && (
@@ -358,12 +363,12 @@ export default function TimesheetHistoryTab() {
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-border">
-                                {sub.entries.map((e) => (
-                                  <tr key={e.id} className="bg-card">
-                                    <td className="px-3 py-1.5 text-xs text-text-muted">{new Date(e.date).toLocaleDateString()}</td>
+                                {sub.entries.map((e, eIdx) => (
+                                  <tr key={e.id || `entry-${eIdx}`} className="bg-card">
+                                    <td className="px-3 py-1.5 text-xs text-text-muted">{e.date ? new Date(e.date).toLocaleDateString() : '—'}</td>
                                     <td className="px-3 py-1.5 text-xs text-text font-medium">{e.project}</td>
                                     <td className="px-3 py-1.5 text-xs text-text-muted">{e.taskCategory}</td>
-                                    <td className="px-3 py-1.5 text-xs text-text font-medium">{e.hours.toFixed(1)}</td>
+                                    <td className="px-3 py-1.5 text-xs text-text font-medium">{(Number(e.hours) || 0).toFixed(1)}</td>
                                     <td className="px-3 py-1.5 text-xs text-text-muted">{e.billable ? 'Yes' : 'No'}</td>
                                     <td className="px-3 py-1.5 text-xs text-text-muted truncate max-w-[200px]">{e.description}</td>
                                   </tr>
@@ -394,7 +399,7 @@ export default function TimesheetHistoryTab() {
                                 {step.comment && (
                                   <span className="text-text-muted italic">&quot;{step.comment}&quot;</span>
                                 )}
-                                <span className="text-text-muted ml-auto">{new Date(step.timestamp).toLocaleString()}</span>
+                                <span className="text-text-muted ml-auto">{step.timestamp ? new Date(step.timestamp).toLocaleString() : '—'}</span>
                               </div>
                             ))}
                           </div>
@@ -406,7 +411,7 @@ export default function TimesheetHistoryTab() {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
             {submissions.length === 0 && (
               <tr>

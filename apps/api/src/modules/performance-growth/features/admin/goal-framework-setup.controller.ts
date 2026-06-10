@@ -51,6 +51,14 @@ export class GoalFrameworkSetupController {
     return this.service.createOrgGoal(orgId, createdBy, body);
   }
 
+  @Patch('org-goals/:id')
+  @Roles('super_admin', 'admin')
+  async updateOrgGoal(@Param('id') id: string, @Body() body: Record<string, any>) { return this.service.updateOrgGoal(this.getOrgIdOrThrow(), id, body); }
+
+  @Delete('org-goals/:id')
+  @Roles('super_admin', 'admin')
+  async deleteOrgGoal(@Param('id') id: string) { return this.service.deleteOrgGoal(this.getOrgIdOrThrow(), id); }
+
   @Get('stats')
   @Roles('super_admin', 'admin')
   async getStats() { return this.service.getGoalStats(this.getOrgIdOrThrow()); }

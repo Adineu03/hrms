@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, desc, sql, or, ilike } from 'drizzle-orm';
+import { eq, and, desc, sql, or, ilike, inArray } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
@@ -56,7 +56,7 @@ export class OfferJoiningService {
       .where(
         and(
           eq(schema.offerLetters.orgId, orgId),
-          sql`${schema.offerLetters.candidateId} = ANY(${candidateIds}::uuid[])`,
+          inArray(schema.offerLetters.candidateId, candidateIds),
           or(
             eq(schema.offerLetters.status, 'sent'),
             eq(schema.offerLetters.status, 'accepted'),
@@ -110,7 +110,7 @@ export class OfferJoiningService {
         and(
           eq(schema.offerLetters.id, offerId),
           eq(schema.offerLetters.orgId, orgId),
-          sql`${schema.offerLetters.candidateId} = ANY(${candidateIds}::uuid[])`,
+          inArray(schema.offerLetters.candidateId, candidateIds),
         ),
       )
       .limit(1);
@@ -179,7 +179,7 @@ export class OfferJoiningService {
       .set({
         status: 'rejected',
         rejectedAt: new Date(),
-        rejectionReason: data.reason || null,
+        rejectionReason: data?.reason || null,
         updatedAt: new Date(),
       })
       .where(eq(schema.offerLetters.id, offerId))
@@ -191,7 +191,7 @@ export class OfferJoiningService {
       .set({
         status: 'rejected',
         rejectedAt: new Date(),
-        rejectionReason: data.reason || 'Offer rejected by candidate',
+        rejectionReason: data?.reason || 'Offer rejected by candidate',
         updatedAt: new Date(),
       })
       .where(eq(schema.applications.id, offer.applicationId));
@@ -214,6 +214,7 @@ export class OfferJoiningService {
 
     return {
       id: offer.id,
+      url: offer.documentUrl,
       documentUrl: offer.documentUrl,
       designation: offer.designation,
       status: offer.status,
@@ -242,11 +243,33 @@ export class OfferJoiningService {
 
     const completedCount = joiningChecklist.filter((item: Record<string, any>) => item.completed).length;
 
+    // Shape consumed by the Offer & Joining tab
+    const formalities = joiningChecklist.map((item: Record<string, any>, idx: number) => ({
+      id: String(item.id ?? idx + 1),
+      label: item.label ?? item.task ?? 'Task',
+      completed: Boolean(item.completed),
+      category: item.category ?? 'Documentation',
+    }));
+
+    const documentsSubmitted: Array<{ name: string; status: string }> = Array.isArray(
+      metadata.documentsSubmitted,
+    )
+      ? metadata.documentsSubmitted
+      : formalities
+          .filter((f: { label: string }) => /document|certificate|letter|photograph/i.test(f.label))
+          .map((f: { label: string; completed: boolean }) => ({
+            name: f.label,
+            status: f.completed ? 'submitted' : 'pending',
+          }));
+
     return {
       offerId: offer.id,
       designation: offer.designation,
       department: offer.department,
       joiningDate: offer.joiningDate,
+      joiningDateConfirmed: Boolean(metadata.joiningConfirmed),
+      formalities,
+      documentsSubmitted,
       checklist: joiningChecklist,
       progress: {
         total: joiningChecklist.length,
@@ -266,19 +289,21 @@ export class OfferJoiningService {
       throw new BadRequestException('Can only confirm joining date after accepting the offer');
     }
 
-    const { joiningDate } = data;
+    // Default to the joining date already on the offer when the client
+    // confirms without picking a new date.
+    const joiningDate: string | null = data?.joiningDate ?? offer.joiningDate;
 
     if (!joiningDate) {
       throw new BadRequestException('joiningDate is required');
     }
 
-    // Validate joining date is in the future
     const parsedDate = new Date(joiningDate);
     if (isNaN(parsedDate.getTime())) {
       throw new BadRequestException('Invalid date format');
     }
 
-    if (parsedDate < new Date()) {
+    // Only enforce the future check when the employee picks a new date
+    if (data?.joiningDate && parsedDate < new Date()) {
       throw new BadRequestException('Joining date must be in the future');
     }
 
@@ -323,7 +348,7 @@ export class OfferJoiningService {
         and(
           eq(schema.offerLetters.id, offerId),
           eq(schema.offerLetters.orgId, orgId),
-          sql`${schema.offerLetters.candidateId} = ANY(${candidateIds}::uuid[])`,
+          inArray(schema.offerLetters.candidateId, candidateIds),
         ),
       )
       .limit(1);
@@ -337,6 +362,30 @@ export class OfferJoiningService {
 
   // ── DTO Mappers ───────────────────────────────────────────────────────
 
+  /** Map DB offer status to the status vocabulary the employee tab acts on. */
+  private toDisplayStatus(status: string): string {
+    if (status === 'sent' || status === 'approved') return 'pending';
+    return status;
+  }
+
+  /** Normalize the salaryBreakdown jsonb to [{ component, amount }]. */
+  private toSalaryBreakdown(raw: unknown): Array<{ component: string; amount: number }> {
+    if (Array.isArray(raw)) {
+      return raw
+        .map((item: any) => ({
+          component: String(item?.component ?? item?.name ?? 'Component'),
+          amount: Number(item?.amount) || 0,
+        }))
+        .filter((item) => item.amount > 0);
+    }
+    if (raw && typeof raw === 'object') {
+      return Object.entries(raw as Record<string, any>)
+        .map(([component, amount]) => ({ component, amount: Number(amount) || 0 }))
+        .filter((item) => item.amount > 0);
+    }
+    return [];
+  }
+
   private toOfferListDto(row: {
     offer: typeof schema.offerLetters.$inferSelect;
     postingTitle: string;
@@ -347,13 +396,19 @@ export class OfferJoiningService {
       applicationId: row.offer.applicationId,
       postingTitle: row.postingTitle,
       designation: row.offer.designation,
-      department: row.offer.department,
-      location: row.offer.location,
+      department: row.offer.department || 'General',
+      location: row.offer.location || 'Bengaluru',
       employmentType: row.offer.employmentType,
-      salaryAmount: Number(row.offer.salaryAmount),
+      salaryAmount: Number(row.offer.salaryAmount) || 0,
+      salary: Number(row.offer.salaryAmount) || 0,
       currency: row.offer.currency,
+      salaryBreakdown: this.toSalaryBreakdown(row.offer.salaryBreakdown),
+      benefits: Array.isArray(row.offer.benefits) ? row.offer.benefits : [],
+      offerTerms: row.offer.terms || null,
+      documentUrl: row.offer.documentUrl || null,
       joiningDate: row.offer.joiningDate,
-      status: row.offer.status,
+      status: this.toDisplayStatus(row.offer.status),
+      offerStatus: row.offer.status,
       applicationStatus: row.applicationStatus,
       validUntil: row.offer.validUntil,
       sentAt: row.offer.sentAt?.toISOString() || null,

@@ -1,8 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc, inArray, ne } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { buildUserNameMap } from '../../../../shared/database/user-names.util';
 
 @Injectable()
 export class PayrollApprovalsService {
@@ -23,7 +24,7 @@ export class PayrollApprovalsService {
     const teamMemberIds = await this.getTeamMemberIds(orgId, managerId);
 
     if (!teamMemberIds.length) {
-      return { data: { reimbursements: [], overtime: [] }, meta: { total: 0 } };
+      return { data: [], meta: { total: 0 } };
     }
 
     // Pending reimbursement claims from team
@@ -53,13 +54,38 @@ export class PayrollApprovalsService {
       )
       .orderBy(desc(schema.overtimeRequests.createdAt));
 
-    return {
-      data: {
-        reimbursements,
-        overtime,
-      },
-      meta: { total: reimbursements.length + overtime.length },
-    };
+    const nameMap = await buildUserNameMap(this.db, [
+      ...reimbursements.map((r) => r.employeeId),
+      ...overtime.map((o) => o.employeeId),
+    ]);
+
+    // Flatten into the single list the tab renders (type drives the approve/reject route)
+    const items = [
+      ...reimbursements.map((r) => ({
+        id: r.id,
+        type: 'reimbursement',
+        employeeId: r.employeeId,
+        employeeName: nameMap.get(r.employeeId) ?? 'Unknown',
+        amount: Number(r.amount) || 0,
+        hours: null as number | null,
+        description: r.description,
+        submittedAt: r.submittedAt ?? r.createdAt,
+      })),
+      ...overtime.map((o) => ({
+        id: o.id,
+        type: 'overtime',
+        employeeId: o.employeeId,
+        employeeName: nameMap.get(o.employeeId) ?? 'Unknown',
+        amount: null as number | null,
+        hours: o.actualHours ?? o.estimatedHours ?? 0,
+        description: o.reason ? `${o.reason} (${o.date})` : `Overtime on ${o.date}`,
+        submittedAt: o.createdAt,
+      })),
+    ].sort(
+      (a, b) => new Date(b.submittedAt ?? 0).getTime() - new Date(a.submittedAt ?? 0).getTime(),
+    );
+
+    return { data: items, meta: { total: items.length } };
   }
 
   async approveItem(orgId: string, managerId: string, type: string, id: string) {
@@ -198,39 +224,70 @@ export class PayrollApprovalsService {
     const teamMemberIds = await this.getTeamMemberIds(orgId, managerId);
 
     if (!teamMemberIds.length) {
-      return { data: { reimbursements: [], overtime: [] }, meta: { total: 0 } };
+      return { data: [], meta: { total: 0 } };
     }
 
-    // Past reimbursement approvals/rejections
+    // Decided reimbursement claims from the team (approved / rejected / paid)
     const reimbursements = await this.db
       .select()
       .from(schema.reimbursementClaims)
       .where(
         and(
           eq(schema.reimbursementClaims.orgId, orgId),
-          eq(schema.reimbursementClaims.approvedBy, managerId),
           eq(schema.reimbursementClaims.isActive, true),
+          ne(schema.reimbursementClaims.status, 'pending'),
+          inArray(schema.reimbursementClaims.employeeId, teamMemberIds),
         ),
       )
       .orderBy(desc(schema.reimbursementClaims.approvedAt))
       .limit(50);
 
-    // Past overtime approvals/rejections
+    // Decided overtime requests from the team
     const overtime = await this.db
       .select()
       .from(schema.overtimeRequests)
       .where(
         and(
           eq(schema.overtimeRequests.orgId, orgId),
-          eq(schema.overtimeRequests.reviewedBy, managerId),
+          ne(schema.overtimeRequests.status, 'pending'),
+          inArray(schema.overtimeRequests.employeeId, teamMemberIds),
         ),
       )
       .orderBy(desc(schema.overtimeRequests.reviewedAt))
       .limit(50);
 
-    return {
-      data: { reimbursements, overtime },
-      meta: { total: reimbursements.length + overtime.length },
-    };
+    const nameMap = await buildUserNameMap(this.db, [
+      ...reimbursements.map((r) => r.employeeId),
+      ...overtime.map((o) => o.employeeId),
+    ]);
+
+    const items = [
+      ...reimbursements.map((r) => ({
+        id: r.id,
+        type: 'reimbursement',
+        employeeId: r.employeeId,
+        employeeName: nameMap.get(r.employeeId) ?? 'Unknown',
+        amount: Number(r.amount) || 0,
+        hours: null as number | null,
+        status: r.status,
+        actionAt: r.paidAt ?? r.approvedAt ?? r.updatedAt,
+        remarks: r.remarks ?? null,
+      })),
+      ...overtime.map((o) => ({
+        id: o.id,
+        type: 'overtime',
+        employeeId: o.employeeId,
+        employeeName: nameMap.get(o.employeeId) ?? 'Unknown',
+        amount: null as number | null,
+        hours: o.actualHours ?? o.estimatedHours ?? 0,
+        status: o.status,
+        actionAt: o.reviewedAt ?? o.updatedAt,
+        remarks: o.reviewerComment ?? null,
+      })),
+    ]
+      .sort((a, b) => new Date(b.actionAt ?? 0).getTime() - new Date(a.actionAt ?? 0).getTime())
+      .slice(0, 50);
+
+    return { data: items, meta: { total: items.length } };
   }
 }

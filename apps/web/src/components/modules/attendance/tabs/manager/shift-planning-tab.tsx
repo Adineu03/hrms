@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 import {
   Loader2,
@@ -33,14 +33,16 @@ interface SwapRequest {
   id: string;
   requesterId: string;
   requesterName: string;
-  targetId: string;
-  targetName: string;
-  requesterShift: string;
-  targetShift: string;
-  date: string;
-  status: 'pending' | 'approved' | 'rejected';
-  comment?: string;
+  targetEmployeeId: string;
+  targetEmployeeName: string;
+  requesterShiftName: string;
+  targetShiftName: string;
+  swapDate: string;
+  status: string; // pending_partner | pending_manager | manager_approved | approved | rejected
+  managerComment?: string;
 }
+
+const PENDING_SWAP_STATUSES = ['pending', 'pending_partner', 'pending_manager'];
 
 interface CoverageData {
   shiftName: string;
@@ -114,6 +116,9 @@ export default function ShiftPlanningTab() {
   // Publishing
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // One-time auto-jump to the week that actually has data (seeded anchor week)
+  const didAutoJump = useRef(false);
+
   const loadData = async () => {
     setIsLoading(true);
     setError(null);
@@ -130,7 +135,29 @@ export default function ShiftPlanningTab() {
       ]);
 
       const rosterData = rosterRes.data?.data || rosterRes.data || {};
-      setRoster(Array.isArray(rosterData) ? rosterData : rosterData.roster || rosterData.assignments || []);
+      const rosterRows: ShiftAssignment[] = Array.isArray(rosterData)
+        ? rosterData
+        : rosterData.roster || rosterData.assignments || [];
+
+      // If today's week has no assignments, fall back once to the week
+      // containing the latest attendance data.
+      if (!didAutoJump.current) {
+        didAutoJump.current = true;
+        const latest = rosterData.latestAttendanceDate;
+        const hasAny = rosterRows.some(
+          (r) => r.assignments && Object.keys(r.assignments).length > 0
+        );
+        if (!hasAny && latest) {
+          const latestDate = new Date(latest + 'T00:00:00');
+          const latestWeekStart = formatDateKey(getWeekDates(latestDate).dates[0]);
+          if (latestWeekStart !== startDate) {
+            setWeekBase(latestDate);
+            return; // effect re-runs with the data week
+          }
+        }
+      }
+
+      setRoster(rosterRows);
       setShifts(Array.isArray(rosterData.shifts) ? rosterData.shifts : rosterData.shiftDefinitions || []);
       const covData = coverageRes.data?.data || coverageRes.data;
       setCoverage(Array.isArray(covData) ? covData : covData?.coverage || []);
@@ -170,8 +197,8 @@ export default function ShiftPlanningTab() {
       await api.post('/attendance/manager/shift-planning/assign', {
         employeeIds: assignEmployeeIds,
         shiftId: assignShiftId,
-        startDate: assignStartDate,
-        endDate: assignEndDate,
+        effectiveFrom: assignStartDate,
+        effectiveTo: assignEndDate,
       });
       setSuccessMessage('Shift assigned successfully.');
       setShowAssignForm(false);
@@ -217,10 +244,8 @@ export default function ShiftPlanningTab() {
     setError(null);
     try {
       const startDate = formatDateKey(weekDates[0]);
-      const endDate = formatDateKey(weekDates[6]);
       await api.post('/attendance/manager/shift-planning/publish', {
-        startDate,
-        endDate,
+        weekStart: startDate,
       });
       setSuccessMessage('Schedule published successfully. Team has been notified.');
       setTimeout(() => setSuccessMessage(null), 4000);
@@ -232,7 +257,11 @@ export default function ShiftPlanningTab() {
   };
 
   const getShiftColor = (shiftName: string): string => {
-    return SHIFT_COLORS[shiftName] || 'bg-gray-100 text-gray-700 border-gray-200';
+    // Match "General Shift" → General, "Morning Shift" → Morning, etc.
+    const key = Object.keys(SHIFT_COLORS).find((k) =>
+      shiftName.toLowerCase().includes(k.toLowerCase())
+    );
+    return (key && SHIFT_COLORS[key]) || 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
   const toggleEmployeeSelection = (empId: string) => {
@@ -250,7 +279,7 @@ export default function ShiftPlanningTab() {
     );
   }
 
-  const pendingSwaps = swapRequests.filter((r) => r.status === 'pending');
+  const pendingSwaps = swapRequests.filter((r) => PENDING_SWAP_STATUSES.includes(r.status));
 
   return (
     <div className="space-y-6">
@@ -542,17 +571,17 @@ export default function ShiftPlanningTab() {
                       {req.requesterName}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">
-                      {req.targetName}
+                      {req.targetEmployeeName}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">
-                      <span className="font-medium">{req.requesterShift}</span>
+                      <span className="font-medium">{req.requesterShiftName}</span>
                       {' '}
                       <ArrowRightLeft className="h-3 w-3 inline text-text-muted" />
                       {' '}
-                      <span className="font-medium">{req.targetShift}</span>
+                      <span className="font-medium">{req.targetShiftName}</span>
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">
-                      {new Date(req.date).toLocaleDateString()}
+                      {new Date(req.swapDate).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
                       {activeSwapId === req.id ? (

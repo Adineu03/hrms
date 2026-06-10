@@ -18,7 +18,8 @@ interface PendingApproval {
   type: string;
   employeeName: string;
   employeeId: string;
-  amount: number;
+  amount: number | null;
+  hours?: number | null;
   description: string;
   submittedAt: string;
 }
@@ -27,7 +28,8 @@ interface ApprovalHistoryItem {
   id: string;
   type: string;
   employeeName: string;
-  amount: number;
+  amount: number | null;
+  hours?: number | null;
   status: string;
   actionAt: string;
   remarks: string;
@@ -94,8 +96,14 @@ export default function PayrollApprovalsTab() {
     }
   }, [success]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0);
+  const formatCurrency = (amount: number | null) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(amount) || 0);
+  };
+
+  // Overtime requests carry hours, not money — show hours for those rows
+  const formatAmount = (item: { type: string; amount: number | null; hours?: number | null }) => {
+    if (item.type === 'overtime') return `${Number(item.hours) || 0} hrs`;
+    return formatCurrency(item.amount);
   };
 
   const getStatusBadge = (status: string) => {
@@ -192,7 +200,7 @@ export default function PayrollApprovalsTab() {
                         <p className="text-xs text-text-muted">{p.employeeId}</p>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-text font-medium">{formatCurrency(p.amount)}</td>
+                    <td className="px-4 py-3 text-sm text-text font-medium">{formatAmount(p)}</td>
                     <td className="px-4 py-3 text-sm text-text-muted max-w-[200px] truncate">{p.description || '—'}</td>
                     <td className="px-4 py-3 text-sm text-text-muted">
                       {p.submittedAt ? new Date(p.submittedAt).toLocaleDateString() : '—'}
@@ -255,7 +263,7 @@ export default function PayrollApprovalsTab() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-text font-medium">{h.employeeName}</td>
-                    <td className="px-4 py-3 text-sm text-text">{formatCurrency(h.amount)}</td>
+                    <td className="px-4 py-3 text-sm text-text">{formatAmount(h)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(h.status)}`}>
                         {getStatusIcon(h.status)}

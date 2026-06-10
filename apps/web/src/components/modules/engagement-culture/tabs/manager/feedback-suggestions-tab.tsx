@@ -15,11 +15,14 @@ import {
 
 interface FeedbackItem {
   id: string;
-  employeeName: string;
+  employeeName: string | null;
   category: string;
   message: string;
   isAnonymous: boolean;
   status: string;
+  managerResponse?: string | null;
+  escalationReason?: string | null;
+  surveyTitle?: string | null;
   createdAt: string;
 }
 
@@ -33,6 +36,23 @@ interface Suggestion {
   votes: number;
   createdAt: string;
 }
+
+const fmtDate = (d?: string | null) => {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString();
+};
+
+const suggestionBadgeClass = (status: string) =>
+  status === 'implemented'
+    ? 'bg-green-100 text-green-700'
+    : status === 'planned'
+      ? 'bg-blue-100 text-blue-700'
+      : status === 'under_review' || status === 'in_review'
+        ? 'bg-yellow-100 text-yellow-700'
+        : status === 'rejected'
+          ? 'bg-red-100 text-red-700'
+          : 'bg-gray-100 text-gray-700';
 
 export default function FeedbackSuggestionsTab() {
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
@@ -185,6 +205,29 @@ export default function FeedbackSuggestionsTab() {
         </div>
       )}
 
+      {/* Stat cards — computed from the same rows the lists below render, so they always agree */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-background rounded-xl border border-border p-5">
+          <p className="text-sm text-text-muted mb-1">Total Feedback</p>
+          <p className="text-2xl font-bold text-text">{feedback.length}</p>
+          <p className="text-xs text-text-muted mt-1">
+            {feedback.filter((f) => f.isAnonymous).length} anonymous
+          </p>
+        </div>
+        <div className="bg-background rounded-xl border border-border p-5">
+          <p className="text-sm text-text-muted mb-1">Awaiting Response</p>
+          <p className="text-2xl font-bold text-text">{feedback.filter((f) => f.status === 'new').length}</p>
+        </div>
+        <div className="bg-background rounded-xl border border-border p-5">
+          <p className="text-sm text-text-muted mb-1">Responded</p>
+          <p className="text-2xl font-bold text-text">{feedback.filter((f) => f.status === 'responded').length}</p>
+        </div>
+        <div className="bg-background rounded-xl border border-border p-5">
+          <p className="text-sm text-text-muted mb-1">Escalated</p>
+          <p className="text-2xl font-bold text-text">{feedback.filter((f) => f.status === 'escalated').length}</p>
+        </div>
+      </div>
+
       {/* Feedback Items */}
       <div className="mb-8">
         <h3 className="text-sm font-semibold text-text uppercase tracking-wider mb-3">Team Feedback</h3>
@@ -201,7 +244,7 @@ export default function FeedbackSuggestionsTab() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-medium text-text">
-                        {item.isAnonymous ? 'Anonymous' : item.employeeName}
+                        {item.isAnonymous ? 'Anonymous' : item.employeeName || 'Unknown'}
                       </span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                         {item.category}
@@ -215,9 +258,21 @@ export default function FeedbackSuggestionsTab() {
                     <p className="text-sm text-text-muted">{item.message}</p>
                   </div>
                   <span className="text-xs text-text-muted whitespace-nowrap ml-4">
-                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '—'}
+                    {fmtDate(item.createdAt)}
                   </span>
                 </div>
+                {item.managerResponse && (
+                  <div className="mt-3 rounded-lg bg-green-50 border border-green-200 px-3 py-2">
+                    <p className="text-xs font-medium text-green-700 mb-0.5">Your response</p>
+                    <p className="text-xs text-green-800">{item.managerResponse}</p>
+                  </div>
+                )}
+                {item.status === 'escalated' && item.escalationReason && (
+                  <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
+                    <p className="text-xs font-medium text-red-700 mb-0.5">Escalated to HR</p>
+                    <p className="text-xs text-red-800">{item.escalationReason}</p>
+                  </div>
+                )}
                 {item.status === 'new' && (
                   <div className="flex items-center gap-2 mt-3">
                     <button
@@ -244,7 +299,16 @@ export default function FeedbackSuggestionsTab() {
 
       {/* Suggestions Tracking */}
       <div>
-        <h3 className="text-sm font-semibold text-text uppercase tracking-wider mb-3">Suggestion Tracking</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-text uppercase tracking-wider">Suggestion Tracking</h3>
+          {suggestions.length > 0 && (
+            <span className="text-xs text-text-muted">
+              {suggestions.length} suggestion{suggestions.length === 1 ? '' : 's'} ·{' '}
+              {suggestions.reduce((sum, s) => sum + (Number(s.votes) || 0), 0)} votes ·{' '}
+              {suggestions.filter((s) => s.status === 'implemented').length} implemented
+            </span>
+          )}
+        </div>
         {suggestions.length === 0 ? (
           <div className="text-center py-8">
             <Inbox className="h-8 w-8 text-text-muted mx-auto mb-2" />
@@ -270,18 +334,16 @@ export default function FeedbackSuggestionsTab() {
                       <p className="text-xs text-text-muted mt-0.5">{s.description}</p>
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">
-                      {s.isAnonymous ? 'Anonymous' : s.submittedBy}
+                      {s.isAnonymous ? 'Anonymous' : s.submittedBy || 'Unknown'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-text font-medium">{s.votes || 0}</td>
+                    <td className="px-4 py-3 text-sm text-text font-medium">{Number(s.votes) || 0}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        s.status === 'implemented' ? 'bg-green-100 text-green-700' : s.status === 'in-review' ? 'bg-blue-100 text-blue-700' : s.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {s.status}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${suggestionBadgeClass(s.status)}`}>
+                        {(s.status || 'new').replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">
-                      {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '—'}
+                      {fmtDate(s.createdAt)}
                     </td>
                   </tr>
                 ))}

@@ -48,11 +48,16 @@ export class GoalFrameworkSetupService {
     return { success: true, message: 'Goal template deleted' };
   }
 
+  /** Frontend field aliases: tab reads targetDate (DB dueDate) and completionPercent (DB progress). */
+  private toOrgGoalDto(row: typeof schema.goals.$inferSelect) {
+    return { ...row, targetDate: row.dueDate, completionPercent: row.progress };
+  }
+
   async listOrgGoals(orgId: string) {
     const rows = await this.db.select().from(schema.goals)
       .where(and(eq(schema.goals.orgId, orgId), eq(schema.goals.category, 'organizational'), eq(schema.goals.isActive, true), eq(schema.goals.isTemplate, false)))
       .orderBy(desc(schema.goals.createdAt));
-    return { data: rows, meta: { total: rows.length } };
+    return { data: rows.map((r) => this.toOrgGoalDto(r)), meta: { total: rows.length } };
   }
 
   async createOrgGoal(orgId: string, createdBy: string, data: Record<string, any>) {
@@ -60,10 +65,34 @@ export class GoalFrameworkSetupService {
       orgId, title: data.title, description: data.description ?? null, category: 'organizational',
       framework: data.framework ?? 'okr', measurementCriteria: data.measurementCriteria ?? null,
       successMetrics: data.successMetrics ?? [], targetValue: data.targetValue ?? null, unit: data.unit ?? null,
-      startDate: data.startDate ?? null, dueDate: data.dueDate ?? null, status: data.status ?? 'active',
+      startDate: data.startDate || null, dueDate: data.dueDate || data.targetDate || null, status: data.status ?? 'active',
       createdBy, isTemplate: false, metadata: data.metadata ?? {},
     }).returning();
-    return created;
+    return this.toOrgGoalDto(created);
+  }
+
+  async getOrgGoal(orgId: string, id: string) {
+    const [row] = await this.db.select().from(schema.goals)
+      .where(and(eq(schema.goals.id, id), eq(schema.goals.orgId, orgId), eq(schema.goals.category, 'organizational'), eq(schema.goals.isTemplate, false))).limit(1);
+    if (!row) throw new NotFoundException('Organization goal not found');
+    return this.toOrgGoalDto(row);
+  }
+
+  async updateOrgGoal(orgId: string, id: string, data: Record<string, any>) {
+    await this.getOrgGoal(orgId, id);
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    const fields = ['title', 'description', 'framework', 'measurementCriteria', 'successMetrics', 'targetValue', 'unit', 'status', 'progress', 'metadata'];
+    for (const f of fields) { if (data[f] !== undefined) updates[f] = data[f]; }
+    if (data.startDate !== undefined) updates.startDate = data.startDate || null;
+    if (data.targetDate !== undefined || data.dueDate !== undefined) updates.dueDate = data.dueDate || data.targetDate || null;
+    await this.db.update(schema.goals).set(updates).where(and(eq(schema.goals.id, id), eq(schema.goals.orgId, orgId)));
+    return this.getOrgGoal(orgId, id);
+  }
+
+  async deleteOrgGoal(orgId: string, id: string) {
+    await this.getOrgGoal(orgId, id);
+    await this.db.update(schema.goals).set({ isActive: false, updatedAt: new Date() }).where(and(eq(schema.goals.id, id), eq(schema.goals.orgId, orgId)));
+    return { success: true, message: 'Organization goal deleted' };
   }
 
   async getGoalStats(orgId: string) {

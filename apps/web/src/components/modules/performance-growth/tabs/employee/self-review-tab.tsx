@@ -305,9 +305,41 @@ export default function SelfReviewTab() {
               </div>
             </div>
           ) : (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-700">
-              <CheckCircle2 className="h-5 w-5 inline mr-2" />
-              Your self-review has been submitted. Rating: {Number(currentReview.selfRating) || 0}/5
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-700">
+                <CheckCircle2 className="h-5 w-5 inline mr-2" />
+                Your self-review has been submitted and is now read-only.
+              </div>
+
+              {/* Read-only summary */}
+              <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+                <div>
+                  <p className="text-xs font-medium text-text-muted uppercase">Overall Self-Rating</p>
+                  <p className="text-2xl font-bold text-text mt-1">
+                    {Number(currentReview.selfRating) || 0}
+                    <span className="text-sm font-medium text-text-muted">/{currentReview.ratingScale === '1-10' ? 10 : 5}</span>
+                  </p>
+                </div>
+                {currentReview.selfComments && (
+                  <div>
+                    <p className="text-xs font-medium text-text-muted uppercase mb-1">Comments</p>
+                    <p className="text-sm text-text">{currentReview.selfComments}</p>
+                  </div>
+                )}
+                {Array.isArray(currentReview.achievements) && currentReview.achievements.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-text-muted uppercase mb-1">Key Achievements</p>
+                    <ul className="space-y-1">
+                      {currentReview.achievements.map((achievement, idx) => (
+                        <li key={idx} className="text-sm text-text flex items-start gap-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+                          {achievement}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </>

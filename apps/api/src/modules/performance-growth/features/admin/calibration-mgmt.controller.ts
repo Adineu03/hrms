@@ -24,7 +24,9 @@ export class CalibrationMgmtController {
   @Patch('ratings')
   @Roles('super_admin', 'admin')
   async updateRatings(@Body() body: { updates: { assignmentId: string; calibratedRating: number; notes?: string }[] }) {
-    return this.service.updateCalibrationRatings(this.getOrgIdOrThrow(), body.updates);
+    const orgId = this.getOrgIdOrThrow();
+    const userId = this.tenantService.getUserId?.() ?? orgId;
+    return this.service.updateCalibrationRatings(orgId, userId, body.updates);
   }
 
   @Get('audit-trail')

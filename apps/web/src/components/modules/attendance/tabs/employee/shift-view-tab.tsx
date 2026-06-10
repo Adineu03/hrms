@@ -28,7 +28,8 @@ interface CurrentShift {
   startTime: string;
   endTime: string;
   breakTimes: string | null;
-  gracePeriodMinutes: number;
+  gracePeriodMinutes?: number;
+  graceMinutesLate?: number;
   isNightShift: boolean;
   isFlexible: boolean;
 }
@@ -46,15 +47,18 @@ interface ScheduleEntry {
 interface SwapRequest {
   id: string;
   date: string;
+  direction?: 'outgoing' | 'incoming';
+  counterpartName?: string;
   targetEmployeeName: string;
   reason: string;
-  status: 'pending_partner' | 'pending_manager' | 'approved' | 'rejected';
+  status: string; // pending_partner | pending_manager | manager_approved | approved | rejected
   createdAt: string;
 }
 
 const SWAP_STATUS_STYLES: Record<string, string> = {
   pending_partner: 'bg-yellow-50 text-yellow-700',
   pending_manager: 'bg-blue-50 text-blue-700',
+  manager_approved: 'bg-green-50 text-green-700',
   approved: 'bg-green-50 text-green-700',
   rejected: 'bg-red-50 text-red-700',
 };
@@ -62,6 +66,7 @@ const SWAP_STATUS_STYLES: Record<string, string> = {
 const SWAP_STATUS_LABELS: Record<string, string> = {
   pending_partner: 'Pending Partner',
   pending_manager: 'Pending Manager',
+  manager_approved: 'Approved',
   approved: 'Approved',
   rejected: 'Rejected',
 };
@@ -105,8 +110,44 @@ export default function ShiftViewTab() {
         api.get('/attendance/employee/shifts/swap-requests'),
       ]);
       setCurrentShift(shiftRes.data);
-      setSchedule(Array.isArray(scheduleRes.data) ? scheduleRes.data : scheduleRes.data.data || []);
-      setSwapRequests(Array.isArray(swapRes.data) ? swapRes.data : swapRes.data.data || []);
+
+      // Normalize schedule entries: the API returns { schedule: [...] } rows
+      // without status/isToday/shiftCode — derive them safely here.
+      const rawSchedule: Record<string, unknown>[] = Array.isArray(scheduleRes.data)
+        ? scheduleRes.data
+        : scheduleRes.data.schedule || scheduleRes.data.data || [];
+      const now = new Date();
+      const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      setSchedule(
+        rawSchedule.map((e) => {
+          const entry = e as Record<string, string | boolean | null>;
+          const dateStr = String(entry.date ?? '');
+          const dow = new Date(dateStr + 'T00:00:00').getDay();
+          const isWeekend = dow === 0 || dow === 6;
+          const derivedStatus = isWeekend
+            ? 'scheduled'
+            : dateStr < todayKey
+              ? 'completed'
+              : dateStr === todayKey
+                ? 'in_progress'
+                : 'upcoming';
+          return {
+            date: dateStr,
+            shiftName: isWeekend ? 'Week Off' : String(entry.shiftName ?? 'No shift assigned'),
+            shiftCode: isWeekend ? 'OFF' : String(entry.shiftCode ?? entry.code ?? '--'),
+            startTime: isWeekend ? '--' : String(entry.startTime ?? '--'),
+            endTime: isWeekend ? '--' : String(entry.endTime ?? '--'),
+            status: (entry.status as ScheduleEntry['status']) || derivedStatus,
+            isToday: Boolean(entry.isToday ?? dateStr === todayKey),
+          };
+        })
+      );
+
+      setSwapRequests(
+        Array.isArray(swapRes.data)
+          ? swapRes.data
+          : swapRes.data.swapRequests || swapRes.data.data || []
+      );
     } catch {
       setError('Failed to load shift data.');
     } finally {
@@ -226,7 +267,7 @@ export default function ShiftViewTab() {
             <div>
               <p className="text-xs text-text-muted">Grace Period</p>
               <p className="text-sm font-medium text-text">
-                {currentShift.gracePeriodMinutes} minutes
+                {currentShift.gracePeriodMinutes ?? currentShift.graceMinutesLate ?? 0} minutes
               </p>
               {currentShift.isFlexible && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 mt-1">
@@ -316,7 +357,9 @@ export default function ShiftViewTab() {
                   </td>
                   <td className="px-4 py-3 text-sm text-text">
                     {entry.shiftName}
-                    <span className="text-xs text-text-muted ml-1 font-mono">({entry.shiftCode})</span>
+                    {entry.shiftCode && entry.shiftCode !== '--' && (
+                      <span className="text-xs text-text-muted ml-1 font-mono">({entry.shiftCode})</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">{entry.startTime}</td>
                   <td className="px-4 py-3 text-sm text-text-muted">{entry.endTime}</td>
@@ -465,7 +508,16 @@ export default function ShiftViewTab() {
                       {formatDate(req.date)}
                     </td>
                     <td className="px-4 py-3 text-sm text-text">
-                      {req.targetEmployeeName}
+                      {req.counterpartName || req.targetEmployeeName}
+                      <span
+                        className={`ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide ${
+                          req.direction === 'incoming'
+                            ? 'bg-indigo-50 text-indigo-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {req.direction === 'incoming' ? 'Incoming' : 'Outgoing'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted max-w-[200px] truncate">
                       {req.reason}

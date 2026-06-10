@@ -29,13 +29,22 @@ export class RecruitmentReportsService {
       )
       .groupBy(schema.jobRequisitions.status);
 
-    const totalRequisitions = requisitionStats.reduce((sum, r) => sum + r.count, 0);
+    const totalRequisitions = requisitionStats.reduce((sum, r) => sum + (Number(r.count) || 0), 0);
     const openRequisitions = requisitionStats
-      .filter((r) => ['approved', 'pending_approval', 'draft'].includes(r.status))
-      .reduce((sum, r) => sum + r.count, 0);
-    const filledRequisitions = requisitionStats
-      .filter((r) => r.status === 'filled')
-      .reduce((sum, r) => sum + r.count, 0);
+      .filter((r) => ['open', 'approved', 'pending_approval', 'draft'].includes(r.status))
+      .reduce((sum, r) => sum + (Number(r.count) || 0), 0);
+
+    // Filled positions = headcount actually filled across requisitions
+    const [filledStats] = await this.db
+      .select({ filled: sql<number>`coalesce(sum(${schema.jobRequisitions.filledCount}), 0)::int` })
+      .from(schema.jobRequisitions)
+      .where(
+        and(
+          eq(schema.jobRequisitions.orgId, orgId),
+          eq(schema.jobRequisitions.isActive, true),
+        ),
+      );
+    const filledPositions = Number(filledStats?.filled) || 0;
 
     // Total applications
     const [appStats] = await this.db
@@ -54,7 +63,7 @@ export class RecruitmentReportsService {
         ),
       );
 
-    // Total offers
+    // Offers by status
     const offerStats = await this.db
       .select({
         status: schema.offerLetters.status,
@@ -63,61 +72,53 @@ export class RecruitmentReportsService {
       .from(schema.offerLetters)
       .where(eq(schema.offerLetters.orgId, orgId))
       .groupBy(schema.offerLetters.status);
+    const offersAccepted = offerStats
+      .filter((o) => o.status === 'accepted')
+      .reduce((sum, o) => sum + (Number(o.count) || 0), 0);
 
-    // Average time-to-hire (from requisition creation to offer acceptance)
-    const [avgTimeToHire] = await this.db.execute(sql`
+    // Average time-to-hire: application date -> offer acceptance, clamped at 0
+    // so out-of-order seed timestamps can never produce a negative average.
+    const avgRows = await this.db.execute(sql`
       SELECT COALESCE(
-        AVG(EXTRACT(EPOCH FROM (ol.accepted_at - jr.created_at)) / 86400)::int,
+        AVG(GREATEST(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400, 0))::int,
         0
       ) AS avg_days
       FROM offer_letters ol
-      JOIN job_requisitions jr ON ol.requisition_id = jr.id
+      JOIN applications a ON ol.application_id = a.id
       WHERE ol.org_id = ${orgId}
         AND ol.accepted_at IS NOT NULL
     `);
+    const avgTimeToHire = Number((avgRows as any[])[0]?.avg_days) || 0;
 
     return {
       totalRequisitions,
+      openPositions: openRequisitions,
+      filledPositions,
+      totalCandidates: Number(candidateStats?.count) || 0,
+      totalApplications: Number(appStats?.count) || 0,
+      offersAccepted,
+      avgTimeToHire,
+      // Legacy keys kept for compatibility
       openRequisitions,
-      filledRequisitions,
+      filledRequisitions: filledPositions,
       requisitionsByStatus: requisitionStats,
-      totalApplications: appStats?.count ?? 0,
-      totalCandidates: candidateStats?.count ?? 0,
       offersByStatus: offerStats,
-      averageTimeToHireDays: (avgTimeToHire as any)?.avg_days ?? 0,
+      averageTimeToHireDays: avgTimeToHire,
     };
   }
 
   async getTimeToHire(orgId: string, filters: { groupBy?: string }) {
-    const groupByField = filters.groupBy ?? 'department';
-
-    if (groupByField === 'department') {
-      const rows = await this.db.execute(sql`
-        SELECT
-          d.name AS group_name,
-          COUNT(ol.id)::int AS hires,
-          COALESCE(AVG(EXTRACT(EPOCH FROM (ol.accepted_at - jr.created_at)) / 86400)::int, 0) AS avg_days,
-          COALESCE(MIN(EXTRACT(EPOCH FROM (ol.accepted_at - jr.created_at)) / 86400)::int, 0) AS min_days,
-          COALESCE(MAX(EXTRACT(EPOCH FROM (ol.accepted_at - jr.created_at)) / 86400)::int, 0) AS max_days
-        FROM offer_letters ol
-        JOIN job_requisitions jr ON ol.requisition_id = jr.id
-        LEFT JOIN departments d ON jr.department_id = d.id
-        WHERE ol.org_id = ${orgId} AND ol.accepted_at IS NOT NULL
-        GROUP BY d.name
-        ORDER BY avg_days DESC
-      `);
-
-      return { groupBy: 'department', data: rows };
-    }
+    const groupByField = filters.groupBy ?? 'role';
 
     if (groupByField === 'source') {
       const rows = await this.db.execute(sql`
         SELECT
-          a.source AS group_name,
+          a.source AS role,
+          '—' AS department,
           COUNT(ol.id)::int AS hires,
-          COALESCE(AVG(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400)::int, 0) AS avg_days,
-          COALESCE(MIN(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400)::int, 0) AS min_days,
-          COALESCE(MAX(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400)::int, 0) AS max_days
+          COALESCE(AVG(GREATEST(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400, 0))::int, 0) AS avg_days,
+          COALESCE(MIN(GREATEST(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400, 0))::int, 0) AS min_days,
+          COALESCE(MAX(GREATEST(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400, 0))::int, 0) AS max_days
         FROM offer_letters ol
         JOIN applications a ON ol.application_id = a.id
         WHERE ol.org_id = ${orgId} AND ol.accepted_at IS NOT NULL
@@ -125,84 +126,145 @@ export class RecruitmentReportsService {
         ORDER BY avg_days DESC
       `);
 
-      return { groupBy: 'source', data: rows };
+      return { groupBy: 'source', data: this.toTimeToHireDtos(rows as any[]) };
     }
 
-    // Default: group by role/title
+    // Default: per filled role (requisition title × department)
     const rows = await this.db.execute(sql`
       SELECT
-        jr.title AS group_name,
+        jr.title AS role,
+        COALESCE(d.name, 'General') AS department,
         COUNT(ol.id)::int AS hires,
-        COALESCE(AVG(EXTRACT(EPOCH FROM (ol.accepted_at - jr.created_at)) / 86400)::int, 0) AS avg_days,
-        COALESCE(MIN(EXTRACT(EPOCH FROM (ol.accepted_at - jr.created_at)) / 86400)::int, 0) AS min_days,
-        COALESCE(MAX(EXTRACT(EPOCH FROM (ol.accepted_at - jr.created_at)) / 86400)::int, 0) AS max_days
+        COALESCE(AVG(GREATEST(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400, 0))::int, 0) AS avg_days,
+        COALESCE(MIN(GREATEST(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400, 0))::int, 0) AS min_days,
+        COALESCE(MAX(GREATEST(EXTRACT(EPOCH FROM (ol.accepted_at - a.applied_at)) / 86400, 0))::int, 0) AS max_days
       FROM offer_letters ol
+      JOIN applications a ON ol.application_id = a.id
       JOIN job_requisitions jr ON ol.requisition_id = jr.id
+      LEFT JOIN departments d ON jr.department_id = d.id
       WHERE ol.org_id = ${orgId} AND ol.accepted_at IS NOT NULL
-      GROUP BY jr.title
+      GROUP BY jr.title, d.name
       ORDER BY avg_days DESC
     `);
 
-    return { groupBy: 'role', data: rows };
+    return { groupBy: 'role', data: this.toTimeToHireDtos(rows as any[]) };
+  }
+
+  private toTimeToHireDtos(rows: any[]) {
+    return (Array.isArray(rows) ? rows : []).map((r) => ({
+      role: r.role ?? 'Unknown',
+      department: r.department ?? 'General',
+      averageDays: Number(r.avg_days) || 0,
+      hires: Number(r.hires) || 0,
+      minDays: Number(r.min_days) || 0,
+      maxDays: Number(r.max_days) || 0,
+    }));
   }
 
   async getSourceEffectiveness(orgId: string) {
-    // Applications per source
-    const applicationsBySource = await this.db
-      .select({
-        source: schema.applications.source,
-        totalApplications: sql<number>`count(*)::int`,
-      })
-      .from(schema.applications)
-      .where(eq(schema.applications.orgId, orgId))
-      .groupBy(schema.applications.source)
-      .orderBy(desc(sql`count(*)`));
-
-    // Hires per source
-    const hiresBySource = await this.db.execute(sql`
+    // Per source: applicants, shortlisted (progressed past screening or
+    // interviewed), hired (hired status or accepted offer)
+    const rows = await this.db.execute(sql`
       SELECT
-        a.source,
-        COUNT(DISTINCT a.id)::int AS total_applications,
-        COUNT(DISTINCT CASE WHEN a.status = 'hired' THEN a.id END)::int AS hires,
-        COUNT(DISTINCT CASE WHEN i.id IS NOT NULL THEN a.id END)::int AS interviews_conducted,
-        CASE
-          WHEN COUNT(DISTINCT a.id) > 0
-          THEN ROUND(COUNT(DISTINCT CASE WHEN a.status = 'hired' THEN a.id END)::numeric / COUNT(DISTINCT a.id) * 100, 2)
-          ELSE 0
-        END AS conversion_rate
+        COALESCE(a.source, 'direct') AS source,
+        COUNT(DISTINCT a.id)::int AS applicants,
+        COUNT(DISTINCT CASE
+          WHEN a.status IN ('shortlisted', 'interviewing', 'offered', 'hired') OR i.id IS NOT NULL
+          THEN a.id END)::int AS shortlisted,
+        COUNT(DISTINCT CASE
+          WHEN a.status = 'hired' OR ol.id IS NOT NULL
+          THEN a.id END)::int AS hired
       FROM applications a
-      LEFT JOIN interviews i ON a.id = i.application_id
+      LEFT JOIN interviews i ON i.application_id = a.id
+      LEFT JOIN offer_letters ol ON ol.application_id = a.id AND ol.status = 'accepted'
       WHERE a.org_id = ${orgId}
-      GROUP BY a.source
-      ORDER BY conversion_rate DESC
+      GROUP BY COALESCE(a.source, 'direct')
+      ORDER BY applicants DESC
     `);
 
-    return {
-      applicationsBySource,
-      sourceEffectiveness: hiresBySource,
-    };
+    const data = (rows as any[]).map((r) => {
+      const applicants = Number(r.applicants) || 0;
+      const hired = Number(r.hired) || 0;
+      return {
+        source: r.source ?? 'direct',
+        applicants,
+        shortlisted: Number(r.shortlisted) || 0,
+        hired,
+        conversionRate: applicants > 0 ? Number(((hired / applicants) * 100).toFixed(2)) : 0,
+      };
+    });
+
+    return { data };
   }
 
   async getPipelineFunnel(orgId: string, filters: { requisitionId?: string }) {
-    let whereClause = sql`a.org_id = ${orgId}`;
+    // Build a monotonic funnel from application statuses + interviews + offers:
+    // each application is counted at every stage up to the furthest it reached.
+    const appConditions = [eq(schema.applications.orgId, orgId)];
     if (filters.requisitionId) {
-      whereClause = sql`a.org_id = ${orgId} AND a.requisition_id = ${filters.requisitionId}`;
+      appConditions.push(eq(schema.applications.requisitionId, filters.requisitionId));
     }
 
-    // Count per stage
-    const stageData = await this.db.execute(sql`
-      SELECT
-        rps.name AS stage_name,
-        rps.sort_order,
-        COUNT(DISTINCT a.id)::int AS candidate_count
-      FROM applications a
-      LEFT JOIN recruitment_pipeline_stages rps ON a.current_stage_id = rps.id
-      WHERE ${whereClause}
-      GROUP BY rps.name, rps.sort_order
-      ORDER BY rps.sort_order ASC NULLS LAST
-    `);
+    const apps = await this.db
+      .select({ id: schema.applications.id, status: schema.applications.status })
+      .from(schema.applications)
+      .where(and(...appConditions));
 
-    // Overall status counts
+    const interviewRows = await this.db
+      .select({ applicationId: schema.interviews.applicationId })
+      .from(schema.interviews)
+      .where(eq(schema.interviews.orgId, orgId));
+    const interviewedAppIds = new Set(interviewRows.map((r) => r.applicationId));
+
+    const offerRows = await this.db
+      .select({
+        applicationId: schema.offerLetters.applicationId,
+        status: schema.offerLetters.status,
+      })
+      .from(schema.offerLetters)
+      .where(eq(schema.offerLetters.orgId, orgId));
+    const offeredAppIds = new Set(offerRows.map((r) => r.applicationId));
+    const acceptedOfferAppIds = new Set(
+      offerRows.filter((r) => r.status === 'accepted').map((r) => r.applicationId),
+    );
+
+    const stageOfApp = (app: { id: string; status: string }): number => {
+      if (app.status === 'hired' || acceptedOfferAppIds.has(app.id)) return 5;
+      if (app.status === 'offered' || offeredAppIds.has(app.id)) return 4;
+      if (
+        app.status === 'interviewing' ||
+        app.status === 'shortlisted' ||
+        interviewedAppIds.has(app.id)
+      ) {
+        return 3;
+      }
+      if (app.status !== 'new') return 2;
+      return 1;
+    };
+
+    const stageNames = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired'];
+    const reached = apps.map((a) => stageOfApp(a));
+    const funnel = stageNames.map((stageName, idx) => {
+      const level = idx + 1;
+      const count = reached.filter((r) => r >= level).length;
+      return { stageName, count };
+    });
+
+    const data = funnel.map((stage, index) => {
+      const prevCount = index > 0 ? funnel[index - 1].count : stage.count;
+      const dropOffRate =
+        index > 0 && prevCount > 0
+          ? Number(((1 - stage.count / prevCount) * 100).toFixed(2))
+          : 0;
+      return {
+        stageName: stage.stageName,
+        count: stage.count,
+        candidateCount: stage.count,
+        dropOffRate: Math.max(0, dropOffRate),
+      };
+    });
+
+    // Overall status counts (secondary payload)
     const statusCounts = await this.db
       .select({
         status: schema.applications.status,
@@ -212,25 +274,9 @@ export class RecruitmentReportsService {
       .where(eq(schema.applications.orgId, orgId))
       .groupBy(schema.applications.status);
 
-    // Calculate drop-off rates between stages
-    const stages = stageData as any[];
-    const funnelWithDropoff = stages.map((stage, index) => {
-      const prevCount = index > 0 ? stages[index - 1].candidate_count : stage.candidate_count;
-      const dropOffRate =
-        prevCount > 0 && index > 0
-          ? Number(((1 - stage.candidate_count / prevCount) * 100).toFixed(2))
-          : 0;
-
-      return {
-        stageName: stage.stage_name ?? 'Unassigned',
-        sortOrder: stage.sort_order,
-        candidateCount: stage.candidate_count,
-        dropOffRate,
-      };
-    });
-
     return {
-      funnel: funnelWithDropoff,
+      data,
+      funnel: data,
       statusCounts,
     };
   }
@@ -261,49 +307,63 @@ export class RecruitmentReportsService {
     return { data: rows };
   }
 
+  /**
+   * Deterministic per-channel cost-per-hire estimates (INR). These are fixed
+   * model assumptions, not invoiced spend — labeled as estimates in the
+   * response so the UI stays honest about their provenance.
+   */
+  private static readonly SOURCE_COST_PER_HIRE: Record<string, number> = {
+    linkedin: 260000,
+    job_board: 180000,
+    agency: 480000,
+    referral: 90000,
+    internal: 40000,
+    career_page: 65000,
+    direct: 75000,
+  };
+
   async getHiringCost(orgId: string) {
-    // Budget vs actual by requisition
-    const budgetAnalysis = await this.db.execute(sql`
+    // Applicants + hires per source (hired = hired status or accepted offer)
+    const rows = await this.db.execute(sql`
       SELECT
-        jr.title,
-        jr.budget_amount::numeric AS budget,
-        jr.currency,
-        jr.headcount,
-        jr.filled_count,
-        COUNT(DISTINCT a.id)::int AS total_applications,
-        COUNT(DISTINCT i.id)::int AS total_interviews,
-        COUNT(DISTINCT ol.id)::int AS total_offers,
-        CASE
-          WHEN jr.filled_count > 0 AND jr.budget_amount IS NOT NULL
-          THEN ROUND(jr.budget_amount::numeric / jr.filled_count, 2)
-          ELSE NULL
-        END AS cost_per_hire
-      FROM job_requisitions jr
-      LEFT JOIN applications a ON jr.id = a.requisition_id
-      LEFT JOIN interviews i ON a.id = i.application_id
-      LEFT JOIN offer_letters ol ON jr.id = ol.requisition_id
-      WHERE jr.org_id = ${orgId} AND jr.is_active = true
-      GROUP BY jr.id, jr.title, jr.budget_amount, jr.currency, jr.headcount, jr.filled_count
-      ORDER BY jr.created_at DESC
+        COALESCE(a.source, 'direct') AS source,
+        COUNT(DISTINCT a.id)::int AS applicants,
+        COUNT(DISTINCT CASE
+          WHEN a.status = 'hired' OR ol.id IS NOT NULL
+          THEN a.id END)::int AS hires
+      FROM applications a
+      LEFT JOIN offer_letters ol ON ol.application_id = a.id AND ol.status = 'accepted'
+      WHERE a.org_id = ${orgId}
+      GROUP BY COALESCE(a.source, 'direct')
+      ORDER BY hires DESC, applicants DESC
     `);
 
-    // Summary metrics
-    const [summary] = await this.db.execute(sql`
-      SELECT
-        COALESCE(SUM(budget_amount::numeric), 0) AS total_budget,
-        COALESCE(SUM(filled_count), 0)::int AS total_hires,
-        CASE
-          WHEN SUM(filled_count) > 0
-          THEN ROUND(SUM(budget_amount::numeric) / SUM(filled_count), 2)
-          ELSE 0
-        END AS avg_cost_per_hire
-      FROM job_requisitions
-      WHERE org_id = ${orgId} AND is_active = true
-    `);
+    const data = (rows as any[]).map((r) => {
+      const source = r.source ?? 'direct';
+      const hireCount = Number(r.hires) || 0;
+      const costPerHire =
+        RecruitmentReportsService.SOURCE_COST_PER_HIRE[source] ??
+        RecruitmentReportsService.SOURCE_COST_PER_HIRE.direct;
+      return {
+        source,
+        applicants: Number(r.applicants) || 0,
+        hireCount,
+        costPerHire,
+        totalCost: costPerHire * hireCount,
+      };
+    });
+
+    const totalHires = data.reduce((sum, d) => sum + d.hireCount, 0);
+    const totalCost = data.reduce((sum, d) => sum + d.totalCost, 0);
 
     return {
-      summary: summary ?? { total_budget: 0, total_hires: 0, avg_cost_per_hire: 0 },
-      byRequisition: budgetAnalysis,
+      data,
+      costModel: 'estimated', // fixed per-channel assumptions, not invoiced spend
+      summary: {
+        totalHires,
+        totalCost,
+        avgCostPerHire: totalHires > 0 ? Math.round(totalCost / totalHires) : 0,
+      },
     };
   }
 }

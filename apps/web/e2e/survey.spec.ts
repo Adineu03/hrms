@@ -144,10 +144,19 @@ for (const role of ROLES) {
 
         // ── Role-guard cells: this module is hidden for this role — assert the redirect ──
         if (!isModuleAllowedForRole(role, mod.id)) {
-          const redirected = await page
+          let redirected = await page
             .waitForURL((u) => new URL(u).pathname === '/dashboard', { timeout: 30000 })
             .then(() => true)
             .catch(() => false);
+          // Same dev-server first-compile race the allowed path retries: the page can sit
+          // on the pre-hydration "Loading..." screen past the window — reload once and re-wait.
+          if (!redirected && !page.url().includes('/login')) {
+            await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+            redirected = await page
+              .waitForURL((u) => new URL(u).pathname === '/dashboard', { timeout: 30000 })
+              .then(() => true)
+              .catch(() => false);
+          }
 
           if (redirected) {
             const file = '0-GUARDED.png';

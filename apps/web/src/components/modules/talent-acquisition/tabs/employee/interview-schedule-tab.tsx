@@ -33,6 +33,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-red-50 text-red-700',
   no_show: 'bg-gray-100 text-gray-600',
   rescheduled: 'bg-yellow-50 text-yellow-700',
+  reschedule_requested: 'bg-yellow-50 text-yellow-700',
 };
 
 interface Interview {

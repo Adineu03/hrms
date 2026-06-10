@@ -8,6 +8,19 @@ import * as schema from '../../../../infrastructure/database/schema';
 export class PipMgmtService {
   constructor(@Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>) {}
 
+  /** Frontend field aliases: endDate (DB targetDate), outcome (DB pipOutcome), milestones (DB pipMilestones), escalationRules (metadata). */
+  private toPipDto(plan: typeof schema.developmentPlans.$inferSelect, employee: { firstName: string; lastName: string | null }) {
+    const metadata = (plan.metadata ?? {}) as Record<string, any>;
+    return {
+      ...plan,
+      employeeName: `${employee.firstName} ${employee.lastName ?? ''}`.trim(),
+      endDate: plan.targetDate,
+      outcome: plan.pipOutcome,
+      milestones: Array.isArray(plan.pipMilestones) ? plan.pipMilestones : [],
+      escalationRules: metadata.escalationRules ?? '',
+    };
+  }
+
   async listPIPs(orgId: string, status?: string) {
     const conditions: any[] = [eq(schema.developmentPlans.orgId, orgId), eq(schema.developmentPlans.type, 'pip'), eq(schema.developmentPlans.isActive, true)];
     if (status) conditions.push(eq(schema.developmentPlans.status, status));
@@ -15,16 +28,24 @@ export class PipMgmtService {
       .from(schema.developmentPlans)
       .innerJoin(schema.users, eq(schema.developmentPlans.employeeId, schema.users.id))
       .where(and(...conditions)).orderBy(desc(schema.developmentPlans.createdAt));
-    return { data: rows.map(r => ({ ...r.plan, employeeName: `${r.employee.firstName} ${r.employee.lastName}` })), meta: { total: rows.length } };
+    return { data: rows.map(r => this.toPipDto(r.plan, r.employee)), meta: { total: rows.length } };
   }
 
   async createPIP(orgId: string, createdBy: string, data: Record<string, any>) {
+    const milestones = (Array.isArray(data.milestones) ? data.milestones : [])
+      .filter((m: any) => m?.title?.trim())
+      .map((m: any, i: number) => ({
+        id: m.id ?? `ms-${i + 1}`, title: m.title, description: m.description ?? '',
+        dueDate: m.dueDate || null, status: m.status ?? 'pending',
+      }));
     const [created] = await this.db.insert(schema.developmentPlans).values({
       orgId, employeeId: data.employeeId, title: data.title, description: data.description ?? null,
-      type: 'pip', activities: data.activities ?? [], pipMilestones: data.milestones ?? [],
-      startDate: data.startDate ?? null, targetDate: data.targetDate ?? null, status: 'active', createdBy,
+      type: 'pip', activities: data.activities ?? [], pipMilestones: milestones,
+      startDate: data.startDate || null, targetDate: data.targetDate || data.endDate || null,
+      status: 'active', createdBy,
+      metadata: { ...(data.metadata ?? {}), escalationRules: data.escalationRules ?? '' },
     }).returning();
-    return created;
+    return this.getPIP(orgId, created.id);
   }
 
   async getPIP(orgId: string, id: string) {
@@ -33,7 +54,14 @@ export class PipMgmtService {
       .innerJoin(schema.users, eq(schema.developmentPlans.employeeId, schema.users.id))
       .where(and(eq(schema.developmentPlans.id, id), eq(schema.developmentPlans.orgId, orgId), eq(schema.developmentPlans.type, 'pip'))).limit(1);
     if (!row) throw new NotFoundException('PIP not found');
-    return { ...row.plan, employeeName: `${row.employee.firstName} ${row.employee.lastName}` };
+    return this.toPipDto(row.plan, row.employee);
+  }
+
+  async deletePIP(orgId: string, id: string) {
+    await this.getPIP(orgId, id);
+    await this.db.update(schema.developmentPlans).set({ isActive: false, updatedAt: new Date() })
+      .where(and(eq(schema.developmentPlans.id, id), eq(schema.developmentPlans.orgId, orgId)));
+    return { success: true, message: 'PIP deleted' };
   }
 
   async updatePIP(orgId: string, id: string, data: Record<string, any>) {

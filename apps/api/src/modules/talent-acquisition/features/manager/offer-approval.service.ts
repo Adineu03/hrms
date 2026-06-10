@@ -55,9 +55,15 @@ export class OfferApprovalService {
         approvalChain: schema.offerLetters.approvalChain,
         currentApproverLevel: schema.offerLetters.currentApproverLevel,
         status: schema.offerLetters.status,
+        probationMonths: schema.offerLetters.probationMonths,
+        benefits: schema.offerLetters.benefits,
         candidateFirstName: schema.candidates.firstName,
         candidateLastName: schema.candidates.lastName,
         candidateEmail: schema.candidates.email,
+        candidatePhone: schema.candidates.phone,
+        candidateCurrentTitle: schema.candidates.currentTitle,
+        candidateCurrentCompany: schema.candidates.currentCompany,
+        candidateExperience: schema.candidates.experienceYears,
         requisitionTitle: schema.jobRequisitions.title,
         createdAt: schema.offerLetters.createdAt,
         updatedAt: schema.offerLetters.updatedAt,
@@ -78,12 +84,78 @@ export class OfferApprovalService {
       this.isCurrentApprover(offer.approvalChain, offer.currentApproverLevel, managerId),
     );
 
+    // Interview summaries per application (for the inline detail view)
+    const applicationIds = [...new Set(pendingForManager.map((o) => o.applicationId))];
+    const interviewRows = applicationIds.length
+      ? await this.db
+          .select({
+            applicationId: schema.interviews.applicationId,
+            overallScore: schema.interviews.overallScore,
+            decision: schema.interviews.decision,
+            status: schema.interviews.status,
+            panelMembers: schema.interviews.panelMembers,
+          })
+          .from(schema.interviews)
+          .where(
+            and(
+              eq(schema.interviews.orgId, orgId),
+              inArray(schema.interviews.applicationId, applicationIds),
+            ),
+          )
+      : [];
+
+    const summaryByApplication = new Map<string, any>();
+    for (const appId of applicationIds) {
+      const rows = interviewRows.filter((i) => i.applicationId === appId);
+      if (rows.length === 0) continue;
+      const scores = rows
+        .map((r) => Number(r.overallScore) || 0)
+        .filter((s) => s > 0);
+      const avgScore = scores.length
+        ? Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1))
+        : 0;
+      const lastDecision = rows.map((r) => r.decision).filter(Boolean).pop() ?? 'pending';
+      summaryByApplication.set(appId, {
+        rounds: rows.length,
+        avgScore,
+        finalDecision: lastDecision,
+        interviewers: rows.map((r) => {
+          const panel = Array.isArray(r.panelMembers)
+            ? (r.panelMembers as Array<Record<string, any>>)
+            : [];
+          return {
+            name: panel[0]?.name ?? 'Interview Panel',
+            score: Number(r.overallScore) || 0,
+            decision: r.decision ?? (r.status === 'completed' ? 'pending' : 'next_round'),
+          };
+        }),
+      });
+    }
+
     return {
       data: pendingForManager.map((offer) => ({
         ...this.toDto(offer),
+        salary: offer.salaryAmount ? Number(offer.salaryAmount) : 0,
         candidateName: `${offer.candidateFirstName} ${offer.candidateLastName ?? ''}`.trim(),
         candidateEmail: offer.candidateEmail,
         requisitionTitle: offer.requisitionTitle,
+        candidateProfile: {
+          name: `${offer.candidateFirstName} ${offer.candidateLastName ?? ''}`.trim(),
+          email: offer.candidateEmail,
+          phone: offer.candidatePhone ?? '--',
+          currentTitle: offer.candidateCurrentTitle ?? '--',
+          currentCompany: offer.candidateCurrentCompany ?? '--',
+          experience: offer.candidateExperience ? Number(offer.candidateExperience) : 0,
+        },
+        interviewSummary: summaryByApplication.get(offer.applicationId) ?? null,
+        offerDetails: {
+          baseSalary: offer.salaryAmount ? Number(offer.salaryAmount) : 0,
+          bonus: 0,
+          equity: null,
+          benefits: Array.isArray(offer.benefits) ? (offer.benefits as string[]).join(', ') : null,
+          noticePeriod: null,
+          probationPeriod: offer.probationMonths ? `${offer.probationMonths} months` : null,
+        },
       })),
       total: pendingForManager.length,
     };
@@ -236,7 +308,7 @@ export class OfferApprovalService {
           status: 'approved',
           approvedBy: managerId,
           approvedAt: new Date().toISOString(),
-          comments: body.comments ?? null,
+          comments: body.comments ?? body.comment ?? null,
         };
       }
       return entry;
@@ -366,12 +438,12 @@ export class OfferApprovalService {
       suggestedBy: managerId,
       suggestedAt: new Date().toISOString(),
       originalSalary: offer.salaryAmount ? Number(offer.salaryAmount) : null,
-      proposedSalary: body.proposedSalary ?? null,
+      proposedSalary: body.proposedSalary ?? body.suggestedSalary ?? null,
       proposedJoiningDate: body.proposedJoiningDate ?? null,
       proposedDesignation: body.proposedDesignation ?? null,
       proposedBenefits: body.proposedBenefits ?? null,
       reason: body.reason ?? null,
-      comments: body.comments ?? null,
+      comments: body.comments ?? body.notes ?? null,
     };
 
     const existingHistory = (offer.negotiationHistory as any[]) ?? [];
@@ -407,6 +479,7 @@ export class OfferApprovalService {
         joiningDate: schema.offerLetters.joiningDate,
         approvalChain: schema.offerLetters.approvalChain,
         status: schema.offerLetters.status,
+        approvedAt: schema.offerLetters.approvedAt,
         sentAt: schema.offerLetters.sentAt,
         acceptedAt: schema.offerLetters.acceptedAt,
         rejectedAt: schema.offerLetters.rejectedAt,
@@ -453,11 +526,23 @@ export class OfferApprovalService {
         requisitionTitle: offer.requisitionTitle,
         designation: offer.designation,
         department: offer.department,
-        salary: offer.salaryAmount ? Number(offer.salaryAmount) : null,
+        salary: Number(offer.salaryAmount) || 0,
         currency: offer.currency,
         joiningDate: offer.joiningDate,
         validUntil: offer.validUntil,
         status: offer.status,
+        approvedAt:
+          offer.approvedAt?.toISOString?.() ??
+          ((offer.approvalChain as any[]) ?? []).find(
+            (entry: any) =>
+              (entry.approverId === managerId || entry.userId === managerId) &&
+              entry.status === 'approved',
+          )?.approvedAt ??
+          null,
+        respondedAt:
+          offer.acceptedAt?.toISOString?.() ??
+          offer.rejectedAt?.toISOString?.() ??
+          null,
         sentAt: offer.sentAt?.toISOString?.() ?? offer.sentAt ?? null,
         acceptedAt: offer.acceptedAt?.toISOString?.() ?? offer.acceptedAt ?? null,
         rejectedAt: offer.rejectedAt?.toISOString?.() ?? offer.rejectedAt ?? null,

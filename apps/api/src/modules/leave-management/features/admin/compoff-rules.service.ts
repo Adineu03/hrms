@@ -82,17 +82,33 @@ export class CompoffRulesService {
     const paginated = filtered.slice(offset, offset + limit);
 
     return {
-      data: paginated.map((r) => ({
-        ...this.toCompOffDto(r.record),
-        employee: {
-          id: r.record.employeeId,
-          firstName: r.employeeFirstName,
-          lastName: r.employeeLastName,
-          email: r.employeeEmail,
-        },
-        departmentId: r.departmentId,
-        departmentName: r.departmentName,
-      })),
+      data: paginated.map((r) => {
+        const metadata = (r.record.metadata as Record<string, any>) ?? {};
+        return {
+          ...this.toCompOffDto(r.record),
+          employee: {
+            id: r.record.employeeId,
+            firstName: r.employeeFirstName,
+            lastName: r.employeeLastName,
+            email: r.employeeEmail,
+          },
+          departmentId: r.departmentId,
+          departmentName: r.departmentName,
+          // Flat aliases consumed by the admin Comp-Off Rules tab
+          employeeName:
+            `${r.employeeFirstName ?? ''} ${r.employeeLastName ?? ''}`.trim() || 'Unknown',
+          department: r.departmentName ?? null,
+          workDate: r.record.earnedDate,
+          hoursWorked: Number(
+            metadata.hoursWorked ?? Number(r.record.daysEarned) * 8,
+          ),
+          approverComment: metadata.reviewComment ?? null,
+          usedDate:
+            r.record.status === 'used'
+              ? r.record.updatedAt?.toISOString() ?? null
+              : null,
+        };
+      }),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -131,6 +147,9 @@ export class CompoffRulesService {
         lastName: row.employeeLastName,
         email: row.employeeEmail,
       },
+      employeeName:
+        `${row.employeeFirstName ?? ''} ${row.employeeLastName ?? ''}`.trim() || 'Unknown',
+      workDate: row.record.earnedDate,
     };
   }
 
@@ -219,15 +238,21 @@ export class CompoffRulesService {
       };
     }
 
+    const earningRules = (policy.compOffEarningRules as Record<string, any>) ?? {};
+
     return {
+      // Flat shape consumed by the admin Comp-Off Rules form
+      ...earningRules,
+      expiryDays: policy.compOffExpiryDays ?? 90,
+      // Canonical fields preserved
       compOffEarningRules: policy.compOffEarningRules,
       compOffExpiryDays: policy.compOffExpiryDays,
     };
   }
 
   async updateRules(orgId: string, data: Record<string, any>) {
-    // Update comp-off rules in the default leave policy
-    const [existing] = await this.db
+    // Update comp-off rules in the default leave policy (create one if missing)
+    let [existing] = await this.db
       .select()
       .from(schema.leavePolicies)
       .where(
@@ -239,18 +264,48 @@ export class CompoffRulesService {
       .limit(1);
 
     if (!existing) {
-      throw new BadRequestException(
-        'No leave policy configured yet. Configure a leave policy first.',
-      );
+      [existing] = await this.db
+        .insert(schema.leavePolicies)
+        .values({
+          orgId,
+          name: 'Default Leave Policy',
+          isDefault: true,
+          isActive: true,
+        })
+        .returning();
     }
 
     const updates: Record<string, any> = { updatedAt: new Date() };
+
+    // Flat fields posted by the admin Comp-Off Rules form → fold into the
+    // policy's compOffEarningRules JSON so they round-trip on reload.
+    const flatRuleKeys = [
+      'earningRuleWeekday',
+      'earningRuleWeekend',
+      'earningRuleHoliday',
+      'minHoursForFullDay',
+      'minHoursForHalfDay',
+      'requireApproval',
+      'maxAccumulation',
+    ];
+    const flatUpdates: Record<string, any> = {};
+    for (const key of flatRuleKeys) {
+      if (data[key] !== undefined) flatUpdates[key] = data[key];
+    }
+    if (Object.keys(flatUpdates).length > 0) {
+      updates.compOffEarningRules = {
+        ...((existing.compOffEarningRules as Record<string, any>) ?? {}),
+        ...flatUpdates,
+      };
+    }
 
     if (data.compOffEarningRules !== undefined) {
       updates.compOffEarningRules = data.compOffEarningRules;
     }
     if (data.compOffExpiryDays !== undefined) {
       updates.compOffExpiryDays = data.compOffExpiryDays;
+    } else if (data.expiryDays !== undefined) {
+      updates.compOffExpiryDays = data.expiryDays;
     }
 
     const [updated] = await this.db
@@ -264,7 +319,11 @@ export class CompoffRulesService {
       )
       .returning();
 
+    const earningRules = (updated.compOffEarningRules as Record<string, any>) ?? {};
+
     return {
+      ...earningRules,
+      expiryDays: updated.compOffExpiryDays ?? 90,
       compOffEarningRules: updated.compOffEarningRules,
       compOffExpiryDays: updated.compOffExpiryDays,
     };

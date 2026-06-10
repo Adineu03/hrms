@@ -368,7 +368,12 @@ export default function TeamRegularizationTab() {
                     {PUNCH_LABELS[req.punchType] || req.punchType}
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">
-                    {req.requestedTime}
+                    {req.requestedTime
+                      ? new Date(req.requestedTime).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : '--'}
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted max-w-[180px] truncate" title={req.reason}>
                     {req.reason}

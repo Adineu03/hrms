@@ -10,11 +10,11 @@ import { WidgetCard, WidgetEmpty } from './widget-card';
 import { DonutChart, BarsChart } from './lazy-charts';
 import { CHART_COLORS, type ManagerOverview } from './types';
 
-const QUEUE_TYPE_LABEL: Record<string, string> = {
-  leave: 'Leave',
-  overtime: 'Overtime',
-  timesheet: 'Timesheet',
-  expense: 'Expense',
+const QUEUE_TYPE_CHIP: Record<string, { label: string; cls: string }> = {
+  leave: { label: 'Leave', cls: 'bg-blue-50 text-primary' },
+  overtime: { label: 'Overtime', cls: 'bg-amber-50 text-amber-700' },
+  timesheet: { label: 'Timesheet', cls: 'bg-background text-text-muted' },
+  expense: { label: 'Expense', cls: 'bg-emerald-50 text-[#059669]' },
 };
 
 export function ManagerDashboard({ data }: { data: ManagerOverview }) {
@@ -98,7 +98,13 @@ export function ManagerDashboard({ data }: { data: ManagerOverview }) {
                   <div className="min-w-0">
                     <p className="text-sm text-text truncate">
                       <span className="font-medium">{q.employeeName}</span>
-                      <span className="text-text-muted"> · {QUEUE_TYPE_LABEL[q.type]}</span>
+                      <span
+                        className={`ml-1.5 align-middle inline-block text-xs rounded-full px-2 py-0.5 font-medium ${
+                          (QUEUE_TYPE_CHIP[q.type] ?? QUEUE_TYPE_CHIP.timesheet).cls
+                        }`}
+                      >
+                        {(QUEUE_TYPE_CHIP[q.type] ?? QUEUE_TYPE_CHIP.timesheet).label}
+                      </span>
                     </p>
                     <p className="text-xs text-text-muted truncate">{q.detail}</p>
                   </div>

@@ -67,8 +67,9 @@ export class DocumentTemplateMgmtService {
     if (!data.name) throw new BadRequestException('Template name is required');
 
     const metadata = {
-      templateType: data.templateType ?? 'general',
-      status: 'active',
+      templateType: data.templateType ?? data.type ?? 'general',
+      status: data.status ?? 'active',
+      country: data.country ?? null,
       content: data.content ?? '',
       dynamicFields: data.dynamicFields ?? [],
       versionHistory: [
@@ -151,6 +152,8 @@ export class DocumentTemplateMgmtService {
     const updatedMeta = {
       ...existingMeta,
       ...(data.templateType !== undefined && { templateType: data.templateType }),
+      ...(data.type !== undefined && { templateType: data.type }),
+      ...(data.country !== undefined && { country: data.country }),
       ...(data.status !== undefined && { status: data.status }),
       ...(data.content !== undefined && { content: data.content }),
       ...(data.dynamicFields !== undefined && { dynamicFields: data.dynamicFields }),
@@ -252,6 +255,9 @@ export class DocumentTemplateMgmtService {
       name: row.name,
       description: row.description,
       templateType: meta.templateType ?? 'general',
+      // Frontend-facing aliases
+      type: meta.templateType ?? 'general',
+      country: meta.country ?? null,
       status: meta.status ?? 'active',
       content: meta.content ?? '',
       dynamicFields: meta.dynamicFields ?? [],

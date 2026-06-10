@@ -31,6 +31,10 @@ export class PipMgmtController {
   @Roles('super_admin', 'admin')
   async update(@Param('id') id: string, @Body() body: Record<string, any>) { return this.service.updatePIP(this.getOrgIdOrThrow(), id, body); }
 
+  @Delete(':id')
+  @Roles('super_admin', 'admin')
+  async remove(@Param('id') id: string) { return this.service.deletePIP(this.getOrgIdOrThrow(), id); }
+
   @Post(':id/escalate')
   @Roles('super_admin', 'admin')
   async escalate(@Param('id') id: string, @Body() body: Record<string, any>) { return this.service.escalatePIP(this.getOrgIdOrThrow(), id, body); }

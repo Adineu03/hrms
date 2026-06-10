@@ -17,7 +17,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { CHART_COLORS } from './types';
+import { CATEGORICAL_COLORS, CHART_COLORS } from './types';
 
 const TOOLTIP_STYLE = {
   backgroundColor: '#ffffff',
@@ -90,13 +90,7 @@ export function DonutChart({
   centerLabel?: string;
   centerSub?: string;
 }) {
-  const palette = [
-    CHART_COLORS.primary,
-    CHART_COLORS.primaryTint,
-    CHART_COLORS.accent,
-    CHART_COLORS.accentTint,
-    CHART_COLORS.muted,
-  ];
+  const palette = CATEGORICAL_COLORS;
   const filled = data.filter((d) => d.value > 0);
   return (
     <div className="relative" style={{ height }}>

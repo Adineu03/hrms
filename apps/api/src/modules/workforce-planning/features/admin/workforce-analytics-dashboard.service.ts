@@ -3,16 +3,20 @@ import { eq, and, desc } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { isScenarioRow } from '../../scenario.util';
 
 @Injectable()
 export class WorkforceAnalyticsDashboardService {
   constructor(@Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>) {}
 
   async getSummary(orgId: string) {
-    const plans = await this.db
+    const planRows = await this.db
       .select()
       .from(schema.workforceHeadcountPlans)
       .where(and(eq(schema.workforceHeadcountPlans.orgId, orgId), eq(schema.workforceHeadcountPlans.isActive, true)));
+
+    // Org Design Studio scenarios share this table (metadata.type === 'scenario') — exclude them.
+    const plans = planRows.filter((p) => !isScenarioRow(p));
 
     const transfers = await this.db
       .select()
@@ -35,11 +39,14 @@ export class WorkforceAnalyticsDashboardService {
   }
 
   async getHeadcountTrend(orgId: string) {
-    const plans = await this.db
+    const planRows = await this.db
       .select()
       .from(schema.workforceHeadcountPlans)
       .where(and(eq(schema.workforceHeadcountPlans.orgId, orgId), eq(schema.workforceHeadcountPlans.isActive, true)))
       .orderBy(desc(schema.workforceHeadcountPlans.planYear));
+
+    // Exclude scenario rows so hypothetical plan-years (e.g. FY27 what-ifs) don't create fake trend points.
+    const plans = planRows.filter((p) => !isScenarioRow(p));
 
     const byYear: Record<number, { year: number; current: number; approved: number; target: number }> = {};
 
@@ -86,12 +93,12 @@ export class WorkforceAnalyticsDashboardService {
     const promotions = all.filter((r) => r.requestType === 'promotion' && r.status === 'completed');
     const internalMoves = all.filter((r) => r.status === 'completed');
 
-    // Headcount denominator for rate %
-    const plans = await this.db
+    // Headcount denominator for rate % (scenario rows excluded — they are what-ifs, not real headcount)
+    const planRows = await this.db
       .select()
       .from(schema.workforceHeadcountPlans)
       .where(and(eq(schema.workforceHeadcountPlans.orgId, orgId), eq(schema.workforceHeadcountPlans.isActive, true)));
-    const totalHeadcount = plans.reduce((sum, p) => sum + (p.currentHeadcount ?? 0), 0);
+    const totalHeadcount = planRows.filter((p) => !isScenarioRow(p)).reduce((sum, p) => sum + (p.currentHeadcount ?? 0), 0);
 
     const promotionRate = totalHeadcount > 0 ? Math.round((promotions.length / totalHeadcount) * 1000) / 10 : 0;
     const internalMobilityRate = totalHeadcount > 0 ? Math.round((internalMoves.length / totalHeadcount) * 1000) / 10 : 0;

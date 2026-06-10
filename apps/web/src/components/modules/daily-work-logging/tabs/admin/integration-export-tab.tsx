@@ -75,7 +75,8 @@ export default function IntegrationExportTab() {
     setIsLoadingCorrelation(true);
     try {
       const res = await api.get('/daily-work-logging/admin/integrations/attendance-correlation');
-      setCorrelationData(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const data = Array.isArray(res.data) ? res.data : res.data?.data;
+      setCorrelationData(Array.isArray(data) ? data : []);
     } catch {
       // Silently fail - correlation may not be available
     } finally {
@@ -337,16 +338,16 @@ export default function IntegrationExportTab() {
                 {correlationData.map((entry, idx) => (
                   <tr key={entry.employeeId || idx} className="bg-card hover:bg-background/50 transition-colors">
                     <td className="px-4 py-3 text-sm text-text font-medium">{entry.employeeName}</td>
-                    <td className="px-4 py-3 text-sm text-text-muted">{(entry.timesheetHours ?? 0).toFixed(1)}</td>
-                    <td className="px-4 py-3 text-sm text-text-muted">{(entry.attendanceHours ?? 0).toFixed(1)}</td>
+                    <td className="px-4 py-3 text-sm text-text-muted">{(Number(entry.timesheetHours) || 0).toFixed(1)}</td>
+                    <td className="px-4 py-3 text-sm text-text-muted">{(Number(entry.attendanceHours) || 0).toFixed(1)}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={(entry.variance ?? 0) === 0 ? 'text-green-700' : 'text-yellow-700'}>
-                        {(entry.variance ?? 0) >= 0 ? '+' : ''}{(entry.variance ?? 0).toFixed(1)}
+                      <span className={(Number(entry.variance) || 0) === 0 ? 'text-green-700' : 'text-yellow-700'}>
+                        {(Number(entry.variance) || 0) >= 0 ? '+' : ''}{(Number(entry.variance) || 0).toFixed(1)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${CORRELATION_STYLES[entry.status]}`}>
-                        {entry.status}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${CORRELATION_STYLES[entry.status] || 'bg-gray-100 text-gray-600'}`}>
+                        {entry.status || 'unknown'}
                       </span>
                     </td>
                   </tr>

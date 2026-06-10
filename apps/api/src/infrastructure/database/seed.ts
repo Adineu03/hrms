@@ -36,6 +36,16 @@ import {
   leaveTypes,
   leaveBalances,
   leaveRequests,
+  leaveDelegations,
+  feedbackRecords,
+  attendanceRegularizations,
+  shiftSwapRequests,
+  reimbursementClaims,
+  policyViolations,
+  auditEvidence,
+  onboardingWorkflows,
+  onboardingWorkflowTasks,
+  offboardingWorkflows,
   timesheetEntries,
   payrollRuns,
   payrollEntries,
@@ -1221,10 +1231,12 @@ async function seed(): Promise<void> {
       { action: 'create', entity: 'employee' },
     ];
     const auditUA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36';
+    // Vary actors so the dashboard activity feed reads as real org motion.
+    const auditActors = [adminUser, managerUser, salesManagerUser, opsManagerUser, empUsers[0], empUsers[4]];
     const auditLogInserts = Array.from({ length: 24 }, (_, k) => {
       const ae = auditActionEntity[k % 8];
-      const actor = k % 3 === 2 ? adminUser : managerUser;
-      const actorName = actor === adminUser ? 'Alex Kumar' : 'Sarah Mehta';
+      const actor = auditActors[k % auditActors.length];
+      const actorName = `${actor.firstName} ${actor.lastName ?? ''}`.trim();
       // oldest first: anchor − 3 days 09:00 + k×3h
       const ts = new Date(SEED_TODAY);
       ts.setUTCDate(ts.getUTCDate() - 3);
@@ -2636,6 +2648,820 @@ async function seed(): Promise<void> {
       { orgId: org.id, connectorId: null, syncName: 'Org Chart Excel Import', sourceType: 'excel', targetType: 'employees', frequency: 'manual', isEnabled: false, lastSyncAt: anchorPlusDays(-30), lastSyncStatus: 'success', lastSyncRecordCount: 20, nextSyncAt: null },
     ]);
     console.log('  ✓ integrations-api: 7 connectors (4 healthy/1 degraded/1 error/1 unknown), 5 logs, 4 API keys, 4 webhooks, 4 OAuth apps, 4 data-sync configs');
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // DEMO-POLISH (Fix Sprint 3) — per-module gap fills.
+    // NO faker calls in this section: fixed literals + anchorPlusDays/fmt only,
+    // so the locked faker stream above stays byte-identical.
+    // ═════════════════════════════════════════════════════════════════════════
+
+    // ── Demo-polish: emp01 leave history + comp-off + manager delegations ────
+    // (#51) 4 approved past leaves for emp01 so Insights has real history.
+    await db.insert(leaveRequests).values([
+      {
+        orgId: org.id, employeeId: empUsers[0].id, leaveTypeId: ltCasual.id,
+        fromDate: fmt(anchorPlusDays(-20)), toDate: fmt(anchorPlusDays(-19)), totalDays: '2',
+        reason: 'Family function out of town.', status: 'approved',
+        approvedBy: managerUser.id, approvedAt: anchorPlusDays(-22), approverComment: 'Approved',
+      },
+      {
+        orgId: org.id, employeeId: empUsers[0].id, leaveTypeId: ltSick.id,
+        fromDate: fmt(anchorPlusDays(-35)), toDate: fmt(anchorPlusDays(-35)), totalDays: '1',
+        reason: 'Fever and rest advised by doctor.', status: 'approved',
+        approvedBy: managerUser.id, approvedAt: anchorPlusDays(-36), approverComment: 'Approved — get well soon',
+      },
+      {
+        orgId: org.id, employeeId: empUsers[0].id, leaveTypeId: ltEarned.id,
+        fromDate: fmt(anchorPlusDays(-50)), toDate: fmt(anchorPlusDays(-49)), totalDays: '2',
+        reason: 'Short trip with family.', status: 'approved',
+        approvedBy: managerUser.id, approvedAt: anchorPlusDays(-52), approverComment: 'Approved',
+      },
+      {
+        orgId: org.id, employeeId: empUsers[0].id, leaveTypeId: ltCasual.id,
+        fromDate: fmt(anchorPlusDays(-65)), toDate: fmt(anchorPlusDays(-65)), totalDays: '1',
+        reason: 'Personal errand — bank and registration work.', status: 'approved',
+        approvedBy: managerUser.id, approvedAt: anchorPlusDays(-66), approverComment: 'Approved',
+      },
+    ]);
+
+    // Keep emp01's balances coherent with the requests above (+ the seeded
+    // pending CL request of 2 days): CL used 3 / pending 2, SL used 1, EL used 2.
+    await db.update(leaveBalances)
+      .set({ used: '3', pending: '2', available: '7' })
+      .where(and(
+        eq(leaveBalances.orgId, org.id), eq(leaveBalances.employeeId, empUsers[0].id),
+        eq(leaveBalances.leaveTypeId, ltCasual.id), eq(leaveBalances.year, '2026'),
+      ));
+    await db.update(leaveBalances)
+      .set({ used: '1', pending: '0', available: '11' })
+      .where(and(
+        eq(leaveBalances.orgId, org.id), eq(leaveBalances.employeeId, empUsers[0].id),
+        eq(leaveBalances.leaveTypeId, ltSick.id), eq(leaveBalances.year, '2026'),
+      ));
+    await db.update(leaveBalances)
+      .set({ used: '2', pending: '0', available: '13' })
+      .where(and(
+        eq(leaveBalances.orgId, org.id), eq(leaveBalances.employeeId, empUsers[0].id),
+        eq(leaveBalances.leaveTypeId, ltEarned.id), eq(leaveBalances.year, '2026'),
+      ));
+
+    // (#50) 1 active comp-off + 1 expiring soon for emp01 ('active' = available).
+    await db.insert(compOffRecords).values([
+      {
+        orgId: org.id, employeeId: empUsers[0].id, earnedDate: fmt(anchorPlusDays(-10)),
+        reason: 'Weekend deployment support for the release.', workType: 'weekend',
+        daysEarned: '1', daysUsed: '0', daysAvailable: '1',
+        expiryDate: fmt(anchorPlusDays(50)), status: 'active',
+        approvedBy: managerUser.id, approvedAt: anchorPlusDays(-8),
+        metadata: { hoursWorked: 9 },
+      },
+      {
+        orgId: org.id, employeeId: empUsers[0].id, earnedDate: fmt(anchorPlusDays(-78)),
+        reason: 'Worked on public holiday for client go-live.', workType: 'holiday',
+        daysEarned: '1', daysUsed: '0', daysAvailable: '1',
+        expiryDate: fmt(anchorPlusDays(12)), status: 'active',
+        approvedBy: managerUser.id, approvedAt: anchorPlusDays(-76),
+        metadata: { hoursWorked: 8 },
+      },
+    ]);
+    console.log('  ✓ Comp-off records (emp01 active + expiring soon): 2');
+
+    // (#28) Leave delegations: Sarah → Vikram (active window) + one past/expired.
+    await db.insert(leaveDelegations).values([
+      {
+        orgId: org.id, delegatorId: managerUser.id, delegateId: salesManagerUser.id,
+        startDate: fmt(anchorPlusDays(-5)), endDate: fmt(anchorPlusDays(10)),
+        delegationType: 'full', isActive: true, activatedAt: anchorPlusDays(-5),
+        autoActivated: false, metadata: {},
+      },
+      {
+        orgId: org.id, delegatorId: managerUser.id, delegateId: salesManagerUser.id,
+        startDate: fmt(anchorPlusDays(-60)), endDate: fmt(anchorPlusDays(-45)),
+        delegationType: 'partial', isActive: false, activatedAt: anchorPlusDays(-60),
+        autoActivated: false, metadata: {},
+      },
+    ]);
+    console.log('  ✓ Leave delegations: 2 (1 active, 1 expired)');
+    console.log('  ✓ Leave history for emp01: 4 approved (+balances aligned)');
+
+    // ── Demo-polish #11: Org-level goals (4) + goal templates (3) ─────────────
+    // listOrgGoals queries category='organizational' AND isTemplate=false;
+    // listGoalTemplates queries isTemplate=true.
+    await db.insert(goals).values([
+      { orgId: org.id, title: 'Grow ARR to ₹120 Cr', description: 'Company-wide revenue goal for FY2025-26 across all business lines.', category: 'organizational', framework: 'okr', weightage: '100', priority: 'high', startDate: fmt(anchorPlusDays(-60)), dueDate: fmt(anchorPlusDays(120)), status: 'on_track', progress: '58.00', currentValue: '0', successMetrics: [], createdBy: adminUser.id, isTemplate: false, isActive: true },
+      { orgId: org.id, title: 'Achieve 95% customer retention', description: 'Reduce churn through proactive success programs and QBR coverage.', category: 'organizational', framework: 'okr', weightage: '100', priority: 'high', startDate: fmt(anchorPlusDays(-60)), dueDate: fmt(anchorPlusDays(180)), status: 'on_track', progress: '72.00', currentValue: '0', successMetrics: [], createdBy: adminUser.id, isTemplate: false, isActive: true },
+      { orgId: org.id, title: 'Launch in 2 new markets', description: 'Open GTM motion in ANZ and MEA with local partnerships.', category: 'organizational', framework: 'okr', weightage: '100', priority: 'medium', startDate: fmt(anchorPlusDays(-60)), dueDate: fmt(anchorPlusDays(210)), status: 'at_risk', progress: '30.00', currentValue: '0', successMetrics: [], createdBy: adminUser.id, isTemplate: false, isActive: true },
+      { orgId: org.id, title: 'Improve eNPS to +45', description: 'Org-wide engagement and culture initiative for FY2025-26.', category: 'organizational', framework: 'okr', weightage: '100', priority: 'medium', startDate: fmt(anchorPlusDays(-60)), dueDate: fmt(anchorPlusDays(150)), status: 'on_track', progress: '64.00', currentValue: '0', successMetrics: [], createdBy: adminUser.id, isTemplate: false, isActive: true },
+      { orgId: org.id, title: 'Increase quarterly revenue contribution by 15%', description: 'Template for revenue-aligned individual goals.', category: 'business', framework: 'okr', measurementCriteria: 'Closed-won revenue vs target in CRM.', weightage: '100', priority: 'medium', status: 'active', progress: '0', currentValue: '0', successMetrics: [], createdBy: adminUser.id, isTemplate: true, templateRole: 'Sales', isActive: true },
+      { orgId: org.id, title: 'Ship one production-grade system improvement per quarter', description: 'Template for engineering excellence goals.', category: 'technical', framework: 'smart', measurementCriteria: 'Shipped to production with monitoring and a rollback plan.', weightage: '100', priority: 'medium', status: 'active', progress: '0', currentValue: '0', successMetrics: [], createdBy: adminUser.id, isTemplate: true, templateRole: 'Engineering', isActive: true },
+      { orgId: org.id, title: 'Mentor one junior teammate to independence', description: 'Template for leadership-track development goals.', category: 'leadership', framework: 'smart', measurementCriteria: 'Mentee delivers a feature end-to-end unassisted.', weightage: '100', priority: 'medium', status: 'active', progress: '0', currentValue: '0', successMetrics: [], createdBy: adminUser.id, isTemplate: true, templateRole: 'All', isActive: true },
+    ]);
+    console.log('  ✓ Org goals: 4, goal templates: 3');
+
+    // ── Demo-polish #13: Calibration audit trail (6 audit_logs rows) ──────────
+    // Must match CalibrationMgmtService.getCalibrationAuditTrail filter:
+    // entity 'review_assignment' + action 'update', with { rating } in oldValue
+    // and { rating, employeeName } in newValue.
+    const fullName = (u: typeof empUsers[number]) => `${u.firstName} ${u.lastName ?? ''}`.trim();
+    const calibrationAuditSeed = [
+      { emp: empUsers[2], by: adminUser, from: 4, to: 3, note: 'aligned with Engineering peer-group distribution.' },
+      { emp: empUsers[9], by: adminUser, from: 3, to: 4, note: 'strong H2 delivery vs peers.' },
+      { emp: empUsers[1], by: adminUser, from: 5, to: 5, note: 'top-bucket justification documented.' },
+      { emp: empUsers[4], by: managerUser, from: 2, to: 2, note: 'confirmed below expectations; PIP recommended.' },
+      { emp: empUsers[0], by: managerUser, from: 4, to: 4, note: 'consistent with goal outcomes.' },
+      { emp: empUsers[12], by: adminUser, from: 3, to: 3, note: 'meets expectations band.' },
+    ];
+    await db.insert(auditLogs).values(
+      calibrationAuditSeed.map((c, i) => {
+        const name = fullName(c.emp);
+        const ts = anchorPlusDays(-2);
+        ts.setUTCHours(9 + i, 30, 0, 0);
+        return {
+          orgId: org.id, userId: c.by.id, action: 'update', entity: 'review_assignment', entityId: null,
+          oldValue: { rating: c.from }, newValue: { rating: c.to, employeeName: name },
+          description: `Calibration: ${name} rating changed ${c.from} → ${c.to} — ${c.note}`,
+          ipAddress: '10.0.1.21', userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+          createdAt: ts,
+        };
+      }),
+    );
+    console.log('  ✓ Calibration audit entries: 6');
+
+    // ── Demo-polish #14: PIPs (2 development_plans rows, type 'pip') ──────────
+    // empUsers[4] has finalRating 2.00 (active PIP — coherent); empUsers[9] recovered to 4.00 (completed).
+    await db.insert(developmentPlans).values([
+      {
+        orgId: org.id, employeeId: empUsers[4].id, title: 'PIP — Enterprise Sales Delivery',
+        description: '60-day plan to bring enterprise deal conversion back on track after a 2.0 annual rating.',
+        type: 'pip',
+        activities: [{ type: 'coaching', title: 'Weekly pipeline review with manager', status: 'in_progress' }],
+        skills: [], certifications: [],
+        pipMilestones: [
+          { id: 'ms-1', title: 'Rebuild qualified pipeline to 3x quota', description: 'Minimum 12 qualified opportunities in CRM.', dueDate: fmt(anchorPlusDays(10)), status: 'completed' },
+          { id: 'ms-2', title: 'Close 4 enterprise deals', description: 'At or above standard discount policy.', dueDate: fmt(anchorPlusDays(30)), status: 'pending' },
+          { id: 'ms-3', title: 'Sustain 90% activity compliance', description: 'CRM hygiene and weekly call targets.', dueDate: fmt(anchorPlusDays(50)), status: 'pending' },
+        ],
+        status: 'active', progress: '35.00', startDate: fmt(anchorPlusDays(-10)), targetDate: fmt(anchorPlusDays(50)),
+        metadata: { escalationRules: 'Missed milestone → review with HRBP; two missed milestones → escalate to department head.' },
+        createdBy: managerUser.id, isActive: true,
+      },
+      {
+        orgId: org.id, employeeId: empUsers[9].id, title: 'PIP — Partner Program Execution',
+        description: 'Completed 60-day plan; performance recovered to a 4.0 rating.',
+        type: 'pip',
+        activities: [{ type: 'coaching', title: 'Bi-weekly coaching with sales lead', status: 'completed' }],
+        skills: [], certifications: [],
+        pipMilestones: [
+          { id: 'ms-1', title: 'Relaunch partner outreach cadence', description: '10 partner touchpoints per week.', dueDate: fmt(anchorPlusDays(-80)), status: 'completed' },
+          { id: 'ms-2', title: 'Sign 3 new referral partners', description: 'Signed agreements in place.', dueDate: fmt(anchorPlusDays(-60)), status: 'completed' },
+        ],
+        pipOutcome: 'improved', status: 'completed', progress: '100.00',
+        startDate: fmt(anchorPlusDays(-120)), targetDate: fmt(anchorPlusDays(-60)), completedAt: anchorPlusDays(-58),
+        metadata: { escalationRules: 'Missed milestone → review with HRBP.' },
+        createdBy: salesManagerUser.id, isActive: true,
+      },
+    ]);
+    console.log('  ✓ PIPs: 2');
+
+    // ── Demo-polish #60: Feedback records (7) ─────────────────────────────────
+    // 3 received by emp01, 1 given by emp01, 1 open request emp01 must fill
+    // (content '' + requestedByUserId = pending), 2 public kudos-wall entries.
+    await db.insert(feedbackRecords).values([
+      { orgId: org.id, fromUserId: managerUser.id, toUserId: empUsers[0].id, type: 'constructive', category: 'communication', content: 'Great ownership on the billing API. Bring stakeholders along earlier — share design docs before the build starts.', isAnonymous: false, visibility: 'private', metadata: {}, isActive: true, createdAt: anchorPlusDays(-6) },
+      { orgId: org.id, fromUserId: empUsers[1].id, toUserId: empUsers[0].id, type: 'appreciation', category: 'collaboration', content: 'Thanks for pairing on the search migration — you unblocked me twice this sprint.', isAnonymous: false, visibility: 'private', metadata: {}, isActive: true, createdAt: anchorPlusDays(-4) },
+      { orgId: org.id, fromUserId: empUsers[2].id, toUserId: empUsers[0].id, type: 'recognition', category: 'problem_solving', content: 'The retry-queue fix you suggested cut our failed jobs to near zero. Brilliant call.', isAnonymous: false, visibility: 'private', metadata: {}, isActive: true, createdAt: anchorPlusDays(-2) },
+      { orgId: org.id, fromUserId: empUsers[0].id, toUserId: empUsers[1].id, type: 'appreciation', category: 'work_quality', content: 'Your code reviews are consistently thorough and kind — I learn something every time.', isAnonymous: false, visibility: 'private', metadata: {}, isActive: true, createdAt: anchorPlusDays(-3) },
+      { orgId: org.id, fromUserId: empUsers[0].id, toUserId: empUsers[1].id, type: 'general', category: null, content: '', isAnonymous: false, visibility: 'private', requestedByUserId: empUsers[1].id, metadata: { cycleName: 'Annual Review FY2025-26', dueDate: fmt(anchorPlusDays(7)) }, isActive: true, createdAt: anchorPlusDays(-1) },
+      { orgId: org.id, fromUserId: managerUser.id, toUserId: empUsers[1].id, type: 'recognition', category: 'work_quality', content: 'Kudos for leading the search re-architecture spike — stellar work!', isAnonymous: false, visibility: 'public', metadata: {}, isActive: true, createdAt: anchorPlusDays(-5) },
+      { orgId: org.id, fromUserId: salesManagerUser.id, toUserId: empUsers[8].id, type: 'recognition', category: 'initiative', content: 'Shout-out for landing the regional partner deal ahead of schedule!', isAnonymous: false, visibility: 'public', metadata: {}, isActive: true, createdAt: anchorPlusDays(-8) },
+    ]);
+    console.log('  ✓ Feedback records: 7 (3 received by emp01, 1 given, 1 open request, 2 kudos)');
+
+    // ── Demo-polish: shift mix + regularizations + shift swaps (#24/#26/#48) ──
+
+    /** A Date at h:m local time on the anchor-relative day. */
+    const atTime = (n: number, h: number, m: number): Date => {
+      const d = anchorPlusDays(n);
+      d.setHours(h, m, 0, 0);
+      return d;
+    };
+
+    // #24 roster mix: move 2 of Sarah's members to Morning Shift so the manager
+    // Shift Planning grid + coverage show a General/Morning mix.
+    for (const member of [empUsers[2], empUsers[5]]) {
+      await db
+        .update(employeeShiftAssignments)
+        .set({ shiftId: morningShift.id })
+        .where(
+          and(
+            eq(employeeShiftAssignments.orgId, org.id),
+            eq(employeeShiftAssignments.employeeId, member.id),
+          ),
+        );
+    }
+    console.log('  ✓ Shift mix: empUsers[2] & empUsers[5] → Morning Shift');
+
+    // #26 — 4 attendance regularizations for Sarah's team (all weekday dates;
+    // anchor is a Tuesday, so -1=Mon, -4=Fri, -6=Wed, -8=Mon).
+    await db.insert(attendanceRegularizations).values([
+      {
+        orgId: org.id,
+        employeeId: empUsers[1].id,
+        date: fmt(anchorPlusDays(-1)),
+        punchType: 'clock_out',
+        requestedTime: atTime(-1, 18, 15),
+        reason: 'Forgot to clock out after the release call ran late',
+        reasonCode: 'forgot_punch',
+        evidence: [],
+        status: 'pending',
+        slaDeadline: atTime(2, 17, 0),
+      },
+      {
+        orgId: org.id,
+        employeeId: empUsers[3].id,
+        date: fmt(anchorPlusDays(-4)),
+        punchType: 'clock_in',
+        requestedTime: atTime(-4, 9, 5),
+        reason: 'Badge reader was down at the office entrance',
+        reasonCode: 'device_issue',
+        evidence: [],
+        status: 'pending',
+        slaDeadline: atTime(3, 17, 0),
+      },
+      {
+        orgId: org.id,
+        employeeId: empUsers[5].id,
+        date: fmt(anchorPlusDays(-6)),
+        punchType: 'clock_out',
+        requestedTime: atTime(-6, 18, 5),
+        reason: 'Stayed for client demo, missed the punch-out window',
+        reasonCode: 'forgot_punch',
+        evidence: [],
+        status: 'approved',
+        reviewedBy: managerUser.id,
+        reviewedAt: atTime(-5, 10, 0),
+        reviewerComment: 'Verified with project logs - approved.',
+      },
+      {
+        orgId: org.id,
+        employeeId: empUsers[6].id,
+        date: fmt(anchorPlusDays(-8)),
+        punchType: 'clock_in',
+        requestedTime: atTime(-8, 9, 10),
+        reason: 'Clocked in on mobile but the entry did not sync',
+        reasonCode: 'app_sync',
+        evidence: [],
+        status: 'rejected',
+        reviewedBy: managerUser.id,
+        reviewedAt: atTime(-7, 11, 30),
+        reviewerComment: 'No supporting evidence; please use the standard punch flow.',
+      },
+    ]);
+    console.log('  ✓ Attendance regularizations: 2 pending, 1 approved, 1 rejected');
+
+    // #48 — 2 shift swap requests involving emp01 (one each direction).
+    await db.insert(shiftSwapRequests).values([
+      {
+        // Outgoing, awaiting manager — also appears on the manager Shift Planning tab
+        orgId: org.id,
+        requesterId: empUsers[0].id,
+        targetEmployeeId: empUsers[2].id,
+        requesterShiftId: generalShift.id,
+        targetShiftId: morningShift.id,
+        swapDate: fmt(anchorPlusDays(3)),
+        reason: 'Family function in the evening - need the earlier shift',
+        status: 'pending_manager',
+        partnerAcceptedAt: atTime(-1, 9, 0),
+      },
+      {
+        // Incoming, completed (manager approved)
+        orgId: org.id,
+        requesterId: empUsers[1].id,
+        targetEmployeeId: empUsers[0].id,
+        requesterShiftId: morningShift.id,
+        targetShiftId: generalShift.id,
+        swapDate: fmt(anchorPlusDays(-7)),
+        reason: 'Medical appointment clashed with the morning shift',
+        status: 'manager_approved',
+        partnerAcceptedAt: atTime(-8, 10, 0),
+        managerApprovedBy: managerUser.id,
+        managerApprovedAt: atTime(-8, 15, 0),
+        managerComment: 'Approved - one-day swap.',
+      },
+    ]);
+    console.log('  ✓ Shift swap requests: 1 pending_manager (out), 1 manager_approved (in)');
+
+    // ── Demo polish: Talent Acquisition (#55 #56 #57 #58 #33 #9) ─────────────
+    // #55 — 3 published INTERNAL postings on existing requisitions
+    const internalPostings = await db.insert(jobPostings).values([
+      { orgId: org.id, requisitionId: requisitions[0].id, title: 'Senior Software Engineer (Internal)', description: 'Internal mobility opening on the Platform team. Own service architecture, mentor engineers, and ship the multi-tenant core.', requirements: '5+ years building backend services\nStrong TypeScript and PostgreSQL\nExperience mentoring engineers', responsibilities: 'Design and ship platform services\nLead code reviews\nPartner with product on the roadmap', benefits: 'Internal mobility bonus\nFlexible hybrid schedule\nLearning budget', skills: ['TypeScript', 'Node.js', 'PostgreSQL'], postingType: 'internal', channels: ['internal_portal'], locationDetails: { city: 'Bengaluru', mode: 'hybrid' }, status: 'published', publishedAt: anchorPlusDays(-14), applicationDeadline: fmt(anchorPlusDays(21)), salaryVisible: false, createdBy: managerUser.id },
+      { orgId: org.id, requisitionId: requisitions[1].id, title: 'Software Engineer II (Internal)', description: 'Step-up role for engineers ready to own features end-to-end on the HRMS web app.', requirements: '2+ years with React or Node.js\nSolid grasp of REST APIs\nProduct mindset', responsibilities: 'Build and own product features\nWrite tests and docs\nSupport releases', benefits: 'Internal mobility bonus\nMentorship from senior engineers', skills: ['JavaScript', 'React'], postingType: 'internal', channels: ['internal_portal'], locationDetails: { city: 'Bengaluru', mode: 'hybrid' }, status: 'published', publishedAt: anchorPlusDays(-35), applicationDeadline: fmt(anchorPlusDays(14)), salaryVisible: false, createdBy: managerUser.id },
+      { orgId: org.id, requisitionId: requisitions[2].id, title: 'Sales Executive (Internal)', description: 'Move into a quota-carrying role on the enterprise sales team.', requirements: 'Customer-facing experience\nStrong communication\nCRM familiarity', responsibilities: 'Run discovery calls\nManage a pipeline\nClose mid-market deals', benefits: 'Uncapped commission\nSales bootcamp training', skills: ['Negotiation', 'CRM'], postingType: 'internal', channels: ['internal_portal'], locationDetails: { city: 'Mumbai', mode: 'onsite' }, status: 'published', publishedAt: anchorPlusDays(-7), applicationDeadline: fmt(anchorPlusDays(30)), salaryVisible: false, createdBy: managerUser.id },
+    ]).returning();
+
+    // #56/#57/#58 — emp01 as internal applicant. Employee services resolve
+    // candidate ids via applications.internalEmployeeId, and the apply flow
+    // matches candidates by user email — so email MUST equal empUsers[0].email.
+    const [emp01Candidate] = await db.insert(candidates).values({
+      orgId: org.id, firstName: empUsers[0].firstName, lastName: empUsers[0].lastName ?? '', email: empUsers[0].email, phone: '+919912345678', currentTitle: 'Software Engineer', currentCompany: 'Acme Corp', experienceYears: '3.0', skills: ['TypeScript', 'React', 'Node.js'], source: 'internal', currentLocation: 'Bengaluru', status: 'active',
+    }).returning();
+
+    const internalApps = await db.insert(applications).values([
+      // Active thread: SSE (Internal) — interviewing, upcoming interview
+      { orgId: org.id, candidateId: emp01Candidate.id, jobPostingId: internalPostings[0].id, requisitionId: requisitions[0].id, source: 'internal', coverLetter: 'I have led two platform features this year and would love to step up into this role.', currentStageId: pipelineStages[2].id, status: 'interviewing', overallScore: '8.20', internalEmployeeId: empUsers[0].id, appliedAt: anchorPlusDays(-12) },
+      // Completed thread: SE II (Internal) — interviewed, offer extended
+      { orgId: org.id, candidateId: emp01Candidate.id, jobPostingId: internalPostings[1].id, requisitionId: requisitions[1].id, source: 'internal', coverLetter: 'Ready to own features end-to-end.', currentStageId: pipelineStages[3].id, status: 'offered', overallScore: '8.80', internalEmployeeId: empUsers[0].id, appliedAt: anchorPlusDays(-32) },
+    ]).returning();
+
+    // #9 — one referral-source application so source reports vary (linkedin/internal/referral)
+    await db.insert(applications).values({ orgId: org.id, candidateId: seededCandidates[4].id, jobPostingId: postings[0].id, requisitionId: requisitions[0].id, source: 'referral', status: 'screening', overallScore: '7.40', currentStageId: pipelineStages[1].id, appliedAt: anchorPlusDays(-9) });
+
+    // #57 — emp01 interviews: upcoming video (anchor+6, 10:30 IST) + completed on the offer thread
+    await db.insert(interviews).values([
+      { orgId: org.id, applicationId: internalApps[0].id, stageId: pipelineStages[2].id, candidateId: emp01Candidate.id, scheduledAt: new Date(anchorPlusDays(6).setUTCHours(5, 0, 0, 0)), duration: 60, location: 'https://meet.google.com/acme-sse-internal', interviewType: 'video', status: 'scheduled', panelMembers: [{ userId: managerUser.id, name: 'Sarah Mehta', role: 'Hiring Manager' }, { userId: adminUser.id, name: 'Alex Kumar', role: 'HR Partner' }], metadata: { videoLink: 'https://meet.google.com/acme-sse-internal', checklist: [{ id: '1', label: 'Review the role scorecard', completed: true }, { id: '2', label: 'Prepare system-design walkthrough', completed: false }, { id: '3', label: 'Collect peer feedback summary', completed: false }] } },
+      { orgId: org.id, applicationId: internalApps[1].id, stageId: pipelineStages[2].id, candidateId: emp01Candidate.id, scheduledAt: new Date(anchorPlusDays(-25).setUTCHours(8, 30, 0, 0)), duration: 60, location: 'https://zoom.us/j/acme-se2-internal', interviewType: 'video', status: 'completed', overallScore: '8.80', decision: 'hire', decisionBy: managerUser.id, decisionAt: anchorPlusDays(-24), panelMembers: [{ userId: managerUser.id, name: 'Sarah Mehta', role: 'Hiring Manager' }] },
+    ]);
+
+    // #58 — offer for emp01 (status 'sent' renders as actionable "pending"; valid past real-today)
+    await db.insert(offerLetters).values({
+      orgId: org.id, applicationId: internalApps[1].id, candidateId: emp01Candidate.id, requisitionId: requisitions[1].id, designation: 'Software Engineer II', department: 'Engineering', location: 'Bengaluru', employmentType: 'full_time', salaryAmount: '1250000', currency: 'INR', salaryBreakdown: [{ component: 'Base Salary', amount: 950000 }, { component: 'House Rent Allowance', amount: 180000 }, { component: 'Performance Bonus', amount: 120000 }], joiningDate: fmt(anchorPlusDays(30)), probationMonths: 3, reportingTo: 'Sarah Mehta', terms: 'Internal transfer effective from the joining date. Existing tenure and benefits carry over. A 90-day transition plan has been agreed with your current team.', benefits: ['Health insurance (family)', 'Internal mobility bonus', 'Learning budget INR 50,000/yr'], approvalChain: [{ level: 1, approverId: managerUser.id, role: 'manager', status: 'approved', approvedAt: anchorPlusDays(-6).toISOString() }], currentApproverLevel: 1, approvedBy: managerUser.id, approvedAt: anchorPlusDays(-6), status: 'sent', sentAt: anchorPlusDays(-5), validUntil: fmt(anchorPlusDays(14)), documentUrl: 'https://files.acme.test/offers/emp01-software-engineer-ii.pdf', createdBy: managerUser.id,
+    });
+
+    // #33 — 2 offers pending manager@acme.com approval (level-1 approver, no approvedBy)
+    await db.insert(offerLetters).values([
+      { orgId: org.id, applicationId: seededApplications[2].id, candidateId: seededCandidates[2].id, requisitionId: requisitions[2].id, designation: 'Sales Executive', department: 'Sales', location: 'Mumbai', employmentType: 'full_time', salaryAmount: '750000', currency: 'INR', salaryBreakdown: [{ component: 'Base Salary', amount: 600000 }, { component: 'Sales Incentive', amount: 150000 }], joiningDate: fmt(anchorPlusDays(35)), probationMonths: 6, approvalChain: [{ level: 1, approverId: managerUser.id, role: 'manager', status: 'pending' }], currentApproverLevel: 1, status: 'pending_approval', validUntil: fmt(anchorPlusDays(21)), createdBy: managerUser.id },
+      { orgId: org.id, applicationId: seededApplications[4].id, candidateId: seededCandidates[4].id, requisitionId: requisitions[2].id, designation: 'Sales Executive', department: 'Sales', location: 'Mumbai', employmentType: 'full_time', salaryAmount: '680000', currency: 'INR', salaryBreakdown: [{ component: 'Base Salary', amount: 550000 }, { component: 'Sales Incentive', amount: 130000 }], joiningDate: fmt(anchorPlusDays(42)), probationMonths: 6, approvalChain: [{ level: 1, approverId: managerUser.id, role: 'manager', status: 'pending' }], currentApproverLevel: 1, status: 'pending_approval', validUntil: fmt(anchorPlusDays(28)), createdBy: managerUser.id },
+    ]);
+    console.log('  ✓ Talent Acquisition demo polish: 3 internal postings, emp01 applicant story (2 apps, 2 interviews, 1 offer), 1 referral app, 2 pending-approval offers');
+
+    // ── Reimbursement claims (#64 employee Reimbursements + #37 manager Approval Workflows) ──
+    await db.insert(reimbursementClaims).values([
+      // emp01 — one claim in every lifecycle state
+      { orgId: org.id, employeeId: empUsers[0].id, type: 'travel', amount: '4200.00', description: 'Client visit - airport taxi and metro fares', receiptUrl: 'taxi-receipts-jun2026.pdf', status: 'pending', submittedAt: anchorPlusDays(-3) },
+      { orgId: org.id, employeeId: empUsers[0].id, type: 'medical', amount: '8500.00', description: 'Annual health check-up - Apollo Clinic', receiptUrl: 'apollo-invoice-may2026.pdf', status: 'approved', submittedAt: anchorPlusDays(-15), approvedBy: managerUser.id, approvedAt: anchorPlusDays(-13), remarks: 'Approved under annual health benefit' },
+      { orgId: org.id, employeeId: empUsers[0].id, type: 'internet', amount: '1200.00', description: 'Home broadband - May 2026 (WFH policy)', receiptUrl: 'airtel-bill-apr2026.pdf', status: 'paid', submittedAt: anchorPlusDays(-40), approvedBy: managerUser.id, approvedAt: anchorPlusDays(-38), paidAt: anchorPlusDays(-35), remarks: 'Paid with May payroll' },
+      { orgId: org.id, employeeId: empUsers[0].id, type: 'food', amount: '950.00', description: 'Team dinner during release week', status: 'rejected', submittedAt: anchorPlusDays(-25), approvedBy: managerUser.id, approvedAt: anchorPlusDays(-24), remarks: 'Team meals are covered by the team budget, not individual claims' },
+      // Other Sarah-team members — pending rows so the manager queue (#37) has reimbursements beyond emp01
+      { orgId: org.id, employeeId: empUsers[2].id, type: 'fuel', amount: '1800.00', description: 'Fuel for client site visits - May 2026', receiptUrl: 'fuel-log-may2026.pdf', status: 'pending', submittedAt: anchorPlusDays(-2) },
+      { orgId: org.id, employeeId: empUsers[5].id, type: 'training', amount: '6000.00', description: 'Kubernetes certification exam fee', receiptUrl: 'cka-exam-receipt.pdf', status: 'pending', submittedAt: anchorPlusDays(-5) },
+    ]);
+    console.log('  ✓ Reimbursement claims: 6 (3 pending / 1 approved / 1 paid / 1 rejected)');
+
+    // ── Punchlist #10: Onboarding/Offboarding admin tabs ──────────────────────
+    // (a) Onboarding workflow templates (3) + task templates (8 / 5 / 4)
+    const [onbWfStandard] = await db.insert(onboardingWorkflows).values({
+      orgId: org.id, name: 'Standard Full-Time Onboarding',
+      description: 'Default 2-week onboarding journey for all full-time hires across IT, HR and the hiring manager.',
+      workflowType: 'onboarding', departmentId: null, employmentType: 'full_time',
+      isTemplate: true, taskCount: 8, conditionalRules: [], status: 'active',
+      createdBy: adminUser.id, metadata: {}, isActive: true,
+      createdAt: anchorPlusDays(-120), updatedAt: anchorPlusDays(-120),
+    }).returning();
+    const [onbWfIntern] = await db.insert(onboardingWorkflows).values({
+      orgId: org.id, name: 'Intern Onboarding',
+      description: 'Lightweight onboarding for interns — mentor-led with a project kickoff.',
+      workflowType: 'onboarding', departmentId: null, employmentType: 'intern',
+      isTemplate: true, taskCount: 5, conditionalRules: [], status: 'active',
+      createdBy: adminUser.id, metadata: {}, isActive: true,
+      createdAt: anchorPlusDays(-100), updatedAt: anchorPlusDays(-100),
+    }).returning();
+    const [onbWfContractor] = await db.insert(onboardingWorkflows).values({
+      orgId: org.id, name: 'Contractor Onboarding',
+      description: 'Draft onboarding flow for fixed-term contractors (SOW-based engagements).',
+      workflowType: 'onboarding', departmentId: null, employmentType: 'contract',
+      isTemplate: true, taskCount: 4, conditionalRules: [], status: 'draft',
+      createdBy: adminUser.id, metadata: {}, isActive: true,
+      createdAt: anchorPlusDays(-45), updatedAt: anchorPlusDays(-45),
+    }).returning();
+
+    const onbWfTaskTemplates = [
+      // Standard Full-Time (8) — day offsets 0–14 across IT / HR / manager
+      { wf: onbWfStandard.id, title: 'Create accounts, email & SSO access', owner: 'it', day: 0, type: 'general', mandatory: true, doc: false, docType: null as string | null, desc: 'Provision corporate email, SSO and core SaaS access.' },
+      { wf: onbWfStandard.id, title: 'Provision laptop & access badge', owner: 'it', day: 0, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Issue configured laptop, peripherals and building access badge.' },
+      { wf: onbWfStandard.id, title: 'Collect signed offer & ID documents', owner: 'hr', day: 1, type: 'document_submission', mandatory: true, doc: true, docType: 'identity', desc: 'Verify signed offer letter, government ID and education certificates.' },
+      { wf: onbWfStandard.id, title: 'Welcome meeting & team introductions', owner: 'manager', day: 1, type: 'general', mandatory: true, doc: false, docType: null, desc: 'First-day welcome, team intros and tour of the floor.' },
+      { wf: onbWfStandard.id, title: 'Enroll in payroll & benefits', owner: 'hr', day: 2, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Bank details, statutory declarations and benefits enrollment.' },
+      { wf: onbWfStandard.id, title: 'Assign onboarding buddy', owner: 'manager', day: 3, type: 'general', mandatory: false, doc: false, docType: null, desc: 'Pair the new hire with a buddy for the first month.' },
+      { wf: onbWfStandard.id, title: 'Complete security awareness training', owner: 'hr', day: 7, type: 'training', mandatory: true, doc: false, docType: null, desc: 'Mandatory e-learning: phishing, passwords, data handling.' },
+      { wf: onbWfStandard.id, title: '2-week check-in & goal setting', owner: 'manager', day: 14, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Review first two weeks and agree 90-day goals.' },
+      // Intern (5)
+      { wf: onbWfIntern.id, title: 'Create intern accounts & limited access', owner: 'it', day: 0, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Time-boxed accounts scoped to the internship project.' },
+      { wf: onbWfIntern.id, title: 'Share internship guidelines & stipend setup', owner: 'hr', day: 1, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Internship policy, stipend banking details and timeline.' },
+      { wf: onbWfIntern.id, title: 'Assign mentor', owner: 'manager', day: 1, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Pair intern with a senior team member as mentor.' },
+      { wf: onbWfIntern.id, title: 'Project kickoff briefing', owner: 'manager', day: 2, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Walk through the internship project scope and milestones.' },
+      { wf: onbWfIntern.id, title: 'Complete code of conduct training', owner: 'hr', day: 3, type: 'training', mandatory: true, doc: false, docType: null, desc: 'Short e-learning on workplace conduct and confidentiality.' },
+      // Contractor (4)
+      { wf: onbWfContractor.id, title: 'Set up contractor VPN & repository access', owner: 'it', day: 0, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Least-privilege access scoped to the SOW.' },
+      { wf: onbWfContractor.id, title: 'Verify signed contract & NDA', owner: 'hr', day: 0, type: 'document_submission', mandatory: true, doc: true, docType: 'contracts', desc: 'Confirm executed services agreement and NDA are on file.' },
+      { wf: onbWfContractor.id, title: 'Statement of work walkthrough', owner: 'manager', day: 1, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Align on deliverables, milestones and acceptance criteria.' },
+      { wf: onbWfContractor.id, title: 'Timesheet & invoicing setup', owner: 'hr', day: 2, type: 'general', mandatory: true, doc: false, docType: null, desc: 'Set up timesheet codes and invoicing cadence.' },
+    ];
+    await db.insert(onboardingWorkflowTasks).values(
+      onbWfTaskTemplates.map((t, i) => ({
+        orgId: org.id, workflowId: t.wf, title: t.title, description: t.desc,
+        taskType: t.type, taskOwner: t.owner, sortOrder: i, deadlineDays: t.day,
+        isMandatory: t.mandatory, isConditional: false, conditionRules: {},
+        documentRequired: t.doc, documentType: t.docType, metadata: {}, isActive: true,
+      })),
+    );
+    console.log('  ✓ Onboarding workflows: 3, workflow task templates: 17');
+
+    // (b) Offboarding workflow templates (2)
+    await db.insert(offboardingWorkflows).values([
+      {
+        orgId: org.id, name: 'Standard Resignation',
+        description: 'Default exit flow for voluntary resignations with 30-day notice: IT asset return, access revocation, finance settlement and exit interview.',
+        exitType: 'resignation', departmentId: null,
+        clearanceDepartments: ['IT', 'Finance', 'HR', 'Admin'],
+        assetChecklist: ['Return laptop & charger', 'Return ID card & access badge', 'Return company phone & SIM', 'Revoke VPN, SSO & repository access'],
+        settlementChecklist: ['Leave encashment', 'Final salary & notice-period adjustment', 'Gratuity (if eligible)', 'Exit interview sign-off'],
+        isTemplate: true, taskCount: 4, status: 'active', createdBy: adminUser.id,
+        metadata: {}, isActive: true, createdAt: anchorPlusDays(-110), updatedAt: anchorPlusDays(-110),
+      },
+      {
+        orgId: org.id, name: 'Termination (Immediate)',
+        description: 'Draft flow for involuntary, same-day separations — immediate access revocation and supervised asset recovery.',
+        exitType: 'termination', departmentId: null,
+        clearanceDepartments: ['IT', 'HR', 'Security'],
+        assetChecklist: ['Immediate laptop & badge surrender', 'Disable all system access same-day'],
+        settlementChecklist: ['Full & final settlement', 'Recovery of company dues'],
+        isTemplate: true, taskCount: 2, status: 'draft', createdBy: adminUser.id,
+        metadata: {}, isActive: true, createdAt: anchorPlusDays(-40), updatedAt: anchorPlusDays(-40),
+      },
+    ]);
+    console.log('  ✓ Offboarding workflows: 2');
+
+    // (c) Document templates (6) — stored in `documents` with category 'template'
+    //     (matches DocumentTemplateMgmtService; employee_id has no FK so the
+    //      zero-uuid "system" owner is safe and keeps them out of employee vaults)
+    const SYSTEM_DOC_EMPLOYEE_ID = '00000000-0000-0000-0000-000000000000';
+    const docTemplateSeed = [
+      { name: 'Offer Letter', type: 'offer_letter', country: 'India', sign: true, fields: ['employee_name', 'designation', 'department', 'salary', 'joining_date', 'company_name'], content: 'Dear {{employee_name}},\n\nWe are pleased to offer you the position of {{designation}} in our {{department}} team at {{company_name}}, with an annual CTC of {{salary}}. Your tentative date of joining is {{joining_date}}.\n\nWe look forward to welcoming you aboard.\n\nSincerely,\nHuman Resources, {{company_name}}' },
+      { name: 'Appointment Letter', type: 'appointment_letter', country: 'India', sign: true, fields: ['employee_name', 'designation', 'date_of_joining', 'probation_period', 'work_location'], content: 'Dear {{employee_name}},\n\nThis letter confirms your appointment as {{designation}} effective {{date_of_joining}} at our {{work_location}} office. Your employment is subject to a probation period of {{probation_period}}.\n\nSincerely,\nHuman Resources' },
+      { name: 'Non-Disclosure Agreement', type: 'nda', country: null as string | null, sign: true, fields: ['employee_name', 'company_name', 'current_date'], content: 'This Non-Disclosure Agreement is entered into on {{current_date}} between {{company_name}} and {{employee_name}}.\n\nThe employee agrees to hold in strict confidence all proprietary information, trade secrets and customer data accessed during employment, surviving termination of employment.' },
+      { name: 'Relieving Letter', type: 'relieving_letter', country: 'India', sign: false, fields: ['employee_name', 'designation', 'last_working_date'], content: 'To whom it may concern,\n\nThis is to certify that {{employee_name}}, {{designation}}, has been relieved from their duties effective close of business on {{last_working_date}}, having completed all exit formalities.\n\nWe wish them success in their future endeavours.' },
+      { name: 'Experience Certificate', type: 'experience_letter', country: null, sign: false, fields: ['employee_name', 'designation', 'date_of_joining', 'last_working_date'], content: 'To whom it may concern,\n\nThis is to certify that {{employee_name}} was employed with us as {{designation}} from {{date_of_joining}} to {{last_working_date}}. During this tenure their conduct and performance were found to be satisfactory.' },
+      { name: 'Exit Checklist', type: 'exit_checklist', country: null, sign: false, fields: ['employee_name', 'last_working_date', 'exit_type'], content: 'Exit checklist for {{employee_name}} (exit type: {{exit_type}}, last working day: {{last_working_date}}):\n\n1. IT assets returned and access revoked\n2. Department clearances obtained (IT / Finance / HR / Admin)\n3. Knowledge transfer completed and signed off\n4. Exit interview conducted\n5. Full & final settlement initiated' },
+    ];
+    await db.insert(documents).values(
+      docTemplateSeed.map((t, i) => ({
+        orgId: org.id, employeeId: SYSTEM_DOC_EMPLOYEE_ID, category: 'template',
+        name: t.name, description: `${t.name} template with merge fields.`,
+        fileUrl: null, fileSize: null, mimeType: 'text/html', version: '1',
+        metadata: {
+          templateType: t.type, status: 'active', country: t.country,
+          content: t.content, dynamicFields: t.fields,
+          versionHistory: [{ version: '1', updatedAt: anchorPlusDays(-90 + i).toISOString(), changeNote: 'Initial version' }],
+          digitalSignatureEnabled: t.sign, complianceCategory: null, applicableTo: 'all',
+        },
+        createdAt: anchorPlusDays(-90 + i), updatedAt: anchorPlusDays(-90 + i),
+      })),
+    );
+    console.log('  ✓ Document templates: 6');
+
+    // (d) Compliance & Policy enrichment — two HISTORICAL completed onboarding
+    //     journeys (emp02, emp03) linked to the Standard workflow, each with
+    //     completed compliance acknowledgements + scored trainings.
+    const histOnboardings = await db.insert(employeeOnboardings).values([
+      {
+        orgId: org.id, employeeId: empUsers[1].id, workflowId: onbWfStandard.id,
+        status: 'completed', startDate: fmt(anchorPlusDays(-90)), targetCompletionDate: fmt(anchorPlusDays(-60)),
+        completedAt: anchorPlusDays(-62), progressPercentage: '100.00',
+        orientationSchedule: [], firstDayInfo: {}, checkinSchedule: [],
+        probationEndDate: fmt(anchorPlusDays(90)), probationStatus: 'confirmed',
+        totalTasks: 4, completedTasks: 4, initiatedBy: managerUser.id, isActive: true,
+      },
+      {
+        orgId: org.id, employeeId: empUsers[2].id, workflowId: onbWfStandard.id,
+        status: 'completed', startDate: fmt(anchorPlusDays(-75)), targetCompletionDate: fmt(anchorPlusDays(-45)),
+        completedAt: anchorPlusDays(-47), progressPercentage: '100.00',
+        orientationSchedule: [], firstDayInfo: {}, checkinSchedule: [],
+        probationEndDate: fmt(anchorPlusDays(105)), probationStatus: 'confirmed',
+        totalTasks: 4, completedTasks: 4, initiatedBy: managerUser.id, isActive: true,
+      },
+    ]).returning();
+
+    const histComplianceTaskSeed = [
+      // emp02 (empUsers[1])
+      { onb: 0, emp: 1, title: 'Acknowledge Code of Conduct', type: 'compliance', due: -88, done: -87, score: null as number | null },
+      { onb: 0, emp: 1, title: 'Acknowledge IT & Security Policy', type: 'compliance', due: -86, done: -85, score: null },
+      { onb: 0, emp: 1, title: 'Complete Security Awareness Training', type: 'training', due: -83, done: -82, score: 92 },
+      { onb: 0, emp: 1, title: 'Complete POSH Awareness Training', type: 'training', due: -80, done: -78, score: 88 },
+      // emp03 (empUsers[2])
+      { onb: 1, emp: 2, title: 'Acknowledge Code of Conduct', type: 'compliance', due: -73, done: -72, score: null },
+      { onb: 1, emp: 2, title: 'Acknowledge IT & Security Policy', type: 'compliance', due: -71, done: -70, score: null },
+      { onb: 1, emp: 2, title: 'Complete Security Awareness Training', type: 'training', due: -68, done: -67, score: 95 },
+      { onb: 1, emp: 2, title: 'Complete POSH Awareness Training', type: 'training', due: -65, done: -64, score: 84 },
+    ];
+    await db.insert(employeeOnboardingTasks).values(
+      histComplianceTaskSeed.map((t) => ({
+        orgId: org.id, onboardingId: histOnboardings[t.onb].id, employeeId: empUsers[t.emp].id,
+        title: t.title, description: t.type === 'training' ? 'Mandatory e-learning module' : 'Read and accept the policy',
+        taskType: t.type, taskOwner: 'employee', status: 'completed',
+        dueDate: fmt(anchorPlusDays(t.due)), completedAt: anchorPlusDays(t.done),
+        verificationStatus: 'verified', verifiedBy: managerUser.id, verifiedAt: anchorPlusDays(t.done + 1),
+        metadata: t.score != null ? { score: t.score } : {}, isActive: true,
+      })),
+    );
+    console.log('  ✓ Historical onboardings: 2, compliance/training tasks: 8');
+
+    // ── #39: Policy Violations — Sarah's team ─────────────────────────────────
+    await db.insert(policyViolations).values([
+      {
+        orgId: org.id, employeeId: empUsers[1].id,
+        policyId: caPolicies[0].id, // Code of Conduct
+        violationType: 'Late Attendance', severity: 'minor',
+        description: 'Repeated late arrivals (4 instances in two weeks) without prior intimation.',
+        incidentDate: fmt(anchorPlusDays(-6)), status: 'open', reportedBy: managerUser.id,
+      },
+      {
+        orgId: org.id, employeeId: empUsers[3].id,
+        policyId: caPolicies[2].id, // Data Privacy Policy
+        violationType: 'Data Policy Breach', severity: 'major',
+        description: 'Shared a customer data export over personal email instead of the secure portal.',
+        incidentDate: fmt(anchorPlusDays(-15)), status: 'under_review', reportedBy: managerUser.id,
+      },
+      {
+        orgId: org.id, employeeId: empUsers[5].id,
+        policyId: caPolicies[0].id, // Code of Conduct
+        violationType: 'Dress Code', severity: 'minor',
+        description: 'Did not follow client-site dress code during an on-site customer visit.',
+        incidentDate: fmt(anchorPlusDays(-30)), status: 'action_taken',
+        disciplinaryAction: 'Verbal warning issued; reminded of client-site dress code guidelines.',
+        reportedBy: managerUser.id,
+      },
+      {
+        orgId: org.id, employeeId: empUsers[6].id,
+        policyId: null, // no seeded expense policy — exercises the nullable path ("—" in Policy column)
+        violationType: 'Expense Policy', severity: 'major',
+        description: 'Claimed a non-reimbursable personal expense on a client project; amount recovered.',
+        incidentDate: fmt(anchorPlusDays(-50)), status: 'closed',
+        disciplinaryAction: 'Written warning issued; expense amount recovered from reimbursement.',
+        resolvedAt: anchorPlusDays(-40), reportedBy: managerUser.id,
+      },
+    ]);
+    console.log('  ✓ Policy violations: 4 (open/under_review/action_taken/closed)');
+
+    // ── #40: Audit Evidence — manager Audit Support tab ───────────────────────
+    await db.insert(auditEvidence).values([
+      {
+        orgId: org.id, title: 'Policy Acknowledgment Records — Q2 2026', category: 'policy',
+        description: 'Signed acknowledgment exports for all four mandatory policies, by department.',
+        collectedBy: adminUser.id, collectedAt: anchorPlusDays(-30), status: 'verified',
+        fileCount: 4, relatedAuditName: 'Internal Compliance Audit FY26',
+      },
+      {
+        orgId: org.id, title: 'Mandatory Training Completion Certificates', category: 'training',
+        description: 'Completion certificates and score sheets for POSH and Data Privacy trainings.',
+        collectedBy: adminUser.id, collectedAt: anchorPlusDays(-25), status: 'verified',
+        fileCount: 12, relatedAuditName: 'Internal Compliance Audit FY26',
+      },
+      {
+        orgId: org.id, title: 'Quarterly Access Review — Engineering Systems', category: 'access_review',
+        description: 'User access matrix and revocation log for production systems, reviewed by team leads.',
+        collectedBy: managerUser.id, collectedAt: anchorPlusDays(-10), status: 'collected',
+        fileCount: 3, relatedAuditName: 'ISO 27001 Surveillance Audit',
+      },
+      {
+        orgId: org.id, title: 'Expense Reimbursement Sample — May 2026', category: 'financial',
+        description: 'Sampled expense reports with receipts pending finance sign-off.',
+        collectedBy: adminUser.id, status: 'pending', // not yet collected → no collectedAt
+        fileCount: 0, relatedAuditName: 'Statutory Financial Audit FY26',
+      },
+    ]);
+    console.log('  ✓ Audit evidence: 4');
+
+    // ── Punchlist #35: Manager "Feedback & Suggestions" (Sarah's team) ────────
+    {
+      // 1) Dedicated team feedback-box survey (type 'feedback' → picked up by the manager feedback endpoint)
+      const [teamFeedbackBox] = await db.insert(surveys).values([
+        {
+          orgId: org.id,
+          title: 'Engineering Team Feedback Box',
+          type: 'feedback',
+          status: 'active',
+          description: 'Always-on channel for the Engineering team to raise feedback with their manager.',
+          questions: [{ id: 'fb1', text: 'Share your feedback with your manager', type: 'text' }],
+          targetAudience: { departments: ['Engineering'] },
+          isAnonymous: false,
+          responseCount: 0,
+          closesAt: anchorPlusDays(30),
+          createdBy: managerUser.id,
+          isActive: true,
+        },
+      ]).returning();
+
+      // 6 feedback items — status is DERIVED by the service from `answers` entries:
+      //   { type: 'escalation' } → escalated, { type: 'manager_response' } → responded, else new.
+      //   { type: 'meta', category, anonymous } carries the category chip + per-response anonymity.
+      const fbItems: Array<{
+        userId: string; category: string; message: string; submittedDaysAgo: number;
+        sentiment: string; anonymous?: boolean;
+        response?: string; respondedDaysAgo?: number;
+        escalationReason?: string; escalatedDaysAgo?: number;
+      }> = [
+        { userId: empUsers[0].id, category: 'workplace', sentiment: 'neutral', submittedDaysAgo: 1,
+          message: 'The 3rd-floor meeting rooms are always booked — can we get a room-booking policy?' },
+        { userId: empUsers[1].id, category: 'tooling', sentiment: 'negative', submittedDaysAgo: 2,
+          message: 'CI pipeline takes 40+ minutes on every PR; it is slowing the whole team down.' },
+        { userId: empUsers[2].id, category: 'process', sentiment: 'neutral', submittedDaysAgo: 3,
+          message: 'Sprint planning regularly overruns by an hour. Can we timebox it?',
+          response: 'Agreed — from next sprint, planning is hard-capped at 90 minutes with a parking lot for overflow.',
+          respondedDaysAgo: 2 },
+        { userId: empUsers[3].id, category: 'workplace', sentiment: 'positive', submittedDaysAgo: 5,
+          message: 'It would be great to have a quiet focus room for deep work.',
+          response: 'Facilities has approved converting meeting room B into a quiet room this month.',
+          respondedDaysAgo: 4 },
+        { userId: empUsers[4].id, category: 'process', sentiment: 'neutral', submittedDaysAgo: 4, anonymous: true,
+          message: 'On-call rotation is unevenly distributed; some of us carry twice the load.' },
+        { userId: empUsers[5].id, category: 'workload', sentiment: 'negative', submittedDaysAgo: 6, anonymous: true,
+          message: 'Workload has been unsustainable for three sprints in a row and it is affecting morale.',
+          escalationReason: 'Sustained workload concern — needs HR visibility.', escalatedDaysAgo: 5 },
+      ];
+
+      await db.insert(surveyResponses).values(fbItems.map((f) => {
+        const answers: any[] = [
+          { questionId: 'fb1', value: f.message },
+          { type: 'meta', category: f.category, anonymous: f.anonymous === true },
+        ];
+        if (f.response) {
+          answers.push({
+            type: 'manager_response', respondedBy: managerUser.id, response: f.response,
+            respondedAt: anchorPlusDays(f.respondedDaysAgo ?? 0).toISOString(),
+          });
+        }
+        if (f.escalationReason) {
+          answers.push({
+            type: 'escalation', escalatedBy: managerUser.id, reason: f.escalationReason,
+            escalatedAt: anchorPlusDays(f.escalatedDaysAgo ?? 0).toISOString(),
+          });
+        }
+        return {
+          orgId: org.id, surveyId: teamFeedbackBox.id, respondentId: f.userId,
+          answers, sentiment: f.sentiment,
+          submittedAt: anchorPlusDays(-f.submittedDaysAgo), isActive: true,
+        };
+      }));
+      await db.update(surveys).set({ responseCount: 6 }).where(eq(surveys.id, teamFeedbackBox.id));
+
+      // 2) Suggestion tracking — socialPosts announcements using the
+      //    "[Suggestion: <title>] [Status: <status>] <description>" convention; votes = likesCount.
+      await db.insert(socialPosts).values([
+        { orgId: org.id, authorId: empUsers[1].id, type: 'announcement',
+          content: '[Suggestion: Adopt a monthly demo day] [Status: implemented] A monthly demo day so every squad can show what shipped.',
+          likesCount: 14, commentsCount: 5, isActive: true, createdAt: anchorPlusDays(-21) },
+        { orgId: org.id, authorId: empUsers[3].id, type: 'announcement',
+          content: '[Suggestion: Self-serve staging environments] [Status: planned] Let every engineer spin up an isolated staging environment from a template.',
+          likesCount: 11, commentsCount: 3, isActive: true, createdAt: anchorPlusDays(-9) },
+        { orgId: org.id, authorId: empUsers[5].id, type: 'announcement',
+          content: '[Suggestion: Rotate sprint retro facilitators] [Status: under_review] Rotating facilitators would bring fresh formats to retrospectives.',
+          likesCount: 6, commentsCount: 2, isActive: true, createdAt: anchorPlusDays(-4) },
+        { orgId: org.id, authorId: empUsers[7].id, type: 'announcement',
+          content: '[Suggestion: Team library budget] [Status: new] A small quarterly budget for technical books and courses.',
+          likesCount: 3, commentsCount: 1, isActive: true, createdAt: anchorPlusDays(-1) },
+      ]);
+    }
+    console.log('  ✓ engagement-culture (#35): 1 feedback-box survey + 6 team feedback responses, 4 tracked suggestions');
+
+    // ── Org Design Studio: planning scenarios (punchlist #17) ──────────────
+    // No dedicated scenarios table exists — scenarios are workforce_headcount_plans
+    // rows tagged metadata.type='scenario' (filtered out of all real headcount reads
+    // via apps/api/src/modules/workforce-planning/scenario.util.ts). Headcount and
+    // requisition columns stay 0 so they can never pollute aggregates or job boards.
+    await db.insert(workforceHeadcountPlans).values([
+      {
+        orgId: org.id,
+        planName: 'FY27 Engineering Scale-Up',
+        planYear: 2027,
+        departmentId: engDept.id,
+        currentHeadcount: 0,
+        approvedHeadcount: 0,
+        targetHeadcount: 0,
+        openRequisitions: 0,
+        hiringFreezeActive: false,
+        status: 'in_review',
+        notes: 'Scenario under leadership review for the FY27 platform roadmap.',
+        createdAt: anchorPlusDays(-12),
+        updatedAt: anchorPlusDays(-4),
+        metadata: {
+          type: 'scenario',
+          createdBy: adminUser.id, // table has no created_by column — carried in metadata
+          description: 'Add 6 engineers across the Platform and Product squads to deliver the FY27 roadmap.',
+          assumptions: [
+            'Engineering attrition holds at 8% through FY27',
+            'Average fully-loaded cost of ₹16L per engineer per year',
+            `All 6 hires ramped by ${fmt(anchorPlusDays(120))}`,
+          ],
+          impact: { headcountDelta: 6, costImpactAnnual: 9600000, costImpactLabel: '+₹96L / yr' },
+          orgStructure: {
+            units: [
+              { name: 'Platform Squad', headcount: 11, change: '+3' },
+              { name: 'Product Squad', headcount: 11, change: '+3' },
+            ],
+          },
+        },
+      },
+      {
+        orgId: org.id,
+        planName: 'Sales Pod Restructure',
+        planYear: 2026,
+        departmentId: salesDept.id,
+        currentHeadcount: 0,
+        approvedHeadcount: 0,
+        targetHeadcount: 0,
+        openRequisitions: 0,
+        hiringFreezeActive: false,
+        status: 'draft',
+        notes: 'Draft scenario — split Sales into two pods with dedicated pod leads.',
+        createdAt: anchorPlusDays(-7),
+        updatedAt: anchorPlusDays(-7),
+        metadata: {
+          type: 'scenario',
+          createdBy: adminUser.id,
+          description: 'Split Sales into an Enterprise pod and an SMB pod; no net headcount change.',
+          assumptions: [
+            'Existing 5 sales executives redistribute across both pods',
+            'Pod leads appointed internally — no new requisitions',
+            'Territory quota coverage unchanged for FY27 planning',
+          ],
+          impact: { headcountDelta: 0, costImpactAnnual: 0, costImpactLabel: 'Cost neutral' },
+          orgStructure: {
+            units: [
+              { name: 'Enterprise Pod', headcount: 3, change: '±0' },
+              { name: 'SMB Pod', headcount: 2, change: '±0' },
+            ],
+          },
+        },
+      },
+      {
+        orgId: org.id,
+        planName: 'Support Function Consolidation',
+        planYear: 2026,
+        departmentId: hrDept.id,
+        currentHeadcount: 0,
+        approvedHeadcount: 0,
+        targetHeadcount: 0,
+        openRequisitions: 0,
+        hiringFreezeActive: false,
+        status: 'approved',
+        approvedBy: adminUser.id,
+        approvedAt: anchorPlusDays(-2),
+        notes: 'Approved scenario — merge HR and Finance operations reporting lines.',
+        createdAt: anchorPlusDays(-30),
+        updatedAt: anchorPlusDays(-2),
+        metadata: {
+          type: 'scenario',
+          createdBy: adminUser.id,
+          description: 'Merge HR and Finance operations under one Shared Services lead; one vacated coordinator role is not backfilled.',
+          assumptions: [
+            'HR Ops and Finance Ops report to a single Shared Services lead',
+            'One open coordinator backfill cancelled, saving ₹14L per year',
+            'No impact on payroll or statutory compliance SLAs',
+          ],
+          impact: { headcountDelta: -1, costImpactAnnual: -1400000, costImpactLabel: '-₹14L / yr' },
+          orgStructure: {
+            units: [
+              { name: 'Shared Services — HR Ops', headcount: 2, change: '±0' },
+              { name: 'Shared Services — Finance Ops', headcount: 3, change: '-1' },
+            ],
+          },
+        },
+      },
+    ]);
+    console.log('  ✓ Planning scenarios: 3 (in_review/draft/approved)');
+
+    // ── #65: emp01 expense history (no new 'submitted' rows — Sarah's pending
+    //    queue and dashboard KPI stay at 12; tracking cards get real amounts) ──
+    const emp01ExpenseSeed = [
+      { title: 'Client Workshop Travel', status: 'approved', amount: '5600.00', cat: 0, submitted: -18, decided: -16 },
+      { title: 'Home Office Internet — May', status: 'reimbursed', amount: '2100.00', cat: 2, submitted: -42, decided: -38 },
+      { title: 'Late-night Cab After Release', status: 'rejected', amount: '950.00', cat: 0, submitted: -28, decided: -26 },
+    ];
+    const emp01ExpenseReports = await db.insert(expenseReports).values(
+      emp01ExpenseSeed.map((e) => ({
+        orgId: org.id,
+        employeeId: empUsers[0].id,
+        title: e.title,
+        description: `${e.title} — submitted via the expense portal.`,
+        totalAmount: e.amount,
+        status: e.status,
+        submittedAt: anchorPlusDays(e.submitted),
+        approvedAt: e.status !== 'rejected' ? anchorPlusDays(e.decided) : null,
+      })),
+    ).returning();
+    await db.insert(expenseItems).values(
+      emp01ExpenseReports.map((r, i) => ({
+        orgId: org.id,
+        reportId: r.id,
+        categoryId: expCatRows[emp01ExpenseSeed[i].cat].id,
+        date: anchorPlusDays(emp01ExpenseSeed[i].submitted - 2),
+        amount: emp01ExpenseSeed[i].amount,
+        description: emp01ExpenseSeed[i].title,
+        vendor: ['Uber India', 'Airtel Broadband', 'Ola Cabs'][i],
+        isActive: true,
+      })),
+    );
+    console.log('  ✓ emp01 expense history: +3 (approved/reimbursed/rejected)');
 
     // ── Done ─────────────────────────────────────────────────────────────────
     console.log('\n✅ Seed complete!\n');

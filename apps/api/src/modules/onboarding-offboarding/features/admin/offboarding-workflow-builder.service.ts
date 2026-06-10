@@ -64,11 +64,12 @@ export class OffboardingWorkflowBuilderService {
         name: data.name,
         description: data.description ?? null,
         exitType: data.exitType ?? 'resignation',
-        departmentId: data.departmentId ?? null,
-        designationId: data.designationId ?? null,
+        // `|| null` (not `?? null`): forms may send '' for unset uuid fields
+        departmentId: data.departmentId || null,
+        designationId: data.designationId || null,
         clearanceDepartments: data.clearanceDepartments ?? [],
-        assetChecklist: data.assetChecklist ?? [],
-        settlementChecklist: data.settlementChecklist ?? [],
+        assetChecklist: data.assetChecklist ?? data.assetChecklistItems ?? [],
+        settlementChecklist: data.settlementChecklist ?? data.settlementItems ?? [],
         isTemplate: data.isTemplate ?? true,
         taskCount: data.taskCount ?? 0,
         status: data.status ?? 'draft',
@@ -119,6 +120,17 @@ export class OffboardingWorkflowBuilderService {
 
     for (const field of allowedFields) {
       if (data[field] !== undefined) updates[field] = data[field];
+    }
+    // Frontend aliases: assetChecklistItems -> assetChecklist, settlementItems -> settlementChecklist
+    if (data.assetChecklistItems !== undefined && data.assetChecklist === undefined) {
+      updates.assetChecklist = data.assetChecklistItems;
+    }
+    if (data.settlementItems !== undefined && data.settlementChecklist === undefined) {
+      updates.settlementChecklist = data.settlementItems;
+    }
+    // Forms may send '' for unset uuid dropdowns — normalize to null
+    for (const uuidField of ['departmentId', 'designationId']) {
+      if (updates[uuidField] === '') updates[uuidField] = null;
     }
 
     await this.db
@@ -186,9 +198,12 @@ export class OffboardingWorkflowBuilderService {
       departmentId: w.departmentId,
       departmentName: row.department?.name ?? null,
       designationId: w.designationId,
-      clearanceDepartments: w.clearanceDepartments,
-      assetChecklist: w.assetChecklist,
-      settlementChecklist: w.settlementChecklist,
+      clearanceDepartments: (w.clearanceDepartments as string[]) ?? [],
+      assetChecklist: (w.assetChecklist as string[]) ?? [],
+      settlementChecklist: (w.settlementChecklist as string[]) ?? [],
+      // Frontend-facing aliases
+      assetChecklistItems: (w.assetChecklist as string[]) ?? [],
+      settlementItems: (w.settlementChecklist as string[]) ?? [],
       isTemplate: w.isTemplate,
       taskCount: w.taskCount,
       status: w.status,

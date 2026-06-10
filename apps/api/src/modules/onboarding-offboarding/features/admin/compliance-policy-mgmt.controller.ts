@@ -76,6 +76,16 @@ export class CompliancePolicyMgmtController {
     return this.service.getDataRetention(orgId);
   }
 
+  @Post('send-reminder')
+  @Roles('super_admin', 'admin')
+  async sendReminder(@Body() body: Record<string, any>) {
+    const orgId = this.getOrgIdOrThrow();
+    return this.service.sendReminder(orgId, {
+      employeeId: body.employeeId,
+      type: body.type,
+    });
+  }
+
   @Post('policies')
   @Roles('super_admin', 'admin')
   async createPolicy(@Body() body: Record<string, any>) {

@@ -43,15 +43,20 @@ export class InternalJobBoardController {
     @Query('limit') limit?: string,
   ) {
     const orgId = this.getOrgIdOrThrow();
-    return this.service.listJobs(orgId, {
-      department,
-      location,
-      grade,
-      employmentType,
-      search,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-    });
+    const userId = this.getUserIdOrThrow();
+    return this.service.listJobs(
+      orgId,
+      {
+        department,
+        location,
+        grade,
+        employmentType,
+        search,
+        page: page ? parseInt(page, 10) : undefined,
+        limit: limit ? parseInt(limit, 10) : undefined,
+      },
+      userId,
+    );
   }
 
   @Get('bookmarks')

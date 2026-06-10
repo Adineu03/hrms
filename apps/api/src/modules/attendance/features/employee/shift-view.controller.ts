@@ -57,7 +57,8 @@ export class ShiftViewController {
     return this.shiftViewService.getHistory(orgId, userId, limit ? parseInt(limit, 10) : 20);
   }
 
-  @Post('swap-request')
+  // Both singular (original API) and plural (UI form) paths are accepted
+  @Post(['swap-request', 'swap-requests'])
   @Roles('super_admin', 'admin', 'manager', 'employee')
   async createSwapRequest(@Body() body: Record<string, any>) {
     const orgId = this.getOrgIdOrThrow();

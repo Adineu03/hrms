@@ -32,6 +32,9 @@ interface Employee {
   employmentType: string;
   status: string;
   joiningDate: string | null;
+  profile?: {
+    employmentType?: string;
+  } | null;
 }
 
 interface EmployeeFormData {
@@ -42,6 +45,20 @@ interface EmployeeFormData {
   designation: string;
   employmentType: string;
 }
+
+interface EmployeeEditFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  employmentType: string;
+}
+
+const emptyEditForm: EmployeeEditFormData = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  employmentType: 'full_time',
+};
 
 const emptyForm: EmployeeFormData = {
   firstName: '',
@@ -82,6 +99,12 @@ export default function EmployeeMasterTab() {
   const [formData, setFormData] = useState<EmployeeFormData>(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Edit form
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editForm, setEditForm] = useState<EmployeeEditFormData>(emptyEditForm);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   // Mass selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showMassUpdate, setShowMassUpdate] = useState(false);
@@ -118,6 +141,61 @@ export default function EmployeeMasterTab() {
       setError('Failed to add employee.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const startEdit = (emp: Employee) => {
+    setShowAddForm(false);
+    setError(null);
+    setSuccessMessage(null);
+    setEditingEmployee(emp);
+    setEditForm({
+      firstName: emp.firstName ?? '',
+      lastName: emp.lastName ?? '',
+      email: emp.email ?? '',
+      employmentType: emp.profile?.employmentType ?? emp.employmentType ?? 'full_time',
+    });
+  };
+
+  const handleUpdate = async () => {
+    if (!editingEmployee) return;
+    if (!editForm.firstName.trim() || !editForm.email.trim()) {
+      setError('First name and email are required.');
+      return;
+    }
+    setError(null);
+    setIsUpdating(true);
+    try {
+      await api.patch(`/core-hr/admin/employees/${editingEmployee.id}`, {
+        firstName: editForm.firstName.trim(),
+        lastName: editForm.lastName.trim(),
+        email: editForm.email.trim(),
+        employmentType: editForm.employmentType,
+      });
+      // Optimistic row update, then refetch to stay in sync with the server.
+      setEmployees((prev) =>
+        prev.map((e) =>
+          e.id === editingEmployee.id
+            ? {
+                ...e,
+                firstName: editForm.firstName.trim(),
+                lastName: editForm.lastName.trim(),
+                email: editForm.email.trim(),
+                profile: { ...e.profile, employmentType: editForm.employmentType },
+              }
+            : e,
+        ),
+      );
+      setSuccessMessage(
+        `Updated ${editForm.firstName.trim()} ${editForm.lastName.trim()}`.trim() + '.',
+      );
+      setEditingEmployee(null);
+      setEditForm(emptyEditForm);
+      await loadEmployees();
+    } catch {
+      setError('Failed to update employee.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -203,6 +281,8 @@ export default function EmployeeMasterTab() {
             onClick={() => {
               setShowAddForm(!showAddForm);
               setFormData(emptyForm);
+              setEditingEmployee(null);
+              setSuccessMessage(null);
             }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-hover transition-colors"
           >
@@ -216,6 +296,13 @@ export default function EmployeeMasterTab() {
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm flex items-center gap-2">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 text-sm flex items-center gap-2">
+          <Check className="h-4 w-4 flex-shrink-0" />
+          {successMessage}
         </div>
       )}
 
@@ -349,6 +436,94 @@ export default function EmployeeMasterTab() {
         </div>
       )}
 
+      {/* Edit Employee Form */}
+      {editingEmployee && (
+        <div className="bg-background border border-border rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-text flex items-center gap-1.5">
+              <Pencil className="h-3.5 w-3.5" />
+              Edit Employee
+            </h3>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingEmployee(null);
+                setEditForm(emptyEditForm);
+              }}
+              className="p-1.5 rounded-lg text-text-muted hover:bg-card transition-colors"
+              title="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1">First Name *</label>
+              <input
+                type="text"
+                value={editForm.firstName}
+                onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                placeholder="First name"
+                className={`${inputClassName} text-sm`}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1">Last Name</label>
+              <input
+                type="text"
+                value={editForm.lastName}
+                onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                placeholder="Last name"
+                className={`${inputClassName} text-sm`}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1">Email *</label>
+              <input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="email@company.com"
+                className={`${inputClassName} text-sm`}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1">Employment Type</label>
+              <select
+                value={editForm.employmentType}
+                onChange={(e) => setEditForm({ ...editForm, employmentType: e.target.value })}
+                className={`${selectClassName} text-sm`}
+              >
+                {EMPLOYMENT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={handleUpdate}
+              disabled={isUpdating}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-hover transition-colors disabled:opacity-50"
+            >
+              {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Save Changes
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingEmployee(null);
+                setEditForm(emptyEditForm);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-border text-text hover:bg-background transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Search & Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[180px]">
@@ -467,6 +642,7 @@ export default function EmployeeMasterTab() {
                 <td className="px-4 py-3 text-right">
                   <button
                     type="button"
+                    onClick={() => startEdit(emp)}
                     className="p-1.5 rounded-lg text-text-muted hover:text-primary hover:bg-background transition-colors"
                     title="Edit"
                   >

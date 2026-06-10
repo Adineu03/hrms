@@ -8,6 +8,7 @@ import { employeeProfiles } from '../../../../infrastructure/database/schema/emp
 import { shifts } from '../../../../infrastructure/database/schema/shifts';
 import { employeeShiftAssignments } from '../../../../infrastructure/database/schema/employee-shift-assignments';
 import { shiftSwapRequests } from '../../../../infrastructure/database/schema/shift-swap-requests';
+import { attendanceRecords } from '../../../../infrastructure/database/schema/attendance-records';
 
 @Injectable()
 export class ShiftPlanningService {
@@ -73,9 +74,35 @@ export class ShiftPlanningService {
         ),
       );
 
+    // Active org shifts — also consumed by the frontend "Assign Shift" dropdown
+    const orgShifts = await this.db
+      .select({
+        id: shifts.id,
+        name: shifts.name,
+        startTime: shifts.startTime,
+        endTime: shifts.endTime,
+      })
+      .from(shifts)
+      .where(and(eq(shifts.orgId, orgId), eq(shifts.isActive, true)))
+      .orderBy(asc(shifts.startTime));
+
     if (teamMembers.length === 0) {
-      return { weekStart, weekEnd, roster: [] };
+      return { weekStart, weekEnd, roster: [], shifts: orgShifts, latestAttendanceDate: null };
     }
+
+    // Latest attendance date for the team — lets the UI default to the week
+    // that actually has data when "today" drifts past the seeded anchor.
+    const teamIds = teamMembers.map((m) => m.userId);
+    const [latestRow] = await this.db
+      .select({ latest: sql<string | null>`max(${attendanceRecords.date})` })
+      .from(attendanceRecords)
+      .where(
+        and(
+          eq(attendanceRecords.orgId, orgId),
+          inArray(attendanceRecords.employeeId, teamIds),
+        ),
+      );
+    const latestAttendanceDate = latestRow?.latest ?? null;
 
     // Get shift assignments for the week
     const assignments = await this.db
@@ -105,21 +132,19 @@ export class ShiftPlanningService {
     // Filter assignments to team members
     const teamAssignments = assignments.filter((a) => teamUserIds.has(a.employeeId));
 
-    // Build roster: for each employee, list their assignments for each day of the week
+    // Build roster: derive each member's working-day (Mon–Fri) schedule for the
+    // requested week from their effective-dated assignment. The frontend grid
+    // reads `assignments` as a date → shift-name map.
     const roster = teamMembers.map((member) => {
       const memberAssignments = teamAssignments.filter((a) => a.employeeId === member.userId);
 
-      const dailyAssignments: Array<{
-        date: string;
-        shiftId: string;
-        shiftName: string;
-        startTime: string;
-        endTime: string;
-      }> = [];
+      const dailyAssignments: Record<string, string> = {};
 
       for (let i = 0; i < 7; i++) {
         const day = new Date(weekStartDate);
-        day.setDate(weekStartDate.getDate() + i);
+        day.setUTCDate(weekStartDate.getUTCDate() + i);
+        const dow = day.getUTCDay();
+        if (dow === 0 || dow === 6) continue; // weekends are off
         const dayStr = day.toISOString().split('T')[0];
 
         // Find applicable assignment for this day
@@ -130,13 +155,7 @@ export class ShiftPlanningService {
         });
 
         if (applicable) {
-          dailyAssignments.push({
-            date: dayStr,
-            shiftId: applicable.shiftId,
-            shiftName: applicable.shiftName,
-            startTime: applicable.startTime,
-            endTime: applicable.endTime,
-          });
+          dailyAssignments[dayStr] = applicable.shiftName;
         }
       }
 
@@ -147,7 +166,7 @@ export class ShiftPlanningService {
       };
     });
 
-    return { weekStart, weekEnd, roster };
+    return { weekStart, weekEnd, roster, shifts: orgShifts, latestAttendanceDate };
   }
 
   async assignShift(
@@ -156,11 +175,16 @@ export class ShiftPlanningService {
     body: {
       employeeIds: string[];
       shiftId: string;
-      effectiveFrom: string;
+      effectiveFrom?: string;
       effectiveTo?: string;
+      startDate?: string;
+      endDate?: string;
     },
   ) {
-    const { employeeIds, shiftId, effectiveFrom, effectiveTo } = body;
+    const { employeeIds, shiftId } = body;
+    // Accept both effectiveFrom/effectiveTo and the UI's startDate/endDate
+    const effectiveFrom = body.effectiveFrom ?? body.startDate;
+    const effectiveTo = body.effectiveTo ?? body.endDate;
 
     if (!employeeIds || employeeIds.length === 0) {
       throw new BadRequestException('At least one employeeId is required');
@@ -474,8 +498,13 @@ export class ShiftPlanningService {
     return { date: coverageDate, coverage };
   }
 
-  async publishSchedule(orgId: string, managerId: string, body: { weekStart: string }) {
-    const { weekStart } = body;
+  async publishSchedule(
+    orgId: string,
+    managerId: string,
+    body: { weekStart?: string; startDate?: string },
+  ) {
+    // Accept both weekStart and the UI's startDate
+    const weekStart = body.weekStart ?? body.startDate;
     if (!weekStart) {
       throw new BadRequestException('weekStart is required');
     }

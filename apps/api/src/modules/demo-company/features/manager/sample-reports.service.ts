@@ -89,4 +89,18 @@ export class SampleReportsService {
       meta: { total: data.length },
     };
   }
+
+  /** Real CSV text for the download endpoint (frontend saves the body as a blob). */
+  async downloadReportCsv(orgId: string, userId: string, reportId: string): Promise<string> {
+    const rows = SAMPLE_REPORT_DATA[reportId] ?? [];
+    if (rows.length === 0) return 'No data available\n';
+
+    const headers = Object.keys(rows[0]);
+    const escape = (v: unknown) => {
+      const s = String(v ?? '');
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [headers.join(','), ...rows.map((r) => headers.map((h) => escape(r[h])).join(','))];
+    return lines.join('\n') + '\n';
+  }
 }

@@ -202,3 +202,6 @@ export const CHART_COLORS = {
   amber: '#d97706',
   red: '#dc2626',
 } as const;
+
+// Categorical series (donut segments, legends): four clearly distinct hues.
+export const CATEGORICAL_COLORS = ['#2563eb', '#059669', '#d97706', '#6b7280', '#93c5fd'] as const;

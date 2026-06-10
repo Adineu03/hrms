@@ -22,8 +22,14 @@ interface OverviewMetrics {
   totalRequisitions: number;
   openPositions: number;
   filledPositions: number;
+  totalCandidates: number;
+  totalApplications: number;
+  offersAccepted: number;
   avgTimeToHire: number;
 }
+
+/** Drizzle numerics arrive as strings — always coerce before rendering. */
+const num = (v: unknown): number => Number(v) || 0;
 
 interface TimeToHireEntry {
   role: string;
@@ -117,7 +123,7 @@ export default function RecruitmentReportsTab() {
   );
 
   const maxFunnelCount = pipelineFunnel.length > 0
-    ? Math.max(...pipelineFunnel.map((e) => e.count))
+    ? Math.max(...pipelineFunnel.map((e) => num(e.count)), 1)
     : 1;
 
   return (
@@ -161,34 +167,55 @@ export default function RecruitmentReportsTab() {
         <>
           {/* Overview */}
           {activeReport === 'overview' && overview && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                 <div className="flex items-center gap-2 mb-1">
                   <Briefcase className="h-4 w-4 text-blue-600" />
                   <span className="text-xs font-medium text-blue-700 uppercase tracking-wider">Total Requisitions</span>
                 </div>
-                <p className="text-2xl font-bold text-blue-700">{overview.totalRequisitions}</p>
+                <p className="text-2xl font-bold text-blue-700">{num(overview.totalRequisitions)}</p>
               </div>
               <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                 <div className="flex items-center gap-2 mb-1">
                   <Target className="h-4 w-4 text-green-600" />
                   <span className="text-xs font-medium text-green-700 uppercase tracking-wider">Open Positions</span>
                 </div>
-                <p className="text-2xl font-bold text-green-700">{overview.openPositions}</p>
+                <p className="text-2xl font-bold text-green-700">{num(overview.openPositions)}</p>
               </div>
               <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
                 <div className="flex items-center gap-2 mb-1">
                   <Users className="h-4 w-4 text-purple-600" />
                   <span className="text-xs font-medium text-purple-700 uppercase tracking-wider">Filled</span>
                 </div>
-                <p className="text-2xl font-bold text-purple-700">{overview.filledPositions}</p>
+                <p className="text-2xl font-bold text-purple-700">{num(overview.filledPositions)}</p>
+              </div>
+              <div className="bg-teal-50 rounded-lg p-4 border border-teal-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="h-4 w-4 text-teal-600" />
+                  <span className="text-xs font-medium text-teal-700 uppercase tracking-wider">Total Candidates</span>
+                </div>
+                <p className="text-2xl font-bold text-teal-700">{num(overview.totalCandidates)}</p>
+              </div>
+              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="h-4 w-4 text-indigo-600" />
+                  <span className="text-xs font-medium text-indigo-700 uppercase tracking-wider">Total Applications</span>
+                </div>
+                <p className="text-2xl font-bold text-indigo-700">{num(overview.totalApplications)}</p>
+              </div>
+              <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="h-4 w-4 text-emerald-600" />
+                  <span className="text-xs font-medium text-emerald-700 uppercase tracking-wider">Offers Accepted</span>
+                </div>
+                <p className="text-2xl font-bold text-emerald-700">{num(overview.offersAccepted)}</p>
               </div>
               <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
                 <div className="flex items-center gap-2 mb-1">
                   <Clock className="h-4 w-4 text-orange-600" />
                   <span className="text-xs font-medium text-orange-700 uppercase tracking-wider">Avg Time-to-Hire</span>
                 </div>
-                <p className="text-2xl font-bold text-orange-700">{overview.avgTimeToHire} <span className="text-sm font-normal">days</span></p>
+                <p className="text-2xl font-bold text-orange-700">{num(overview.avgTimeToHire)} <span className="text-sm font-normal">days</span></p>
               </div>
             </div>
           )}
@@ -212,24 +239,27 @@ export default function RecruitmentReportsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {timeToHire.map((entry, idx) => (
-                    <tr key={idx} className="bg-card hover:bg-background/50 transition-colors">
-                      <td className="px-4 py-3 text-sm text-text font-medium">{entry.role}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{entry.department}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted font-medium">{entry.averageDays}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            {renderProgressBar(
-                              Math.min(100, (entry.averageDays / 60) * 100),
-                              entry.averageDays > 45 ? 'bg-red-500' : entry.averageDays > 30 ? 'bg-yellow-500' : 'bg-green-500'
-                            )}
+                  {timeToHire.map((entry, idx) => {
+                    const avgDays = num(entry.averageDays);
+                    return (
+                      <tr key={`${entry.role || 'role'}-${idx}`} className="bg-card hover:bg-background/50 transition-colors">
+                        <td className="px-4 py-3 text-sm text-text font-medium">{entry.role || 'Unknown'}</td>
+                        <td className="px-4 py-3 text-sm text-text-muted">{entry.department || 'General'}</td>
+                        <td className="px-4 py-3 text-sm text-text-muted font-medium">{avgDays}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              {renderProgressBar(
+                                Math.min(100, (avgDays / 60) * 100),
+                                avgDays > 45 ? 'bg-red-500' : avgDays > 30 ? 'bg-yellow-500' : 'bg-green-500'
+                              )}
+                            </div>
+                            <span className="text-xs font-medium text-text w-12 text-right">{avgDays}d</span>
                           </div>
-                          <span className="text-xs font-medium text-text w-12 text-right">{entry.averageDays}d</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {timeToHire.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-4 py-8 text-center">
@@ -257,25 +287,28 @@ export default function RecruitmentReportsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {sourceEffectiveness.map((entry, idx) => (
-                    <tr key={idx} className="bg-card hover:bg-background/50 transition-colors">
-                      <td className="px-4 py-3 text-sm text-text font-medium capitalize">{entry.source.replace(/_/g, ' ')}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{entry.applicants}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{entry.shortlisted}</td>
-                      <td className="px-4 py-3 text-sm text-green-700 font-medium">{entry.hired}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            {renderProgressBar(
-                              entry.conversionRate,
-                              entry.conversionRate >= 20 ? 'bg-green-500' : entry.conversionRate >= 10 ? 'bg-yellow-500' : 'bg-red-500'
-                            )}
+                  {sourceEffectiveness.map((entry, idx) => {
+                    const conversionRate = num(entry.conversionRate);
+                    return (
+                      <tr key={`${entry.source || 'source'}-${idx}`} className="bg-card hover:bg-background/50 transition-colors">
+                        <td className="px-4 py-3 text-sm text-text font-medium capitalize">{(entry.source || 'direct').replace(/_/g, ' ')}</td>
+                        <td className="px-4 py-3 text-sm text-text-muted">{num(entry.applicants)}</td>
+                        <td className="px-4 py-3 text-sm text-text-muted">{num(entry.shortlisted)}</td>
+                        <td className="px-4 py-3 text-sm text-green-700 font-medium">{num(entry.hired)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              {renderProgressBar(
+                                conversionRate,
+                                conversionRate >= 20 ? 'bg-green-500' : conversionRate >= 10 ? 'bg-yellow-500' : 'bg-red-500'
+                              )}
+                            </div>
+                            <span className="text-xs font-medium text-text w-12 text-right">{conversionRate.toFixed(1)}%</span>
                           </div>
-                          <span className="text-xs font-medium text-text w-12 text-right">{entry.conversionRate.toFixed(1)}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {sourceEffectiveness.length === 0 && (
                     <tr>
                       <td colSpan={5} className="px-4 py-8 text-center">
@@ -300,18 +333,20 @@ export default function RecruitmentReportsTab() {
               ) : (
                 <div className="space-y-3">
                   {pipelineFunnel.map((entry, idx) => {
+                    const count = num(entry.count);
+                    const dropOffRate = num(entry.dropOffRate);
                     const widthPercent = maxFunnelCount > 0
-                      ? (entry.count / maxFunnelCount) * 100
+                      ? (count / maxFunnelCount) * 100
                       : 0;
                     return (
-                      <div key={idx} className="bg-card border border-border rounded-lg p-4">
+                      <div key={`${entry.stageName || 'stage'}-${idx}`} className="bg-card border border-border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-text">{entry.stageName}</span>
+                          <span className="text-sm font-medium text-text">{entry.stageName || 'Stage'}</span>
                           <div className="flex items-center gap-3 text-xs text-text-muted">
-                            <span className="font-semibold text-text">{entry.count} candidates</span>
+                            <span className="font-semibold text-text">{count} candidates</span>
                             {idx > 0 && (
-                              <span className={`${entry.dropOffRate > 50 ? 'text-red-600' : entry.dropOffRate > 30 ? 'text-yellow-600' : 'text-green-600'}`}>
-                                {entry.dropOffRate.toFixed(1)}% drop-off
+                              <span className={`${dropOffRate > 50 ? 'text-red-600' : dropOffRate > 30 ? 'text-yellow-600' : 'text-green-600'}`}>
+                                {dropOffRate.toFixed(1)}% drop-off
                               </span>
                             )}
                           </div>
@@ -321,7 +356,7 @@ export default function RecruitmentReportsTab() {
                             className="bg-primary h-6 rounded-full transition-all flex items-center justify-end pr-2"
                             style={{ width: `${Math.max(10, widthPercent)}%` }}
                           >
-                            <span className="text-[10px] font-bold text-white">{entry.count}</span>
+                            <span className="text-[10px] font-bold text-white">{count}</span>
                           </div>
                         </div>
                       </div>
@@ -334,7 +369,11 @@ export default function RecruitmentReportsTab() {
 
           {/* Hiring Cost */}
           {activeReport === 'hiring-cost' && (
-            <div className="border border-border rounded-xl overflow-hidden">
+            <div className="space-y-2">
+              <p className="text-xs text-text-muted">
+                Costs are estimated from standard per-channel sourcing benchmarks, not invoiced spend.
+              </p>
+              <div className="border border-border rounded-xl overflow-hidden">
               <table className="w-full">
                 <thead>
                   <tr className="bg-background border-b border-border">
@@ -347,22 +386,23 @@ export default function RecruitmentReportsTab() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {hiringCost.map((entry, idx) => {
-                    const maxCost = Math.max(...hiringCost.map((e) => e.costPerHire), 1);
-                    const costPercent = (entry.costPerHire / maxCost) * 100;
+                    const costPerHire = num(entry.costPerHire);
+                    const maxCost = Math.max(...hiringCost.map((e) => num(e.costPerHire)), 1);
+                    const costPercent = (costPerHire / maxCost) * 100;
                     return (
-                      <tr key={idx} className="bg-card hover:bg-background/50 transition-colors">
-                        <td className="px-4 py-3 text-sm text-text font-medium capitalize">{entry.source.replace(/_/g, ' ')}</td>
+                      <tr key={`${entry.source || 'source'}-${idx}`} className="bg-card hover:bg-background/50 transition-colors">
+                        <td className="px-4 py-3 text-sm text-text font-medium capitalize">{(entry.source || 'direct').replace(/_/g, ' ')}</td>
                         <td className="px-4 py-3 text-sm text-text-muted">
                           <div className="flex items-center gap-1">
                             <DollarSign className="h-3 w-3" />
-                            {entry.totalCost.toLocaleString()}
+                            {num(entry.totalCost).toLocaleString()}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-text-muted">{entry.hireCount}</td>
+                        <td className="px-4 py-3 text-sm text-text-muted">{num(entry.hireCount)}</td>
                         <td className="px-4 py-3 text-sm text-text font-medium">
                           <div className="flex items-center gap-1">
                             <DollarSign className="h-3 w-3" />
-                            {entry.costPerHire.toLocaleString()}
+                            {costPerHire.toLocaleString()}
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -388,6 +428,7 @@ export default function RecruitmentReportsTab() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </>

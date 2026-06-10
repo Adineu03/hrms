@@ -18,12 +18,37 @@ interface DeptHeadcount {
   openRequisitions: number;
 }
 
+interface ScenarioUnit {
+  name: string;
+  headcount: number;
+  change: string;
+}
+
+interface ScenarioImpact {
+  headcountDelta: number;
+  costImpactAnnual: number;
+  costImpactLabel: string;
+}
+
 interface Scenario {
   id: string;
   scenarioName: string;
   description?: string;
   status: string;
+  assumptions?: string[];
+  impact?: ScenarioImpact;
+  orgStructure?: { units: ScenarioUnit[] };
 }
+
+const SCENARIO_STATUS_STYLES: Record<string, string> = {
+  draft: 'bg-gray-100 text-gray-600',
+  in_review: 'bg-amber-100 text-amber-700',
+  pending_approval: 'bg-amber-100 text-amber-700',
+  approved: 'bg-green-100 text-green-700',
+  active: 'bg-green-100 text-green-700',
+};
+
+const formatScenarioStatus = (status: string) => (status || 'draft').replace(/_/g, ' ');
 
 export default function OrgDesignStudioTab() {
   const [summary, setSummary] = useState<OrgSummary | null>(null);
@@ -45,8 +70,14 @@ export default function OrgDesignStudioTab() {
         api.get('/workforce-planning/admin/org-design-studio/scenarios'),
       ]);
       if (summaryRes.status === 'fulfilled') setSummary(summaryRes.value.data?.data || summaryRes.value.data || null);
-      if (deptRes.status === 'fulfilled') setDeptData(deptRes.value.data?.data || deptRes.value.data || []);
-      if (scenariosRes.status === 'fulfilled') setScenarios(scenariosRes.value.data?.data || scenariosRes.value.data || []);
+      if (deptRes.status === 'fulfilled') {
+        const rawDepts = deptRes.value.data?.data ?? deptRes.value.data;
+        setDeptData(Array.isArray(rawDepts) ? rawDepts : []);
+      }
+      if (scenariosRes.status === 'fulfilled') {
+        const rawScenarios = scenariosRes.value.data?.data ?? scenariosRes.value.data;
+        setScenarios(Array.isArray(rawScenarios) ? rawScenarios : []);
+      }
     } catch {
       setError('Failed to load org design data');
     } finally {
@@ -66,7 +97,7 @@ export default function OrgDesignStudioTab() {
   const statCards = [
     { label: 'Total Headcount', value: summary?.totalHeadcount ?? '—', color: 'text-indigo-600' },
     { label: 'Open Positions', value: summary?.openPositions ?? '—', color: 'text-orange-600' },
-    { label: 'Avg Span of Control', value: summary?.avgSpanOfControl != null ? summary.avgSpanOfControl.toFixed(1) : '—', color: 'text-blue-600' },
+    { label: 'Avg Span of Control', value: summary?.avgSpanOfControl != null ? (Number(summary.avgSpanOfControl) || 0).toFixed(1) : '—', color: 'text-blue-600' },
     { label: 'Management Layers', value: summary?.managementLayers ?? '—', color: 'text-purple-600' },
   ];
 
@@ -133,18 +164,61 @@ export default function OrgDesignStudioTab() {
             <p className="text-gray-500 text-sm">No planning scenarios available.</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {scenarios.map((scenario) => (
-              <div key={scenario.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-                <div>
-                  <p className="text-sm font-medium text-[#2c2c2c]">{scenario.scenarioName}</p>
-                  {scenario.description && <p className="text-xs text-gray-500 mt-0.5">{scenario.description}</p>}
+          <div className="space-y-3">
+            {scenarios.map((scenario) => {
+              const assumptions = Array.isArray(scenario.assumptions) ? scenario.assumptions : [];
+              const units = Array.isArray(scenario.orgStructure?.units) ? scenario.orgStructure.units : [];
+              const headcountDelta = Number(scenario.impact?.headcountDelta) || 0;
+              return (
+                <div key={scenario.id} className="p-4 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-[#2c2c2c]">{scenario.scenarioName || 'Untitled scenario'}</p>
+                      {scenario.description && <p className="text-xs text-gray-500 mt-0.5">{scenario.description}</p>}
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${SCENARIO_STATUS_STYLES[scenario.status] ?? 'bg-indigo-100 text-indigo-700'}`}>
+                      {formatScenarioStatus(scenario.status)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
+                    <div>
+                      <span className="text-gray-400 font-semibold uppercase tracking-wide">Headcount</span>{' '}
+                      <span className={`font-semibold ${headcountDelta > 0 ? 'text-green-600' : headcountDelta < 0 ? 'text-orange-600' : 'text-gray-600'}`}>
+                        {headcountDelta === 0 ? 'No change' : headcountDelta > 0 ? `+${headcountDelta}` : `${headcountDelta}`}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 font-semibold uppercase tracking-wide">Cost impact</span>{' '}
+                      <span className="font-semibold text-gray-700">{scenario.impact?.costImpactLabel || 'Cost neutral'}</span>
+                    </div>
+                  </div>
+
+                  {units.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {units.map((unit, idx) => (
+                        <span key={`${scenario.id}-unit-${idx}`} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-xs text-gray-600">
+                          <Building2 className="w-3 h-3 text-gray-400" />
+                          {unit.name} · {Number(unit.headcount) || 0}
+                          <span className="text-gray-400">({unit.change || '±0'})</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {assumptions.length > 0 && (
+                    <ul className="space-y-1">
+                      {assumptions.map((assumption, idx) => (
+                        <li key={`${scenario.id}-assumption-${idx}`} className="flex items-start gap-1.5 text-xs text-gray-500">
+                          <span className="text-gray-300">•</span>
+                          {assumption}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
-                  {scenario.status}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

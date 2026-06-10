@@ -10,6 +10,54 @@ export class DelegationMgmtService {
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
   ) {}
 
+  /** Map a raw delegation row + delegate info to the shape the manager tab renders. */
+  private toDelegationDto(
+    d: typeof schema.leaveDelegations.$inferSelect | Record<string, any>,
+    delegate?: { firstName: string; lastName: string | null; email: string } | null,
+  ) {
+    const today = new Date().toISOString().slice(0, 10);
+    let status: 'active' | 'expired' | 'revoked';
+    if (d.endDate && d.endDate < today) {
+      status = 'expired';
+    } else {
+      status = d.isActive ? 'active' : 'revoked';
+    }
+
+    return {
+      id: d.id,
+      delegatorId: d.delegatorId,
+      delegateId: d.delegateId,
+      delegateName: delegate
+        ? `${delegate.firstName} ${delegate.lastName ?? ''}`.trim()
+        : 'Unknown',
+      delegateEmail: delegate?.email ?? null,
+      startDate: d.startDate,
+      endDate: d.endDate,
+      type: d.delegationType === 'partial' ? 'partial' : 'full',
+      delegationType: d.delegationType,
+      status,
+      isActive: d.isActive,
+      activatedAt: d.activatedAt,
+      autoActivated: d.autoActivated,
+      metadata: d.metadata,
+      createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
+    };
+  }
+
+  private async getDelegateInfo(delegateId: string) {
+    const [delegate] = await this.db
+      .select({
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName,
+        email: schema.users.email,
+      })
+      .from(schema.users)
+      .where(eq(schema.users.id, delegateId))
+      .limit(1);
+    return delegate ?? null;
+  }
+
   async getDelegations(orgId: string, managerId: string) {
     const delegations = await this.db
       .select({
@@ -55,21 +103,16 @@ export class DelegationMgmtService {
       }
     }
 
-    const enriched = delegations.map((d) => {
-      const delegate = delegateMap.get(d.delegateId);
-      return {
-        ...d,
-        delegateName: delegate
-          ? `${delegate.firstName} ${delegate.lastName ?? ''}`.trim()
-          : 'Unknown',
-        delegateEmail: delegate?.email ?? null,
-      };
-    });
+    const enriched = delegations.map((d) =>
+      this.toDelegationDto(d, delegateMap.get(d.delegateId) ?? null),
+    );
 
     return {
       total: enriched.length,
-      active: enriched.filter((d) => d.isActive).length,
+      active: enriched.filter((d) => d.status === 'active').length,
       delegations: enriched,
+      // Alias consumed by the manager Delegation tab (reads response.data)
+      data: enriched,
     };
   }
 
@@ -108,7 +151,9 @@ export class DelegationMgmtService {
   }
 
   async createDelegation(orgId: string, managerId: string, body: Record<string, any>) {
-    const { delegateId, startDate, endDate, delegationType } = body;
+    const { delegateId, startDate, endDate } = body;
+    // Tab posts `type` ('full' | 'partial'); accept `delegationType` too
+    const delegationType = body.delegationType ?? body.type ?? 'full';
 
     if (!delegateId) throw new BadRequestException('delegateId is required');
     if (!startDate) throw new BadRequestException('startDate is required');
@@ -161,7 +206,7 @@ export class DelegationMgmtService {
         delegateId,
         startDate,
         endDate,
-        delegationType: delegationType ?? 'approval',
+        delegationType,
         isActive: true,
         activatedAt: now,
         autoActivated: false,
@@ -171,7 +216,7 @@ export class DelegationMgmtService {
       })
       .returning();
 
-    return created;
+    return this.toDelegationDto(created, await this.getDelegateInfo(created.delegateId));
   }
 
   async updateDelegation(orgId: string, managerId: string, delegationId: string, body: Record<string, any>) {
@@ -201,6 +246,7 @@ export class DelegationMgmtService {
     if (body.startDate !== undefined) updateData.startDate = body.startDate;
     if (body.endDate !== undefined) updateData.endDate = body.endDate;
     if (body.delegationType !== undefined) updateData.delegationType = body.delegationType;
+    else if (body.type !== undefined) updateData.delegationType = body.type;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
 
     const [updated] = await this.db
@@ -209,7 +255,7 @@ export class DelegationMgmtService {
       .where(eq(schema.leaveDelegations.id, delegationId))
       .returning();
 
-    return updated;
+    return this.toDelegationDto(updated, await this.getDelegateInfo(updated.delegateId));
   }
 
   async cancelDelegation(orgId: string, managerId: string, delegationId: string) {
@@ -296,7 +342,60 @@ export class DelegationMgmtService {
       createdAt: req.createdAt,
     }));
 
-    return { total: requests.length, requests };
+    // Resolve each employee's manager name (= the delegator the approval came from)
+    const employeeIds = [...new Set(requests.map((r) => r.employeeId))];
+    const managerNameByEmployee = new Map<string, string>();
+    if (employeeIds.length > 0) {
+      const profiles = await this.db
+        .select({
+          userId: schema.employeeProfiles.userId,
+          managerId: schema.employeeProfiles.managerId,
+        })
+        .from(schema.employeeProfiles)
+        .where(
+          and(
+            eq(schema.employeeProfiles.orgId, orgId),
+            inArray(schema.employeeProfiles.userId, employeeIds),
+          ),
+        );
+
+      const managerIds = [
+        ...new Set(profiles.map((p) => p.managerId).filter((m): m is string => !!m)),
+      ];
+      const managerNames = new Map<string, string>();
+      if (managerIds.length > 0) {
+        const managers = await this.db
+          .select({
+            id: schema.users.id,
+            firstName: schema.users.firstName,
+            lastName: schema.users.lastName,
+          })
+          .from(schema.users)
+          .where(inArray(schema.users.id, managerIds));
+        for (const m of managers) {
+          managerNames.set(m.id, `${m.firstName} ${m.lastName ?? ''}`.trim());
+        }
+      }
+      for (const p of profiles) {
+        if (p.managerId && managerNames.has(p.managerId)) {
+          managerNameByEmployee.set(p.userId, managerNames.get(p.managerId)!);
+        }
+      }
+    }
+
+    // Alias consumed by the manager Delegation tab table
+    const data = requests.map((r) => ({
+      id: r.id,
+      employeeName: r.employeeName,
+      leaveType: r.leaveType.name,
+      startDate: r.fromDate,
+      endDate: r.toDate,
+      days: r.totalDays,
+      status: 'pending' as const,
+      delegatedFrom: managerNameByEmployee.get(r.employeeId) ?? '—',
+    }));
+
+    return { total: requests.length, requests, data };
   }
 
   async setAutoRules(orgId: string, managerId: string, body: Record<string, any>) {

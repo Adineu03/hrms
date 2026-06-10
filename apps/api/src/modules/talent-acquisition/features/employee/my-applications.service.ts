@@ -204,7 +204,7 @@ export class MyApplicationsService {
       .set({
         status: 'withdrawn',
         withdrawnAt: new Date(),
-        withdrawReason: data.reason || null,
+        withdrawReason: data?.reason || null,
         updatedAt: new Date(),
       })
       .where(eq(schema.applications.id, applicationId))
@@ -324,9 +324,27 @@ export class MyApplicationsService {
     // Sort by timestamp
     timeline.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
+    // Shape consumed by the My Applications tab: { id, stage, status, date, notes }
+    const eventDisplay: Record<string, { stage: string; status: string }> = {
+      application_submitted: { stage: 'Application Submitted', status: 'new' },
+      interview_scheduled: { stage: 'Interview Scheduled', status: 'in_progress' },
+      interview_completed: { stage: 'Interview Completed', status: 'in_progress' },
+      application_withdrawn: { stage: 'Application Withdrawn', status: 'withdrawn' },
+      application_rejected: { stage: 'Application Rejected', status: 'rejected' },
+      application_hired: { stage: 'Hired', status: 'hired' },
+    };
+    const data = timeline.map((t, idx) => ({
+      id: `${applicationId}-${idx}`,
+      stage: eventDisplay[t.event]?.stage ?? t.event,
+      status: eventDisplay[t.event]?.status ?? 'in_progress',
+      date: t.timestamp,
+      notes: t.details ?? null,
+    }));
+
     return {
       applicationId,
       status: application.status,
+      data,
       timeline,
     };
   }
@@ -390,6 +408,11 @@ export class MyApplicationsService {
       jobPostingId: row.application.jobPostingId,
       requisitionId: row.application.requisitionId,
       postingTitle: row.postingTitle,
+      // Aliases consumed by the My Applications tab
+      jobTitle: row.postingTitle,
+      department: row.departmentName || 'General',
+      appliedDate: row.application.appliedAt.toISOString(),
+      currentStage: row.stageName || 'Applied',
       postingStatus: row.postingStatus,
       postingType: row.postingType,
       departmentName: row.departmentName,

@@ -4,6 +4,9 @@
 
 > **Fix Sprint 1 (2026-06-10) changes:** a real **reporting hierarchy** (3 managers — see credentials), `departments.headId` set, `gradeId`/`locationId` backfilled on all 20 profiles, timesheet submissions 2→**4** (2 pending for the manager queue), and **role-scoped navigation** (manager sees 13 modules / employee 11; hidden modules redirect → survey records GUARDED).
 
+> **Fix Sprint 3 (2026-06-10) changes** — a "Demo-polish" section at the END of `seed()` (fixed literals + anchor helpers ONLY, no faker → the locked faker stream is untouched), plus **2 NEW tables** (`policy_violations`, `audit_evidence` — created via `pnpm --filter @hrms/api db:push`; run it before seeding on a fresh DB). Additions: emp01 leave history 4 approved (+balances aligned: CL 3 used/2 pending, SL 1, EL 2); comp-offs 8→**10** (emp01 active + expiring); **2 leave delegations**; goals 10→**17** (4 org-level + 3 templates); audit logs 24→**30** (6 calibration entries; actors now cycle 6 people); dev plans 5→**7** (2 PIPs); **7 feedback records**; 2 of Sarah's team moved to Morning shift; **4 attendance regularizations**; **2 shift swaps**; postings 3→**6** (3 internal), candidates 5→**6** (emp01), applications 5→**8**, interviews 3→**5**, offers 3→**6** (1 emp01 'sent' + 2 'pending_approval'); **6 reimbursement claims**; **3 onboarding workflows + 17 task templates**; **2 offboarding workflows**; documents 62→**68** (6 templates, category 'template'); onboarding journeys 1→**3** (+8 compliance/training tasks); **4 policy violations**; **4 audit evidence**; surveys 5→**6** (+6 feedback responses → 52), social posts 7→**11** (4 suggestions); headcount plans 5→**8** (3 planning scenarios tagged `metadata.type='scenario'`, zeroed + filtered out of real aggregates); expense reports 10→**13** (emp01 +approved/reimbursed/rejected — deliberately no new 'submitted' so Sarah's pending queue stays 12).
+> Known pre-existing quirk: `db:push` reports one rejected ALTER (42P16 "column id is in a primary key") from legacy schema drift — harmless; all CREATE TABLEs apply and the seed + app are unaffected.
+
 - **Seed script:** `apps/api/src/infrastructure/database/seed.ts`
 - **Run:** `pnpm seed` (from repo root)
 - **Verify:** `pnpm --filter @hrms/web test:survey` → `pnpm --filter @hrms/web survey:report` → `demo-readiness/inventory.md` should read **220 OK / 0 EMPTY / 0 ERROR / 14 GUARDED** (234 rows).
@@ -70,7 +73,7 @@ Prereqs: local PostgreSQL (DB `hrms`, `DATABASE_URL=postgresql://postgres@127.0.
 - **3** salary structures, **20** salary assignments
 
 ### Expense
-- **10** expense reports (3 draft / 3 submitted / 4 approved); **4** expense policies
+- **13** expense reports (3 draft / 3 submitted / 5 approved / 1 reimbursed / 1 rejected); **4** expense policies
 
 ### Talent acquisition
 - **5** requisitions, **5** pipeline stages, **3** postings, **5** candidates, **5** applications, **3** interviews, **3** offers, **3** referrals

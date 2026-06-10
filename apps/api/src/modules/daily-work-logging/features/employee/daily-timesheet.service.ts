@@ -45,6 +45,18 @@ export class DailyTimesheetService {
       .filter((e) => e.entry.isBillable)
       .reduce((sum, e) => sum + Number(e.entry.hours || 0), 0);
 
+    // Most recent date this employee has any entry — lets the UI fall back to
+    // the latest logged day when the requested date (e.g. real "today") is empty.
+    const [latestRow] = await this.db
+      .select({ latest: sql<string | null>`MAX(${schema.timesheetEntries.date})` })
+      .from(schema.timesheetEntries)
+      .where(
+        and(
+          eq(schema.timesheetEntries.orgId, orgId),
+          eq(schema.timesheetEntries.employeeId, employeeId),
+        ),
+      );
+
     return {
       date: targetDate,
       entries: entries.map((e) => this.toEntryDto(e)),
@@ -52,6 +64,7 @@ export class DailyTimesheetService {
       billableHours,
       nonBillableHours: totalHours - billableHours,
       entryCount: entries.length,
+      latestEntryDate: latestRow?.latest ?? null,
     };
   }
 

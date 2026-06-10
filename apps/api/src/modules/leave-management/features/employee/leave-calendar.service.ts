@@ -135,10 +135,18 @@ export class LeaveCalendarService {
       );
 
     // Build per-day calendar
+    // NOTE: build date strings from local components — toISOString() shifts the
+    // date back a day on timezones ahead of UTC (e.g. IST).
+    const toLocalDateStr = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+        d.getDate(),
+      ).padStart(2, '0')}`;
+    const todayStr = toLocalDateStr(new Date());
+
     const days: Record<string, any>[] = [];
     const cursor = new Date(y, m - 1, 1);
     while (cursor.getMonth() === m - 1) {
-      const dateStr = cursor.toISOString().slice(0, 10);
+      const dateStr = toLocalDateStr(cursor);
       const dayOfWeek = cursor.getDay();
       const isWeekend = weekendDays.includes(dayOfWeek);
       const holiday = holidays.find((h) => h.date === dateStr);
@@ -149,27 +157,34 @@ export class LeaveCalendarService {
       // Find team leaves for this day
       const teamLeavesForDay = teamLeaves.filter((l: any) => l.fromDate <= dateStr && l.toDate >= dateStr);
 
+      const myLeavesMapped = myLeavesForDay.map((l) => ({
+        id: l.id,
+        leaveTypeName: l.leaveTypeName,
+        leaveTypeColor: l.leaveTypeColor,
+        status: l.status,
+        isHalfDay: l.isHalfDay,
+        halfDayType: l.halfDayType,
+      }));
+
       days.push({
         date: dateStr,
         dayOfWeek: dayNames[dayOfWeek],
         isWeekend,
+        isToday: dateStr === todayStr,
         isHoliday: !!holiday,
         holidayName: holiday?.name || null,
         holidayType: holiday?.type || null,
-        myLeaves: myLeavesForDay.map((l) => ({
-          id: l.id,
-          leaveTypeName: l.leaveTypeName,
-          leaveTypeColor: l.leaveTypeColor,
-          status: l.status,
-          isHalfDay: l.isHalfDay,
-          halfDayType: l.halfDayType,
-        })),
+        holiday: holiday ? { name: holiday.name, type: holiday.type } : null,
+        myLeaves: myLeavesMapped,
+        // Singular form rendered by the employee Leave Calendar tab
+        myLeave: myLeavesMapped[0] ?? null,
         teamLeaves: teamLeavesForDay.map((l: any) => ({
           id: l.id,
           employeeName: `${l.employeeFirstName} ${l.employeeLastName || ''}`.trim(),
           leaveTypeName: l.leaveTypeName,
           leaveTypeColor: l.leaveTypeColor,
         })),
+        teamOnLeaveCount: teamLeavesForDay.length,
       });
 
       cursor.setDate(cursor.getDate() + 1);

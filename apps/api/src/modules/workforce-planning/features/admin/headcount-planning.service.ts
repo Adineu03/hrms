@@ -3,6 +3,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { isScenarioRow } from '../../scenario.util';
 
 @Injectable()
 export class HeadcountPlanningService {
@@ -15,7 +16,10 @@ export class HeadcountPlanningService {
       .where(and(eq(schema.workforceHeadcountPlans.orgId, orgId), eq(schema.workforceHeadcountPlans.isActive, true)))
       .orderBy(desc(schema.workforceHeadcountPlans.createdAt));
 
-    return { data: rows, meta: { total: rows.length } };
+    // Org Design Studio scenarios share this table (metadata.type === 'scenario') — exclude them.
+    const plans = rows.filter((r) => !isScenarioRow(r));
+
+    return { data: plans, meta: { total: plans.length } };
   }
 
   async createPlan(
