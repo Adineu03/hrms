@@ -31,7 +31,7 @@ import {
 import { useAuthStore } from '@/lib/auth-store';
 import { useModuleStore } from '@/lib/module-store';
 import { useChatStore } from '@/lib/chat-store';
-import type { ModuleWithStatus } from '@hrms/shared';
+import { isModuleAllowedForRole, type ModuleWithStatus } from '@hrms/shared';
 import ModuleActivationDialog from '@/components/module-activation-dialog';
 import ChatBubble from '@/components/ai-assistant/chat-bubble';
 import ChatWindow from '@/components/ai-assistant/chat-window';
@@ -83,6 +83,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const isAdmin = user.role === 'super_admin' || user.role === 'admin';
+
+  // Role-scoped sidebar: admins see all modules (incl. locked/inactive for the
+  // activation flow); managers/employees only see active modules allowed for their role.
+  const visibleModules = isAdmin
+    ? modules
+    : modules.filter((mod) => mod.isActive && isModuleAllowedForRole(user.role, mod.id));
 
   const roleBadgeColor: Record<string, string> = {
     super_admin: 'bg-purple-100 text-purple-700',
@@ -167,7 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               ))}
             </div>
           ) : (
-            modules.map((mod) => {
+            visibleModules.map((mod) => {
               const Icon = MODULE_ICONS[mod.icon];
               const isLocked = mod.activationStatus === 'locked';
               const isInactive = mod.activationStatus === 'inactive';

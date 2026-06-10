@@ -48,7 +48,14 @@ export default function TeamDirectoryTab() {
       try {
         const res = await api.get('/core-hr/manager/team', { params: { limit: 500 } });
         const data = res.data;
-        const teamMembers: TeamMember[] = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : data?.members || [];
+        const rawMembers: any[] = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : data?.members || [];
+        // Backend returns departmentName/designationName/locationName — normalize to the flat fields this tab renders.
+        const teamMembers: TeamMember[] = rawMembers.map((m) => ({
+          ...m,
+          department: m.department ?? m.departmentName,
+          designation: m.designation ?? m.designationName,
+          location: m.location ?? m.locationName,
+        }));
         setMembers(teamMembers);
 
         // Calculate stats

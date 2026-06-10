@@ -11,6 +11,7 @@ const SAMPLE_REPORTS = [
     description: 'Current headcount breakdown by department and designation',
     category: 'workforce',
     format: 'csv',
+    lastUpdated: '2026-06-08T09:30:00.000Z',
   },
   {
     reportId: 'leave-summary',
@@ -18,6 +19,7 @@ const SAMPLE_REPORTS = [
     description: 'Leave balances, utilization, and pending approvals for your team',
     category: 'leave',
     format: 'csv',
+    lastUpdated: '2026-06-07T17:45:00.000Z',
   },
   {
     reportId: 'attendance-rate',
@@ -25,6 +27,7 @@ const SAMPLE_REPORTS = [
     description: 'Monthly attendance rate trend for your team with exceptions',
     category: 'attendance',
     format: 'csv',
+    lastUpdated: '2026-06-09T08:15:00.000Z',
   },
   {
     reportId: 'performance-distribution',
@@ -32,6 +35,7 @@ const SAMPLE_REPORTS = [
     description: 'Performance rating distribution across the last review cycle',
     category: 'performance',
     format: 'csv',
+    lastUpdated: '2026-06-05T14:00:00.000Z',
   },
 ];
 

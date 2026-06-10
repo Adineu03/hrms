@@ -71,7 +71,21 @@ export default function SampleReports() {
 
   useEffect(() => {
     api.get('/demo-company/manager/sample-reports')
-      .then((r) => setReports(r.data.data ?? FALLBACK_REPORTS))
+      .then((r) => {
+        const raw: any[] = r.data.data ?? [];
+        if (raw.length === 0) {
+          setReports(FALLBACK_REPORTS);
+          return;
+        }
+        // Server rows use reportId/title/category — normalize to this component's shape.
+        setReports(raw.map((s, i) => ({
+          id: s.id ?? s.reportId,
+          name: s.name ?? s.title,
+          description: s.description,
+          type: ((s.type ?? s.category) === 'workforce' ? 'headcount' : (s.type ?? s.category ?? FALLBACK_REPORTS[i % FALLBACK_REPORTS.length].type)) as SampleReport['type'],
+          lastUpdated: s.lastUpdated ?? '',
+        })));
+      })
       .catch(() => {
         setReports(FALLBACK_REPORTS);
         setError('');
@@ -103,7 +117,9 @@ export default function SampleReports() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    const d = new Date(dateStr);
+    if (!dateStr || Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',

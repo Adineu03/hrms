@@ -8,6 +8,7 @@ import {
   setTracingDisabled,
 } from '@openai/agents';
 import { randomUUID } from 'crypto';
+import { MODULES, isModuleAllowedForRole } from '@hrms/shared';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../infrastructure/database/database.module';
 import * as schema from '../../infrastructure/database/schema';
@@ -192,6 +193,19 @@ export class AiAssistantService implements OnModuleInit {
 
     // --- Navigation ---
     if (kind === 'navigate') {
+      // Enforce the shared per-role module map: deny unknown or disallowed
+      // targets without an action payload so the client never navigates.
+      const targetModule = MODULES[args.moduleId];
+      if (!targetModule) {
+        const content = `I couldn't find a module called "${args.moduleId}".`;
+        this.saveHistory(user, conversationId, history, dto.message, content);
+        return this.message(content, conversationId);
+      }
+      if (!isModuleAllowedForRole(user.role, args.moduleId)) {
+        const content = `The ${targetModule.name} module isn't available for your role.`;
+        this.saveHistory(user, conversationId, history, dto.message, content);
+        return this.message(content, conversationId);
+      }
       const url = args.tab
         ? `/dashboard/modules/${args.moduleId}?tab=${args.tab}`
         : `/dashboard/modules/${args.moduleId}`;

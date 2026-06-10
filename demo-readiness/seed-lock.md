@@ -1,10 +1,12 @@
 # Demo Seed — Lock & Specification
 
-**Status: LOCKED ✅ (2026-06-09).** The demo dataset is **deterministic** and **idempotent**. Re-running `pnpm seed` always produces the identical "Acme Corp" dataset documented below. This is the dataset behind the **100% green** demo-readiness survey (263 / 263 tab-views OK across all 19 modules × 3 personas).
+**Status: LOCKED ✅ (re-locked 2026-06-10, Fix Sprint 1).** The demo dataset is **deterministic** and **idempotent**. Re-running `pnpm seed` always produces the identical "Acme Corp" dataset documented below. This is the dataset behind the **100% green** demo-readiness survey (all allowed role×module tab-views OK; role-guarded cells assert the redirect and report **GUARDED** — see the survey baseline below).
+
+> **Fix Sprint 1 (2026-06-10) changes:** a real **reporting hierarchy** (3 managers — see credentials), `departments.headId` set, `gradeId`/`locationId` backfilled on all 20 profiles, timesheet submissions 2→**4** (2 pending for the manager queue), and **role-scoped navigation** (manager sees 13 modules / employee 11; hidden modules redirect → survey records GUARDED).
 
 - **Seed script:** `apps/api/src/infrastructure/database/seed.ts`
 - **Run:** `pnpm seed` (from repo root)
-- **Verify:** `pnpm --filter @hrms/web test:survey` → `pnpm --filter @hrms/web survey:report` → `demo-readiness/inventory.md` should read **263 OK / 0 EMPTY / 0 ERROR**.
+- **Verify:** `pnpm --filter @hrms/web test:survey` → `pnpm --filter @hrms/web survey:report` → `demo-readiness/inventory.md` should read **220 OK / 0 EMPTY / 0 ERROR / 14 GUARDED** (234 rows).
 
 ---
 
@@ -31,8 +33,12 @@
 | Persona | Login | Password | Name / Role |
 |---|---|---|---|
 | Admin | `admin@acme.com` | `Admin@123` | Alex Kumar — super_admin |
-| Manager | `manager@acme.com` | `Manager@123` | Sarah Mehta — manager (all 20 employees report to her) |
+| Manager (demo persona) | `manager@acme.com` | `Manager@123` | Sarah Mehta — manager, **Engineering (emp01–08, 8 directs)** |
+| Manager 2 | `manager2@acme.com` | `Manager@123` | Vikram Rao — manager, **Sales (emp09–12, 4 directs)** |
+| Manager 3 | `manager3@acme.com` | `Manager@123` | Meera Joshi — manager, **HR + Finance (emp13–20, 8 directs)** |
 | Employee | `emp01@acme.com` … `emp20@acme.com` | `Employee@123` | 20 employees (emp01 is the primary demo persona — given a healthy engagement score + badge) |
+
+**Reporting hierarchy (Fix Sprint 1):** every employee profile has a real `managerId` (emp01–08 → Sarah, emp09–12 → Vikram, emp13–20 → Meera); `departments.headId` is set (Eng → Sarah, Sales → Vikram, HR/Finance → Meera). All "team" views filter by direct reports — **Sarah's expected numbers:** team 8 · pending leave 5 · pending OT 2 · pending timesheets 2 · pending expenses 3 · reviews 7 / goals 7 / dev plans 3 / one-on-ones 4 · offboarding 1 / exit interview 1.
 
 Prereqs: local PostgreSQL (DB `hrms`, `DATABASE_URL=postgresql://postgres@127.0.0.1:5432/hrms`) + Redis. App up via `pnpm dev` (web :3000, api :3001).
 
@@ -41,11 +47,12 @@ Prereqs: local PostgreSQL (DB `hrms`, `DATABASE_URL=postgresql://postgres@127.0.
 ## Produced dataset (authoritative inventory)
 
 ### Organization & people (Core HR)
-- **1** org (Acme Corp), **22** users (1 admin + 1 manager + 20 employees)
+- **1** org (Acme Corp), **24** users (1 admin + 3 managers + 20 employees)
 - **19** modules — all activated + setup-completed (feature mode renders directly, no setup walls)
-- **4** departments (Engineering, Sales, HR, Finance); **8** designations; **20** employee profiles (with emergency contacts / bank / address)
+- **4** departments (Engineering, Sales, HR, Finance) with `headId` set; **8** designations; **20** employee profiles (with emergency contacts / bank / address, `managerId`, `gradeId`, `locationId`)
 - **3** locations, **5** grades, **2** legal entities
-- emp01–08 → Engineering, emp09–12 → Sales, emp13–16 → HR, emp17–20 → Finance
+- emp01–08 → Engineering (Sarah), emp09–12 → Sales (Vikram), emp13–16 → HR (Meera), emp17–20 → Finance (Meera)
+- Grade spread: L2 ×14, L3 ×5, L4 ×1 (from designation level); locations: remote Eng → Remote—India, Sales → Mumbai, rest → Bengaluru HQ
 
 ### Time & attendance
 - **3** shifts (General/Morning/Night); **20** shift assignments → General
@@ -56,7 +63,7 @@ Prereqs: local PostgreSQL (DB `hrms`, `DATABASE_URL=postgresql://postgres@127.0.
 - **3** leave types (Casual/Sick/Earned); **60** balances (20 × 3); **15** requests (5 pending + 10 approved); **2** approval workflows
 
 ### Daily work logging
-- **5** projects, **6** task categories, **20** project assignments; **400** timesheet entries (linked to projects/categories); **1** timesheet policy; **2** submissions
+- **5** projects, **6** task categories, **20** project assignments; **400** timesheet entries (linked to projects/categories); **1** timesheet policy; **4** submissions (2 rejected/disputed + 2 pending approval from Sarah's team)
 
 ### Payroll
 - **1** finalized run (Feb 2026) + **20** entries; **80** payslips (Feb–May); **7** salary components; **1** payroll config; **7** statutory filings; **12** investment declarations
@@ -117,6 +124,6 @@ pnpm --filter @hrms/web test:survey      # crawl all 57 role×module tests
 pnpm --filter @hrms/web survey:report    # regenerate demo-readiness/inventory.md
 ```
 
-Expected: `inventory.md` summary = **263 OK / 0 EMPTY / 0 ERROR**. Any EMPTY/ERROR is a regression — triage from the per-tab notes + screenshots under `apps/web/e2e/screenshots/`.
+**Role-scoped baseline (Fix Sprint 1, verified 2026-06-10):** the survey is guard-aware — modules hidden for a role (per `packages/shared/src/constants/role-modules.ts`: manager 13 / employee 11 / admin all 19) must redirect deep links to `/dashboard` and are recorded as **GUARDED** (counts as OK; a missing redirect is an ERROR "GUARD MISSING"). Locked baseline = **220 OK / 0 EMPTY / 0 ERROR / 14 GUARDED (234 rows)** — admin 106 OK · manager 59 OK + 6 GUARDED · employee 55 OK + 8 GUARDED. Any EMPTY/ERROR is a regression — triage from the per-tab notes + screenshots under `apps/web/e2e/screenshots/`.
 
 > CI gating on the survey was intentionally **not** wired (per owner decision) — the survey stays a deterministic local/manual regression tool, preserving the locked "survey reports, never fails the build" stance.

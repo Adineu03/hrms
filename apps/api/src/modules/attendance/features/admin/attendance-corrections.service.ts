@@ -80,6 +80,8 @@ export class AttendanceCorrectionsService {
     return {
       data: paginated.map((r) => ({
         ...this.toRecordDto(r.record),
+        // flat employeeName for the table column + nested object for detail views
+        employeeName: `${r.employeeFirstName ?? ''} ${r.employeeLastName ?? ''}`.trim() || '—',
         employee: {
           id: r.record.employeeId,
           firstName: r.employeeFirstName,

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Loader2, X, AlertCircle, Shield, Download, Edit, Trash2, CheckCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Loader2, X, AlertCircle, Shield, Download, Edit, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface DataCategory {
@@ -38,7 +38,7 @@ export default function DataPrivacyControlsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [activeSection, setActiveSection] = useState<'my-data' | 'correction' | 'consent' | 'deletion'>('my-data');
+  const [activeSection, setActiveSection] = useState<'my-data' | 'correction' | 'consent'>('my-data');
   const [submitting, setSubmitting] = useState(false);
   const [exportRequested, setExportRequested] = useState(false);
 
@@ -48,9 +48,6 @@ export default function DataPrivacyControlsTab() {
     requestedValue: '',
     reason: '',
   });
-
-  const [deletionReason, setDeletionReason] = useState('');
-  const [deletionConfirmed, setDeletionConfirmed] = useState(false);
 
   useEffect(() => {
     fetchMyData();
@@ -119,22 +116,6 @@ export default function DataPrivacyControlsTab() {
     }
   };
 
-  const handleDeletionRequest = async () => {
-    if (!deletionReason || !deletionConfirmed) return;
-    try {
-      setSubmitting(true);
-      await api.post('/compliance-audit/employee/data-privacy/deletion-request', { reason: deletionReason });
-      setSuccessMsg('Account deletion request submitted. HR and Legal will review your request and contact you within 10 business days.');
-      setDeletionReason('');
-      setDeletionConfirmed(false);
-      setTimeout(() => setSuccessMsg(''), 8000);
-    } catch {
-      setError('Failed to submit deletion request');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
     <button
       onClick={() => onChange(!checked)}
@@ -188,12 +169,6 @@ export default function DataPrivacyControlsTab() {
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeSection === 'consent' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
           >
             Consent Settings
-          </button>
-          <button
-            onClick={() => setActiveSection('deletion')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeSection === 'deletion' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            Account Deletion
           </button>
         </div>
 
@@ -332,61 +307,6 @@ export default function DataPrivacyControlsTab() {
           </div>
         )}
 
-        {activeSection === 'deletion' && (
-          <div>
-            <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-              <Trash2 className="w-5 h-5 text-red-600 shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-red-800">Account Deletion Request</p>
-                <p className="text-xs text-red-700">This is an irreversible action. Please read the consequences before proceeding.</p>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-              <p className="text-sm font-medium text-[#2c2c2c] mb-2">Consequences of account deletion:</p>
-              <ul className="space-y-1 text-sm text-gray-600 list-disc list-inside">
-                <li>Your access to the HRMS platform will be immediately revoked</li>
-                <li>Payroll data required for legal compliance may be retained for up to 7 years</li>
-                <li>Your employment records may need to be preserved for regulatory purposes</li>
-                <li>This request will trigger an offboarding process if you are still employed</li>
-                <li>You will be contacted by HR to discuss and verify this request</li>
-              </ul>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Deletion *</label>
-                <textarea
-                  value={deletionReason}
-                  onChange={(e) => setDeletionReason(e.target.value)}
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Please explain why you are requesting account deletion..."
-                />
-              </div>
-              <div className="flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  id="deleteConfirm"
-                  checked={deletionConfirmed}
-                  onChange={(e) => setDeletionConfirmed(e.target.checked)}
-                  className="mt-0.5 rounded border-gray-300 text-red-600 focus:ring-red-500"
-                />
-                <label htmlFor="deleteConfirm" className="text-sm text-gray-700">
-                  I understand that this request is irreversible and I have read the consequences above.
-                </label>
-              </div>
-              <button
-                onClick={handleDeletionRequest}
-                disabled={submitting || !deletionReason || !deletionConfirmed}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
-              >
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                Request Account Deletion
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

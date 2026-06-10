@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { isModuleAllowedForRole } from '@hrms/shared';
 
 interface PageContext {
   moduleId: string | null;
@@ -51,6 +52,7 @@ export class ContextBuilderService {
       : '';
 
     const moduleList = Object.entries(MODULE_DESCRIPTIONS)
+      .filter(([id]) => isModuleAllowedForRole(user.role, id))
       .map(([id, desc]) => `- ${id}: ${desc}`)
       .join('\n');
 
@@ -61,7 +63,7 @@ You are speaking with ${user.firstName} ${user.lastName}, who has the role of "$
 They are currently on: ${pageDescription}.${tabInfo}
 Current page path: ${pageContext.pathname}
 
-Available HRMS modules (all are valid navigation targets):
+Available HRMS modules for this user's role (the only valid navigation targets):
 ${moduleList}
 
 ${hasScreenshot ? `IMPORTANT: A screenshot of the user's current screen is attached. When the user asks what they see, what this page/dashboard is, or anything about the current view, LOOK AT THE SCREENSHOT and describe the ACTUAL content — real numbers, real labels, real data. Do NOT call read_page. Just describe what you see in the image directly.` : ''}

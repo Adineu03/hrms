@@ -1,13 +1,19 @@
 import { test, expect, type Page } from '@playwright/test';
+import { isModuleAllowedForRole } from '@hrms/shared';
 import fs from 'fs';
 import path from 'path';
 
 /**
- * Demo-Readiness Survey Crawler (Sprint 0).
+ * Demo-Readiness Survey Crawler (Sprint 0; guard-aware since Fix Sprint 1).
  *
  * For each persona × module: navigate the module route, discover every tab, click each,
  * and REPORT per tab — render OK? console/pageerror? failed /api/v1/* call? empty state?
  * + a fullPage screenshot. Writes one JSON result file per (role × module) to e2e/results/.
+ *
+ * Role-scoped navigation (Fix Sprint 1): modules hidden for a role must redirect deep
+ * links back to /dashboard. For those role×module cells the crawler asserts the redirect
+ * fired and records a single GUARDED row (counts as OK). A missing redirect is an ERROR
+ * ("GUARD MISSING"). The role-module map comes from @hrms/shared (same source the app uses).
  *
  * This NEVER fails the build — it observes and reports. Triage happens from inventory.md
  * (built by e2e/build-inventory.mjs).
@@ -62,7 +68,7 @@ interface TabRow {
   pageTitle: string;
   tabIndex: number;
   tab: string;
-  status: 'OK' | 'EMPTY' | 'ERROR';
+  status: 'OK' | 'EMPTY' | 'ERROR' | 'GUARDED';
   looksEmpty: boolean;
   errorBoundary: boolean;
   apiErrors: string[];
@@ -135,6 +141,40 @@ for (const role of ROLES) {
         const relShot = (file: string) => path.posix.join('e2e/screenshots', role, mod.id, file);
 
         await page.goto(`/dashboard/modules/${mod.id}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
+
+        // ── Role-guard cells: this module is hidden for this role — assert the redirect ──
+        if (!isModuleAllowedForRole(role, mod.id)) {
+          const redirected = await page
+            .waitForURL((u) => new URL(u).pathname === '/dashboard', { timeout: 30000 })
+            .then(() => true)
+            .catch(() => false);
+
+          if (redirected) {
+            const file = '0-GUARDED.png';
+            await page.screenshot({ path: path.join(shotDir, file), fullPage: true }).catch(() => {});
+            rows.push(blankRow(role, mod, '', 0, 'guarded', 'GUARDED', {
+              note: 'role-guard redirected to /dashboard (module hidden for this role)',
+              screenshot: relShot(file),
+            }));
+          } else if (page.url().includes('/login')) {
+            const file = '0-AUTH_REDIRECT.png';
+            await page.screenshot({ path: path.join(shotDir, file), fullPage: true }).catch(() => {});
+            rows.push(blankRow(role, mod, '', 0, 'default', 'ERROR', {
+              note: 'Redirected to /login — storageState auth not applied',
+              screenshot: relShot(file),
+            }));
+          } else {
+            const file = '0-GUARD_MISSING.png';
+            await page.screenshot({ path: path.join(shotDir, file), fullPage: true }).catch(() => {});
+            rows.push(blankRow(role, mod, '', 0, 'default', 'ERROR', {
+              note: 'GUARD MISSING — module rendered for a disallowed role (expected redirect to /dashboard)',
+              screenshot: relShot(file),
+            }));
+          }
+          flush(rows, role, mod);
+          expect(true).toBeTruthy();
+          return;
+        }
 
         let s = await settle(page);
         // If the page is stuck on the pre-hydration "Loading..." screen (no h1, no tab bar) and

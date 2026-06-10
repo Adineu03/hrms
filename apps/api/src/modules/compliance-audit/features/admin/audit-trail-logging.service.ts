@@ -1,8 +1,21 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
+import { buildUserNameMap } from '../../../../shared/database/user-names.util';
+
+/** Maps audit-log entity values onto the HRMS module they belong to. */
+const ENTITY_MODULE: Record<string, string> = {
+  employee: 'Core HR',
+  department: 'Core HR',
+  document: 'Core HR',
+  custom_field: 'Platform',
+  leave_request: 'Leave Management',
+  payroll_run: 'Payroll',
+  salary_structure: 'Payroll',
+  benefit_plan: 'Compensation',
+};
 
 @Injectable()
 export class AuditTrailLoggingService {
@@ -36,13 +49,21 @@ export class AuditTrailLoggingService {
       .select()
       .from(schema.auditLogs)
       .where(and(...conditions))
-      .orderBy(schema.auditLogs.createdAt)
+      .orderBy(desc(schema.auditLogs.createdAt))
       .limit(filters.limit ?? 50)
       .offset(filters.offset ?? 0);
 
     const rows = await query;
+    const userNames = await buildUserNameMap(this.db, rows.map((r) => r.userId));
 
-    return { data: rows, meta: { total: rows.length, limit: filters.limit ?? 50, offset: filters.offset ?? 0 } };
+    const data = rows.map((r) => ({
+      ...r,
+      userName: (r.userId && userNames.get(r.userId)) || 'System',
+      entityType: r.entity,
+      module: ENTITY_MODULE[r.entity] ?? 'Platform',
+    }));
+
+    return { data, meta: { total: data.length, limit: filters.limit ?? 50, offset: filters.offset ?? 0 } };
   }
 
   async listTrailConfigs(orgId: string) {
@@ -52,13 +73,15 @@ export class AuditTrailLoggingService {
       .where(and(eq(schema.auditTrailConfigs.orgId, orgId), eq(schema.auditTrailConfigs.isActive, true)))
       .orderBy(schema.auditTrailConfigs.entity);
 
-    return { data: rows, meta: { total: rows.length } };
+    // The tab renders `entityName`; the column is `entity`.
+    return { data: rows.map((r) => ({ ...r, entityName: r.entity })), meta: { total: rows.length } };
   }
 
   async createTrailConfig(
     orgId: string,
     dto: {
-      entity: string;
+      entity?: string;
+      entityName?: string; // the admin tab's form field name
       retentionDays?: number;
       isTracked?: boolean;
       trackCreate?: boolean;
@@ -72,7 +95,7 @@ export class AuditTrailLoggingService {
       .insert(schema.auditTrailConfigs)
       .values({
         orgId,
-        entity: dto.entity,
+        entity: dto.entity ?? dto.entityName ?? 'unspecified',
         retentionDays: dto.retentionDays ?? 365,
         isTracked: dto.isTracked ?? true,
         trackCreate: dto.trackCreate ?? true,

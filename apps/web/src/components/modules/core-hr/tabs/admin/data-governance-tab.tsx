@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { formatDateTime } from '@/lib/format';
 import {
   Loader2,
   Database,
@@ -232,10 +233,10 @@ export default function DataGovernanceTab() {
                     className="bg-card hover:bg-background/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm text-text-muted whitespace-nowrap">
-                      {new Date(log.timestamp).toLocaleString()}
+                      {formatDateTime(log.timestamp)}
                     </td>
                     <td className="px-4 py-3 text-sm text-text font-medium">
-                      {log.userName}
+                      {log.userName || '—'}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span

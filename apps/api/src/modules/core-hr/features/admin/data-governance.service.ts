@@ -5,6 +5,7 @@ import { DRIZZLE } from '../../../../infrastructure/database/database.module';
 import * as schema from '../../../../infrastructure/database/schema';
 import { auditLogs } from '../../../../infrastructure/database/schema/audit-logs';
 import { orgs } from '../../../../infrastructure/database/schema/orgs';
+import { buildUserNameMap } from '../../../../shared/database/user-names.util';
 
 interface AuditLogFilters {
   entity?: string;
@@ -55,10 +56,13 @@ export class DataGovernanceService {
       .from(auditLogs)
       .where(and(...conditions));
 
+    const userNames = await buildUserNameMap(this.db, rows.map((r) => r.userId));
+
     return {
       data: rows.map((r) => ({
         id: r.id,
         userId: r.userId,
+        userName: (r.userId && userNames.get(r.userId)) || 'System',
         action: r.action,
         entity: r.entity,
         entityId: r.entityId ?? undefined,
@@ -68,6 +72,7 @@ export class DataGovernanceService {
         ipAddress: r.ipAddress ?? undefined,
         userAgent: r.userAgent ?? undefined,
         createdAt: r.createdAt.toISOString(),
+        timestamp: r.createdAt.toISOString(),
       })),
       meta: {
         total: countResult?.count ?? 0,

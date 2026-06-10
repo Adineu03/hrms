@@ -82,9 +82,19 @@ export default function TeamCostReportsTab() {
         utilizationPercent: totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0,
       });
 
-      // Leave impact — backend returns a single summary object
+      // Leave impact — backend returns per-leave-type items (+ legacy LOP summary)
       const leaveData = leaveRes.data?.data || leaveRes.data || {};
-      if (leaveData.totalLopDays !== undefined && Number(leaveData.totalLopDays) > 0) {
+      if (Array.isArray(leaveData.items) && leaveData.items.length > 0) {
+        setLeaveImpact(
+          leaveData.items.map((it: any, i: number) => ({
+            id: it.id ?? String(i),
+            leaveType: it.leaveType ?? '—',
+            totalDays: Number(it.totalDays) || 0,
+            costImpact: Number(it.costImpact) || 0,
+            affectedEmployees: Number(it.affectedEmployees) || 0,
+          })),
+        );
+      } else if (leaveData.totalLopDays !== undefined && Number(leaveData.totalLopDays) > 0) {
         setLeaveImpact([
           {
             id: 'lop',

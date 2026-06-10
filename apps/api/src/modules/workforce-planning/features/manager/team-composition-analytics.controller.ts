@@ -17,15 +17,23 @@ export class TeamCompositionAnalyticsController {
     return orgId;
   }
 
+  private getUserIdOrThrow(): string {
+    const userId = this.tenantService.getUserId();
+    if (!userId) throw new UnauthorizedException('Missing user context');
+    return userId;
+  }
+
   @Get()
   async getTeamComposition() {
     const orgId = this.getOrgIdOrThrow();
-    return this.service.getTeamComposition(orgId);
+    const managerId = this.getUserIdOrThrow();
+    return this.service.getTeamComposition(orgId, managerId);
   }
 
   @Get('grade-distribution')
   async getGradeDistribution() {
     const orgId = this.getOrgIdOrThrow();
-    return this.service.getGradeDistribution(orgId);
+    const managerId = this.getUserIdOrThrow();
+    return this.service.getGradeDistribution(orgId, managerId);
   }
 }

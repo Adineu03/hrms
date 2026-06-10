@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api';
-import { MODULE_LIST } from '@hrms/shared';
+import { getAllowedModuleIds } from '@hrms/shared';
 import { Boxes, Users, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { StatCardSkeleton } from '@/components/ui/skeleton';
 
@@ -28,6 +28,9 @@ export default function DashboardPage() {
   }, []);
 
   if (!user) return null;
+
+  const isAdmin = user.role === 'super_admin' || user.role === 'admin';
+  const allowedModuleCount = getAllowedModuleIds(user.role).length;
 
   return (
     <div className="max-w-4xl space-y-8">
@@ -89,14 +92,25 @@ export default function DashboardPage() {
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-text">Modules</h2>
             <p className="text-text-muted mt-1">
-              Your HRMS includes <span className="font-semibold text-text">{MODULE_LIST.length}</span> modules
-              ready to be configured. Start by setting up Core HR, then proceed through each module
-              in order to build your complete HR platform.
+              {isAdmin ? (
+                <>
+                  Your HRMS includes <span className="font-semibold text-text">{allowedModuleCount}</span> modules
+                  ready to be configured. Start by setting up Core HR, then proceed through each module
+                  in order to build your complete HR platform.
+                </>
+              ) : (
+                <>
+                  You have access to <span className="font-semibold text-text">{allowedModuleCount}</span> modules.
+                  Use the sidebar to open a module and get started.
+                </>
+              )}
             </p>
-            <Link href="/dashboard/modules/cold-start-setup" className="mt-4 flex items-center gap-2 text-sm text-primary font-medium hover:underline cursor-pointer">
-              <ArrowRight className="h-4 w-4" />
-              Begin setup with module configuration
-            </Link>
+            {isAdmin && (
+              <Link href="/dashboard/modules/cold-start-setup" className="mt-4 flex items-center gap-2 text-sm text-primary font-medium hover:underline cursor-pointer">
+                <ArrowRight className="h-4 w-4" />
+                Begin setup with module configuration
+              </Link>
+            )}
           </div>
         </div>
       </div>

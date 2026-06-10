@@ -16,7 +16,7 @@ dotenv.config(); // fallback to CWD/.env
 
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { faker } from '@faker-js/faker';
 
@@ -291,6 +291,35 @@ async function seed(): Promise<void> {
       })
       .returning();
 
+    // Two more managers for a believable 2-level org chart.
+    // NOTE: fixed literals only — a faker call here would shift the seeded
+    // faker stream and change every downstream generated value.
+    const [salesManagerUser] = await db
+      .insert(users)
+      .values({
+        orgId: org.id,
+        email: 'manager2@acme.com',
+        passwordHash: managerHash,
+        role: 'manager',
+        firstName: 'Vikram',
+        lastName: 'Rao',
+        isActive: true,
+      })
+      .returning();
+
+    const [opsManagerUser] = await db
+      .insert(users)
+      .values({
+        orgId: org.id,
+        email: 'manager3@acme.com',
+        passwordHash: managerHash,
+        role: 'manager',
+        firstName: 'Meera',
+        lastName: 'Joshi',
+        isActive: true,
+      })
+      .returning();
+
     // 20 employee users
     const empInserts = Array.from({ length: 20 }, (_, i) => ({
       orgId: org.id,
@@ -303,8 +332,14 @@ async function seed(): Promise<void> {
     }));
     const empUsers = await db.insert(users).values(empInserts).returning();
 
+    // Reporting hierarchy (0-based empUsers index):
+    //   emp01–08 → Sarah Mehta (Engineering) | emp09–12 → Vikram Rao (Sales)
+    //   emp13–20 → Meera Joshi (HR + Finance)
+    const managerForIdx = (i: number) =>
+      i < 8 ? managerUser.id : i < 12 ? salesManagerUser.id : opsManagerUser.id;
+
     console.log(
-      `  ✓ Users:   admin@acme.com, manager@acme.com, emp01–emp20@acme.com`,
+      `  ✓ Users:   admin@acme.com, manager@acme.com, manager2@acme.com, manager3@acme.com, emp01–emp20@acme.com`,
     );
 
     // ── 3. Org Modules (all 19, active + completed) ──────────────────────────
@@ -327,10 +362,10 @@ async function seed(): Promise<void> {
     const [engDept, salesDept, hrDept, finDept] = await db
       .insert(departments)
       .values([
-        { orgId: org.id, name: 'Engineering' },
-        { orgId: org.id, name: 'Sales' },
-        { orgId: org.id, name: 'Human Resources' },
-        { orgId: org.id, name: 'Finance' },
+        { orgId: org.id, name: 'Engineering', headId: managerUser.id },
+        { orgId: org.id, name: 'Sales', headId: salesManagerUser.id },
+        { orgId: org.id, name: 'Human Resources', headId: opsManagerUser.id },
+        { orgId: org.id, name: 'Finance', headId: opsManagerUser.id },
       ])
       .returning();
     console.log(`  ✓ Departments: Engineering, Sales, HR, Finance`);
@@ -352,7 +387,8 @@ async function seed(): Promise<void> {
     console.log(`  ✓ Designations: 8 created`);
 
     // ── 6. Employee Profiles ─────────────────────────────────────────────────
-    // emp01–08 → Engineering | emp09–12 → Sales | emp13–16 → HR | emp17–20 → Finance
+    // emp01–08 → Engineering (mgr: Sarah) | emp09–12 → Sales (mgr: Vikram)
+    // emp13–16 → HR (mgr: Meera) | emp17–20 → Finance (mgr: Meera)
     const profileInserts = empUsers.map((u, i) => {
       const idx = i + 1; // 1-based
 
@@ -393,7 +429,7 @@ async function seed(): Promise<void> {
         employeeId: `EMP${String(idx).padStart(3, '0')}`,
         departmentId: deptId,
         designationId: desigId,
-        managerId: managerUser.id,
+        managerId: managerForIdx(i),
         dateOfJoining: fmt(joinDate),
         probationEndDate: fmt(probEnd),
         employmentType,
@@ -711,7 +747,7 @@ async function seed(): Promise<void> {
         totalDays: '2',
         reason: approvedLeaveReasons[i],
         status: 'approved',
-        approvedBy: managerUser.id,
+        approvedBy: managerForIdx(i + 5),
         approvedAt: anchorPlusDays(-2 - i * 4 - 3),
         approverComment: 'Approved',
       };
@@ -833,10 +869,12 @@ async function seed(): Promise<void> {
       ])
       .returning();
 
+    // Reports map index→emp01–10; keep all 3 'submitted' inside emp01–08 so
+    // Sarah's expense-approval queue stays populated (emp09/10 are Vikram's).
     const expenseStatusList = [
       'draft', 'submitted', 'approved',
       'draft', 'submitted', 'approved',
-      'approved', 'draft', 'submitted', 'approved',
+      'approved', 'submitted', 'draft', 'approved',
     ];
     const expenseTitles = [
       'Team Lunch', 'Client Visit Travel', 'AWS Certification',
@@ -894,11 +932,11 @@ async function seed(): Promise<void> {
     // ═════════════════════════════════════════════════════════════════════════
 
     // ── Locations (3) ─────────────────────────────────────────────────────────
-    await db.insert(locations).values([
+    const locationRows = await db.insert(locations).values([
       { orgId: org.id, name: 'Bengaluru HQ', code: 'BLR', type: 'office', address: 'Prestige Tech Park, Marathahalli', city: 'Bengaluru', state: 'Karnataka', country: 'India', postalCode: '560037', timezone: 'Asia/Kolkata', isPrimary: true, isActive: true },
       { orgId: org.id, name: 'Mumbai Office', code: 'BOM', type: 'office', address: 'Bandra Kurla Complex', city: 'Mumbai', state: 'Maharashtra', country: 'India', postalCode: '400051', timezone: 'Asia/Kolkata', isPrimary: false, isActive: true },
       { orgId: org.id, name: 'Remote — India', code: 'REM', type: 'remote', country: 'India', timezone: 'Asia/Kolkata', isPrimary: false, isActive: true },
-    ]);
+    ]).returning();
     console.log('  ✓ Locations: 3');
 
     // ── Grades (5) ────────────────────────────────────────────────────────────
@@ -909,8 +947,34 @@ async function seed(): Promise<void> {
       { orgId: org.id, name: 'L4 — Manager / Lead', level: 4, salaryBandMin: '2000000', salaryBandMax: '3200000', currency: 'INR', description: 'People / tech lead' },
       { orgId: org.id, name: 'L5 — Director', level: 5, salaryBandMin: '3200000', salaryBandMax: '5000000', currency: 'INR', description: 'Leadership' },
     ]).returning();
-    void gradeRows;
     console.log('  ✓ Grades: 5');
+
+    // Backfill grade + location onto the 20 employee profiles (deterministic):
+    // grade follows the designation level (L2 IC / L3 senior / L4 manager);
+    // location follows the work model (remote Eng → REM), Sales sits in Mumbai.
+    const gradeByLevel: Record<number, string> = {
+      2: gradeRows[1].id,
+      3: gradeRows[2].id,
+      4: gradeRows[3].id,
+    };
+    for (let i = 0; i < empUsers.length; i++) {
+      const idx = i + 1; // 1-based, same convention as the profile insert
+      const level =
+        idx <= 8 ? (idx <= 5 ? 2 : 3)
+        : idx <= 12 ? (idx <= 10 ? 2 : 3)
+        : idx <= 16 ? 2
+        : idx === 20 ? 4
+        : 2;
+      const locId =
+        idx <= 8 ? (idx % 2 === 1 ? locationRows[2].id : locationRows[0].id)
+        : idx <= 12 ? locationRows[1].id
+        : locationRows[0].id;
+      await db
+        .update(employeeProfiles)
+        .set({ gradeId: gradeByLevel[level], locationId: locId })
+        .where(and(eq(employeeProfiles.orgId, org.id), eq(employeeProfiles.userId, empUsers[i].id)));
+    }
+    console.log('  ✓ Employee profiles: grade + location backfilled');
 
     // ── Talent Acquisition ──
     const pipelineStages = await db.insert(recruitmentPipelineStages).values([
@@ -1049,7 +1113,7 @@ async function seed(): Promise<void> {
         orgId: org.id, revisionId: annualRevision.id, employeeId: u.id,
         currentCtc: String(current), proposedCtc: String(proposed),
         incrementPercent: String(incrementPct), incrementAmount: String(incrementAmount),
-        meritScore: (i % 4) + 2, status, proposedBy: managerUser.id,
+        meritScore: (i % 4) + 2, status, proposedBy: managerForIdx(i),
         approvedBy: status === 'approved' ? adminUser.id : null,
         remarks: status === 'approved' ? 'Strong performer; promotion track.' : 'Pending review.',
       };
@@ -1234,7 +1298,7 @@ async function seed(): Promise<void> {
       ...reviewedSsr.map((s) => ({
         orgId: org.id, employeeId: empUsers[s.empIdx].id, type: s.type, status: s.status,
         priority: s.priority, subject: s.subject, description: faker.lorem.sentence(),
-        data: {}, attachments: [], reviewedBy: managerUser.id, reviewedAt: anchorPlusDays(-3),
+        data: {}, attachments: [], reviewedBy: managerForIdx(s.empIdx), reviewedAt: anchorPlusDays(-3),
         completedAt: s.status === 'completed' ? anchorPlusDays(-2) : null,
       })),
       ...openSsr.map((s) => ({
@@ -1247,7 +1311,7 @@ async function seed(): Promise<void> {
 
     // ── Org Change Requests (5) ───────────────────────────────────────────────
     await db.insert(orgChangeRequests).values([
-      { orgId: org.id, requestedBy: managerUser.id, type: 'transfer', employeeId: empUsers[8].id, status: 'approved', currentData: {}, proposedData: { toDepartment: 'Engineering' }, justification: 'Internal mobility request.', approvedBy: adminUser.id, approvedAt: new Date('2026-02-20T10:00:00Z') },
+      { orgId: org.id, requestedBy: salesManagerUser.id, type: 'transfer', employeeId: empUsers[8].id, status: 'approved', currentData: {}, proposedData: { toDepartment: 'Engineering' }, justification: 'Internal mobility request.', approvedBy: adminUser.id, approvedAt: new Date('2026-02-20T10:00:00Z') },
       { orgId: org.id, requestedBy: managerUser.id, type: 'role_change', employeeId: empUsers[3].id, status: 'implemented', currentData: {}, proposedData: { newRole: 'Tech Lead' }, justification: 'Stepping into a lead role.', approvedBy: adminUser.id, approvedAt: new Date('2026-01-15T10:00:00Z'), implementedAt: new Date('2026-02-01T00:00:00Z') },
       { orgId: org.id, requestedBy: managerUser.id, type: 'reporting_change', employeeId: empUsers[5].id, status: 'rejected', currentData: {}, proposedData: { newManager: 'Sarah Mehta' }, justification: 'Requested reporting line change.', rejectionReason: 'Org structure unchanged this quarter.' },
       { orgId: org.id, requestedBy: managerUser.id, type: 'salary_change', employeeId: empUsers[2].id, status: 'pending', currentData: {}, proposedData: { hikePercent: 12 }, justification: 'Annual merit increase.', budgetImpact: '+₹8,400/mo' },
@@ -1398,12 +1462,15 @@ async function seed(): Promise<void> {
     });
     console.log('  ✓ Timesheet policy: 1');
 
-    // ── Timesheet Submissions (2) ─────────────────────────────────────────────
+    // ── Timesheet Submissions (4: 2 rejected/disputed + 2 pending approval) ──
     await db.insert(timesheetSubmissions).values([
       { orgId: org.id, employeeId: empUsers[0].id, periodStart: fmt(anchorPlusDays(-7)), periodEnd: fmt(anchorPlusDays(-1)), totalHours: '40', billableHours: '36', nonBillableHours: '4', status: 'rejected', summaryNote: 'Weekly timesheet', approvalChain: [], currentApproverLevel: 1, submittedAt: anchorPlusDays(-1), dayBreakdown: [], metadata: { disputeReason: 'Employee contests rejected overtime hours', disputeStatus: 'open' } },
       { orgId: org.id, employeeId: empUsers[1].id, periodStart: fmt(anchorPlusDays(-14)), periodEnd: fmt(anchorPlusDays(-8)), totalHours: '40', billableHours: '36', nonBillableHours: '4', status: 'rejected', summaryNote: 'Weekly timesheet', approvalChain: [], currentApproverLevel: 1, submittedAt: anchorPlusDays(-8), dayBreakdown: [], metadata: { disputeReason: 'Employee disputes project code requirement', disputeStatus: 'open' } },
+      // Pending submissions from Sarah's team so her approval queue is populated (#30)
+      { orgId: org.id, employeeId: empUsers[2].id, periodStart: fmt(anchorPlusDays(-7)), periodEnd: fmt(anchorPlusDays(-1)), totalHours: '41', billableHours: '37', nonBillableHours: '4', status: 'submitted', summaryNote: 'Weekly timesheet', approvalChain: [], currentApproverLevel: 1, submittedAt: anchorPlusDays(-1), dayBreakdown: [], metadata: {} },
+      { orgId: org.id, employeeId: empUsers[4].id, periodStart: fmt(anchorPlusDays(-7)), periodEnd: fmt(anchorPlusDays(-1)), totalHours: '39', billableHours: '35', nonBillableHours: '4', status: 'submitted', summaryNote: 'Weekly timesheet', approvalChain: [], currentApproverLevel: 1, submittedAt: anchorPlusDays(-1), dayBreakdown: [], metadata: {} },
     ]);
-    console.log('  ✓ Timesheet submissions: 2');
+    console.log('  ✓ Timesheet submissions: 4 (2 disputed, 2 pending)');
 
     // ── Salary Components (7) ─────────────────────────────────────────────────
     await db.insert(salaryComponents).values([
@@ -1515,7 +1582,7 @@ async function seed(): Promise<void> {
         const selfDone = submitted || r.status === 'self_review_submitted';
         return {
           orgId: org.id, cycleId: reviewCycle.id, employeeId: empUsers[r.empIdx].id,
-          reviewerId: managerUser.id, reviewerType: 'manager', status: r.status,
+          reviewerId: managerForIdx(r.empIdx), reviewerType: 'manager', status: r.status,
           selfRating: r.self, managerRating: r.mgr, finalRating: r.final,
           selfComments: selfDone ? selfComment : null,
           managerComments: submitted ? mgrComment : null,
@@ -1546,7 +1613,7 @@ async function seed(): Promise<void> {
         description: `${g.title} — tracked for the FY2025-26 cycle.`, category: g.category,
         framework: 'okr', weightage: '100', currentValue: '0', priority: 'medium',
         startDate: fmt(anchorPlusDays(-60)), dueDate: fmt(anchorPlusDays(g.due)), status: g.status,
-        progress: g.progress, createdBy: managerUser.id, isTemplate: false, successMetrics: [], isActive: true,
+        progress: g.progress, createdBy: managerForIdx(g.empIdx), isTemplate: false, successMetrics: [], isActive: true,
       })),
     );
     console.log('  ✓ Goals: 10');
@@ -1591,7 +1658,7 @@ async function seed(): Promise<void> {
         careerAspiration: `Grow into a ${d.targetRole} role over the next 12–18 months.`,
         targetRole: d.targetRole, status: 'active', progress: d.progress,
         startDate: fmt(anchorPlusDays(-30)), targetDate: fmt(anchorPlusDays(180)),
-        mentorId: managerUser.id, createdBy: managerUser.id, isActive: true,
+        mentorId: managerForIdx(d.empIdx), createdBy: managerForIdx(d.empIdx), isActive: true,
       })),
     );
     console.log('  ✓ Development plans: 5');
@@ -1603,7 +1670,7 @@ async function seed(): Promise<void> {
       { orgId: org.id, managerId: managerUser.id, employeeId: empUsers[1].id, scheduledAt: anchorPlusDays(-3), duration: 30, isRecurring: true, recurrencePattern: 'weekly', agenda: oneOnOneAgenda, notes: 'Discussed goal progress; on track overall.', actionItems: [{ title: 'Share design doc by Friday', status: 'open' }], status: 'completed', completedAt: anchorPlusDays(-3) },
       { orgId: org.id, managerId: managerUser.id, employeeId: empUsers[2].id, scheduledAt: anchorPlusDays(5), duration: 30, isRecurring: true, recurrencePattern: 'weekly', agenda: oneOnOneAgenda, actionItems: [], status: 'scheduled' },
       { orgId: org.id, managerId: managerUser.id, employeeId: empUsers[0].id, scheduledAt: anchorPlusDays(7), duration: 30, isRecurring: true, recurrencePattern: 'weekly', agenda: oneOnOneAgenda, actionItems: [], status: 'scheduled' },
-      { orgId: org.id, managerId: managerUser.id, employeeId: empUsers[8].id, scheduledAt: anchorPlusDays(10), duration: 30, isRecurring: true, recurrencePattern: 'weekly', agenda: oneOnOneAgenda, actionItems: [], status: 'scheduled' },
+      { orgId: org.id, managerId: salesManagerUser.id, employeeId: empUsers[8].id, scheduledAt: anchorPlusDays(10), duration: 30, isRecurring: true, recurrencePattern: 'weekly', agenda: oneOnOneAgenda, actionItems: [], status: 'scheduled' },
     ]);
     console.log('  ✓ One-on-one meetings: 5');
 
@@ -1650,15 +1717,17 @@ async function seed(): Promise<void> {
     console.log('  ✓ Employee onboarding: 1, onboarding tasks: 9');
 
     // ── Employee Offboardings (2) ─────────────────────────────────────────────
+    // emp08 (Sarah's contract engineer) keeps her team-offboarding view populated;
+    // emp20 belongs to Meera's team.
     const offboardingRows = await db.insert(employeeOffboardings).values([
-      { orgId: org.id, employeeId: empUsers[18].id, exitType: 'resignation', exitReason: 'Career growth opportunity elsewhere', resignationDate: fmt(anchorPlusDays(-10)), lastWorkingDate: fmt(anchorPlusDays(20)), noticePeriodDays: 30, clearanceStatus: {}, assetReturnStatus: [], settlementStatus: 'pending', settlementEstimate: {}, handoverStatus: 'in_progress', status: 'in_progress', initiatedBy: managerUser.id, isActive: true },
-      { orgId: org.id, employeeId: empUsers[19].id, exitType: 'resignation', exitReason: 'Relocating to another city', resignationDate: fmt(anchorPlusDays(-5)), lastWorkingDate: fmt(anchorPlusDays(25)), noticePeriodDays: 30, clearanceStatus: {}, assetReturnStatus: [], settlementStatus: 'pending', settlementEstimate: {}, handoverStatus: 'pending', status: 'initiated', initiatedBy: managerUser.id, isActive: true },
+      { orgId: org.id, employeeId: empUsers[7].id, exitType: 'resignation', exitReason: 'Career growth opportunity elsewhere', resignationDate: fmt(anchorPlusDays(-10)), lastWorkingDate: fmt(anchorPlusDays(20)), noticePeriodDays: 30, clearanceStatus: {}, assetReturnStatus: [], settlementStatus: 'pending', settlementEstimate: {}, handoverStatus: 'in_progress', status: 'in_progress', initiatedBy: managerUser.id, isActive: true },
+      { orgId: org.id, employeeId: empUsers[19].id, exitType: 'resignation', exitReason: 'Relocating to another city', resignationDate: fmt(anchorPlusDays(-5)), lastWorkingDate: fmt(anchorPlusDays(25)), noticePeriodDays: 30, clearanceStatus: {}, assetReturnStatus: [], settlementStatus: 'pending', settlementEstimate: {}, handoverStatus: 'pending', status: 'initiated', initiatedBy: opsManagerUser.id, isActive: true },
     ]).returning();
     console.log('  ✓ Employee offboardings: 2');
 
     // ── Exit Interviews (1) ───────────────────────────────────────────────────
     await db.insert(exitInterviews).values({
-      orgId: org.id, employeeId: empUsers[18].id, offboardingId: offboardingRows[0].id,
+      orgId: org.id, employeeId: empUsers[7].id, offboardingId: offboardingRows[0].id,
       interviewerId: managerUser.id, scheduledAt: anchorPlusDays(12),
       questionnaire: ['What prompted your decision to leave?', 'How was your overall experience?', 'Would you recommend us as an employer?'],
       responses: {}, themes: [], exitReasons: [], status: 'scheduled', metadata: {}, isActive: true,
@@ -1736,7 +1805,7 @@ async function seed(): Promise<void> {
     await db.insert(courseEnrollments).values(
       enrollSpecs.map((e) => ({
         orgId: org.id, courseId: seededCourses[e.courseIdx].id, employeeId: empUsers[e.empIdx].id,
-        assignedBy: e.assignmentType === 'manager' ? managerUser.id : null, assignmentType: e.assignmentType,
+        assignedBy: e.assignmentType === 'manager' ? managerForIdx(e.empIdx) : null, assignmentType: e.assignmentType,
         status: e.status, progress: e.progress, score: e.status === 'completed' ? 80 + (e.empIdx % 20) : null,
         completedAt: e.completedOffset !== undefined ? anchorPlusDays(e.completedOffset) : null,
         deadline: e.deadlineOffset !== undefined ? anchorPlusDays(e.deadlineOffset) : null,
@@ -1759,7 +1828,7 @@ async function seed(): Promise<void> {
         totalItems: p.items.length, completedItems: p.completed, progress: p.progress,
         estimatedHours: p.items.reduce((s, idx) => s + Math.round((seededCourses[idx].duration ?? 60) / 60), 0),
         status: p.progress >= 100 ? 'completed' : 'active', completedAt: p.progress >= 100 ? anchorPlusDays(-5) : null,
-        createdBy: managerUser.id, metadata: { createdByManager: true }, isActive: true,
+        createdBy: managerForIdx(p.empIdx), metadata: { createdByManager: true }, isActive: true,
       }).returning();
       await db.insert(learningPathItems).values(
         p.items.map((courseIdx, order) => ({
@@ -1820,7 +1889,7 @@ async function seed(): Promise<void> {
     console.log('  ✓ L&D: 10 courses, enrollments, 5 paths, 6 certs, 5 budgets, 3 sessions');
 
     // ── Engagement & Culture ─────────────────────────────────────────────────
-    // All 20 empUsers report to managerUser; emp01–08 Eng, 09–12 Sales, 13–16 HR, 17–20 Fin.
+    // Hierarchy: emp01–08 Eng → Sarah, emp09–12 Sales → Vikram, emp13–20 HR/Fin → Meera.
     {
       // ---- Culture Values ----
       const cultureValueRows = [
@@ -2049,7 +2118,7 @@ async function seed(): Promise<void> {
       .insert(successionPlans)
       .values([
         { orgId: org.id, positionTitle: 'VP Engineering', departmentId: engDept.id, currentHolderId: managerUser.id, isKeyPosition: true, criticalityLevel: 'critical', benchStrength: 'adequate', successionCoveragePercent: 60, notes: 'Two candidates in development.', lastReviewedAt: anchorPlusDays(-30), reviewedBy: adminUser.id, status: 'active' },
-        { orgId: org.id, positionTitle: 'Head of Sales', departmentId: salesDept.id, currentHolderId: managerUser.id, isKeyPosition: true, criticalityLevel: 'critical', benchStrength: 'strong', successionCoveragePercent: 80, notes: 'Strong internal pipeline.', lastReviewedAt: anchorPlusDays(-25), reviewedBy: adminUser.id, status: 'active' },
+        { orgId: org.id, positionTitle: 'Head of Sales', departmentId: salesDept.id, currentHolderId: salesManagerUser.id, isKeyPosition: true, criticalityLevel: 'critical', benchStrength: 'strong', successionCoveragePercent: 80, notes: 'Strong internal pipeline.', lastReviewedAt: anchorPlusDays(-25), reviewedBy: adminUser.id, status: 'active' },
         { orgId: org.id, positionTitle: 'HR Business Partner Lead', departmentId: hrDept.id, currentHolderId: null, isKeyPosition: true, criticalityLevel: 'high', benchStrength: 'weak', successionCoveragePercent: 25, notes: 'Single point of failure — needs development.', lastReviewedAt: anchorPlusDays(-40), reviewedBy: adminUser.id, status: 'active' },
         { orgId: org.id, positionTitle: 'Finance Controller', departmentId: finDept.id, currentHolderId: null, isKeyPosition: true, criticalityLevel: 'high', benchStrength: 'weak', successionCoveragePercent: 15, notes: 'Single early-stage successor in development — retention risk.', lastReviewedAt: anchorPlusDays(-50), reviewedBy: adminUser.id, status: 'active' },
       ])
@@ -2058,10 +2127,10 @@ async function seed(): Promise<void> {
     await db.insert(successionCandidates).values([
       { orgId: org.id, successionPlanId: wfSuccessionPlans[0].id, candidateEmployeeId: empUsers[0].id, readinessLevel: 'ready_now', performanceRating: 'exceptional', potentialRating: 'high', flightRisk: 'low', developmentNotes: 'Leadership program completed; ready for VP role.', nominatedBy: managerUser.id, approvedBy: adminUser.id, approvedAt: anchorPlusDays(-15), status: 'approved' },
       { orgId: org.id, successionPlanId: wfSuccessionPlans[0].id, candidateEmployeeId: empUsers[1].id, readinessLevel: '1yr', performanceRating: 'meets', potentialRating: 'high', flightRisk: 'medium', developmentNotes: 'Needs more cross-functional exposure.', nominatedBy: managerUser.id, status: 'nominated' },
-      { orgId: org.id, successionPlanId: wfSuccessionPlans[1].id, candidateEmployeeId: empUsers[10].id, readinessLevel: 'ready_now', performanceRating: 'exceptional', potentialRating: 'high', flightRisk: 'low', developmentNotes: 'Top performer, strong leadership.', nominatedBy: managerUser.id, approvedBy: adminUser.id, approvedAt: anchorPlusDays(-12), status: 'approved' },
-      { orgId: org.id, successionPlanId: wfSuccessionPlans[1].id, candidateEmployeeId: empUsers[11].id, readinessLevel: '2yr', performanceRating: 'meets', potentialRating: 'medium', flightRisk: 'low', developmentNotes: 'Developing account management skills.', nominatedBy: managerUser.id, status: 'nominated' },
-      { orgId: org.id, successionPlanId: wfSuccessionPlans[2].id, candidateEmployeeId: empUsers[16].id, readinessLevel: '2yr', performanceRating: 'meets', potentialRating: 'medium', flightRisk: 'high', developmentNotes: 'Flight risk — retention plan needed.', nominatedBy: managerUser.id, status: 'nominated' },
-      { orgId: org.id, successionPlanId: wfSuccessionPlans[3].id, candidateEmployeeId: empUsers[18].id, readinessLevel: '2yr', performanceRating: 'meets', potentialRating: 'medium', flightRisk: 'medium', developmentNotes: 'Early-stage successor; needs controller-track development.', nominatedBy: managerUser.id, status: 'nominated' },
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[1].id, candidateEmployeeId: empUsers[10].id, readinessLevel: 'ready_now', performanceRating: 'exceptional', potentialRating: 'high', flightRisk: 'low', developmentNotes: 'Top performer, strong leadership.', nominatedBy: salesManagerUser.id, approvedBy: adminUser.id, approvedAt: anchorPlusDays(-12), status: 'approved' },
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[1].id, candidateEmployeeId: empUsers[11].id, readinessLevel: '2yr', performanceRating: 'meets', potentialRating: 'medium', flightRisk: 'low', developmentNotes: 'Developing account management skills.', nominatedBy: salesManagerUser.id, status: 'nominated' },
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[2].id, candidateEmployeeId: empUsers[16].id, readinessLevel: '2yr', performanceRating: 'meets', potentialRating: 'medium', flightRisk: 'high', developmentNotes: 'Flight risk — retention plan needed.', nominatedBy: opsManagerUser.id, status: 'nominated' },
+      { orgId: org.id, successionPlanId: wfSuccessionPlans[3].id, candidateEmployeeId: empUsers[18].id, readinessLevel: '2yr', performanceRating: 'meets', potentialRating: 'medium', flightRisk: 'medium', developmentNotes: 'Early-stage successor; needs controller-track development.', nominatedBy: opsManagerUser.id, status: 'nominated' },
     ]);
 
     // Internal transfer / mobility requests — drives Internal Mobility (admin), Transfer Requests (manager),
@@ -2070,7 +2139,7 @@ async function seed(): Promise<void> {
       { orgId: org.id, employeeId: empUsers[0].id, requestType: 'transfer', fromDepartmentId: engDept.id, toDepartmentId: salesDept.id, effectiveDate: anchorPlusDays(21), reason: 'Seeking a customer-facing role for career growth.', managerInitiated: false, initiatedBy: empUsers[0].id, currentApproverId: managerUser.id, backfillRequired: true, backfillStatus: 'not_started', status: 'pending' },
       { orgId: org.id, employeeId: empUsers[2].id, requestType: 'location_change', fromLocationId: null, toLocationId: null, fromDepartmentId: engDept.id, toDepartmentId: engDept.id, effectiveDate: anchorPlusDays(30), reason: 'Relocating to the Bengaluru office.', managerInitiated: false, initiatedBy: empUsers[2].id, currentApproverId: managerUser.id, backfillRequired: false, status: 'pending' },
       { orgId: org.id, employeeId: empUsers[1].id, requestType: 'promotion', fromDepartmentId: engDept.id, toDepartmentId: engDept.id, fromDesignationId: swe.id, toDesignationId: sse.id, effectiveDate: anchorPlusDays(-10), reason: 'Promotion to Senior Software Engineer for strong performance.', managerInitiated: true, initiatedBy: managerUser.id, backfillRequired: false, status: 'completed', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-14), completedAt: anchorPlusDays(-10) },
-      { orgId: org.id, employeeId: empUsers[10].id, requestType: 'promotion', fromDepartmentId: salesDept.id, toDepartmentId: salesDept.id, fromDesignationId: salesExec.id, toDesignationId: snrSales.id, effectiveDate: anchorPlusDays(-5), reason: 'Promotion to Senior Sales Executive.', managerInitiated: true, initiatedBy: managerUser.id, backfillRequired: true, backfillStatus: 'in_progress', status: 'approved', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-7) },
+      { orgId: org.id, employeeId: empUsers[10].id, requestType: 'promotion', fromDepartmentId: salesDept.id, toDepartmentId: salesDept.id, fromDesignationId: salesExec.id, toDesignationId: snrSales.id, effectiveDate: anchorPlusDays(-5), reason: 'Promotion to Senior Sales Executive.', managerInitiated: true, initiatedBy: salesManagerUser.id, backfillRequired: true, backfillStatus: 'in_progress', status: 'approved', approvedBy: adminUser.id, approvedAt: anchorPlusDays(-7) },
       { orgId: org.id, employeeId: empUsers[4].id, requestType: 'lateral_move', fromDepartmentId: engDept.id, toDepartmentId: engDept.id, effectiveDate: anchorPlusDays(45), reason: 'Move from frontend to platform team.', managerInitiated: false, initiatedBy: empUsers[4].id, currentApproverId: managerUser.id, backfillRequired: false, status: 'pending' },
       { orgId: org.id, employeeId: empUsers[6].id, requestType: 'transfer', fromDepartmentId: salesDept.id, toDepartmentId: hrDept.id, effectiveDate: anchorPlusDays(15), reason: 'Interest in people operations.', managerInitiated: false, initiatedBy: empUsers[6].id, backfillRequired: false, status: 'rejected', rejectionReason: 'No current opening in HR; revisit next quarter.' },
     ]);
@@ -2572,7 +2641,9 @@ async function seed(): Promise<void> {
     console.log('\n✅ Seed complete!\n');
     console.log('  Credentials:');
     console.log('    admin@acme.com     / Admin@123    (super_admin)');
-    console.log('    manager@acme.com   / Manager@123  (manager)');
+    console.log('    manager@acme.com   / Manager@123  (manager — Engineering, emp01–08)');
+    console.log('    manager2@acme.com  / Manager@123  (manager — Sales, emp09–12)');
+    console.log('    manager3@acme.com  / Manager@123  (manager — HR + Finance, emp13–20)');
     console.log('    emp01@acme.com ... emp20@acme.com / Employee@123  (employee)');
   } catch (err) {
     console.error('\n❌ Seed failed:', err);

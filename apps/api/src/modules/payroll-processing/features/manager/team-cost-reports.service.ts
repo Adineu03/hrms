@@ -109,6 +109,23 @@ export class TeamCostReportsService {
       )
       .orderBy(schema.payrollRuns.month);
 
+    // Planned budget derives from the team's assigned CTCs (single source of
+    // truth with the comp module): monthly budget = sum(CTC)/12 + 15% loaded
+    // cost (benefits/overheads) so gross payroll sits believably ~95% of budget.
+    const assignments = teamMemberIds.length
+      ? await this.db
+          .select({ ctc: schema.employeeSalaryAssignments.ctc })
+          .from(schema.employeeSalaryAssignments)
+          .where(
+            and(
+              eq(schema.employeeSalaryAssignments.orgId, orgId),
+              inArray(schema.employeeSalaryAssignments.employeeId, teamMemberIds),
+            ),
+          )
+      : [];
+    const annualCtcTotal = assignments.reduce((sum, a) => sum + (Number(a.ctc) || 0), 0);
+    const monthlyBudget = (annualCtcTotal / 12) * 1.15;
+
     let ytdActual = 0;
     const monthlyData = [];
 
@@ -130,17 +147,20 @@ export class TeamCostReportsService {
 
       monthlyData.push({
         month: run.month,
+        budget: monthlyBudget.toFixed(2),
         actual: monthlyActual.toFixed(2),
       });
     }
+
+    const totalBudget = monthlyBudget * Math.max(runs.length, 1);
 
     return {
       data: {
         year: now.getFullYear(),
         teamSize: teamMemberIds.length,
+        totalBudget: totalBudget.toFixed(2),
         ytdActual: ytdActual.toFixed(2),
         monthlyData,
-        note: 'Budget data requires configuration. Showing actuals only.',
       },
     };
   }
@@ -229,6 +249,40 @@ export class TeamCostReportsService {
     const avgDailySalary = entries.length > 0 ? totalBasic / (entries.length * 30) : 0;
     const estimatedDeduction = avgDailySalary * totalLopDays;
 
+    // Approved-leave impact per leave type (payroll cost of paid leave days) —
+    // gives the summary real content even when no one has loss-of-pay days.
+    const approvedLeaves = await this.db
+      .select({
+        leaveType: schema.leaveTypes.name,
+        totalDays: schema.leaveRequests.totalDays,
+        employeeId: schema.leaveRequests.employeeId,
+      })
+      .from(schema.leaveRequests)
+      .innerJoin(schema.leaveTypes, eq(schema.leaveRequests.leaveTypeId, schema.leaveTypes.id))
+      .where(
+        and(
+          eq(schema.leaveRequests.orgId, orgId),
+          eq(schema.leaveRequests.status, 'approved'),
+          inArray(schema.leaveRequests.employeeId, teamMemberIds),
+        ),
+      );
+
+    const byType = new Map<string, { totalDays: number; employees: Set<string> }>();
+    for (const l of approvedLeaves) {
+      const key = l.leaveType ?? 'Leave';
+      if (!byType.has(key)) byType.set(key, { totalDays: 0, employees: new Set() });
+      const t = byType.get(key)!;
+      t.totalDays += Number(l.totalDays) || 0;
+      t.employees.add(l.employeeId);
+    }
+    const items = [...byType.entries()].map(([leaveType, t], i) => ({
+      id: `${leaveType}-${i}`,
+      leaveType,
+      totalDays: t.totalDays,
+      affectedEmployees: t.employees.size,
+      costImpact: Number((avgDailySalary * t.totalDays).toFixed(2)),
+    }));
+
     return {
       data: {
         period: { month: latestRun.month, year: latestRun.year },
@@ -236,6 +290,7 @@ export class TeamCostReportsService {
         affectedEmployees: lopEntries.length,
         estimatedDeduction: estimatedDeduction.toFixed(2),
         teamSize: entries.length,
+        items,
       },
     };
   }

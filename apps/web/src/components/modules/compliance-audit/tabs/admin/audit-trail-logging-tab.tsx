@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Plus, X, ClipboardList, Download, AlertCircle, Eye, Pencil, Trash2, FileDown } from 'lucide-react';
 import { api } from '@/lib/api';
+import { formatDateTime } from '@/lib/format';
 
 interface AuditLog {
   id: string;
@@ -202,7 +203,7 @@ export default function AuditTrailLoggingTab() {
                   <tbody className="divide-y divide-gray-100">
                     {logs.map((log) => (
                       <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-2 font-medium text-[#2c2c2c]">{log.userName}</td>
+                        <td className="py-3 px-2 font-medium text-[#2c2c2c]">{log.userName || '—'}</td>
                         <td className="py-3 px-2">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${actionColors[log.action]}`}>
                             {actionIcons[log.action]}
@@ -216,7 +217,7 @@ export default function AuditTrailLoggingTab() {
                         <td className="py-3 px-2 text-gray-600 max-w-xs truncate">{log.description}</td>
                         <td className="py-3 px-2 text-gray-500 font-mono text-xs">{log.ipAddress || '—'}</td>
                         <td className="py-3 px-2 text-gray-500 text-xs">
-                          {new Date(log.createdAt).toLocaleString()}
+                          {formatDateTime(log.createdAt)}
                         </td>
                       </tr>
                     ))}

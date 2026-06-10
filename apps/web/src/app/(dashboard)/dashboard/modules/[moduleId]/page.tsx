@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useModuleStore } from '@/lib/module-store';
 import { useAuthStore } from '@/lib/auth-store';
-import { MODULES } from '@hrms/shared';
+import { MODULES, isModuleAllowedForRole } from '@hrms/shared';
 import SetupWizard from '@/components/setup-wizard';
 import FeatureModePlaceholder from '@/components/feature-mode-placeholder';
 import ErrorBoundary from '@/components/error-boundary';
@@ -32,6 +32,7 @@ import { Power, Lock, Loader2 } from 'lucide-react';
 
 export default function ModulePage() {
   const params = useParams();
+  const router = useRouter();
   const moduleId = params.moduleId as string;
   const { modules, isLoading, fetchModules } = useModuleStore();
   const user = useAuthStore((s) => s.user);
@@ -46,6 +47,21 @@ export default function ModulePage() {
   const moduleDef = MODULES[moduleId];
   const moduleStatus = modules.find((m) => m.id === moduleId);
   const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+
+  // Role guard: only known modules are guarded (unknown ids keep the
+  // "Module Not Found" card). Keyed off the auth store only — the dashboard
+  // layout guarantees `user` is hydrated before this page renders.
+  const isAllowed = !moduleDef || isModuleAllowedForRole(user?.role, moduleId);
+
+  useEffect(() => {
+    if (user && !isAllowed) {
+      router.replace('/dashboard');
+    }
+  }, [user, isAllowed, router]);
+
+  if (user && !isAllowed) {
+    return null;
+  }
 
   if (isLoading && modules.length === 0) {
     return (

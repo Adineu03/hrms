@@ -279,15 +279,19 @@ export class OvertimeApprovalService {
       { totalOTHours: number; approvedHours: number; pendingHours: number }
     >();
 
+    let approvedThisMonth = 0;
+    let totalOtHoursThisMonth = 0;
     for (const r of rows) {
       if (!summaryMap.has(r.employeeId)) {
         summaryMap.set(r.employeeId, { totalOTHours: 0, approvedHours: 0, pendingHours: 0 });
       }
       const s = summaryMap.get(r.employeeId)!;
-      const hours = r.actualHours ?? r.estimatedHours ?? 0;
+      const hours = Number(r.actualHours ?? r.estimatedHours) || 0;
       s.totalOTHours += hours;
+      totalOtHoursThisMonth += hours;
       if (r.status === 'approved') {
         s.approvedHours += hours;
+        approvedThisMonth += 1;
       } else if (r.status === 'pending') {
         s.pendingHours += hours;
       }
@@ -302,7 +306,28 @@ export class OvertimeApprovalService {
       };
     });
 
-    return { month: monthNum, year: yearNum, data };
+    // pendingCount mirrors the requests table (team-wide, no date window) so
+    // the stat card and the table beneath it always agree.
+    const [pendingResult] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(overtimeRequests)
+      .where(
+        and(
+          eq(overtimeRequests.orgId, orgId),
+          inArray(overtimeRequests.employeeId, teamMemberIds),
+          eq(overtimeRequests.status, 'pending'),
+        ),
+      );
+
+    return {
+      month: monthNum,
+      year: yearNum,
+      pendingCount: pendingResult?.count ?? 0,
+      approvedThisMonth,
+      totalOtHoursThisMonth,
+      monthlyBreakdown: data,
+      data,
+    };
   }
 
   async getOvertimeTrends(
