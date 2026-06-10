@@ -15,6 +15,7 @@
     "test:e2e": "pnpm --filter @hrms/api test:e2e:run"
   },
   "devDependencies": {
+    "railway": "^3.1.1",
     "turbo": "^2"
   },
   "packageManager": "pnpm@10.30.3",
