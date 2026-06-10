@@ -20,6 +20,7 @@
     "next": "^15",
     "react": "^19",
     "react-dom": "^19",
+    "recharts": "^3.8.1",
     "zustand": "^5"
   },
   "devDependencies": {

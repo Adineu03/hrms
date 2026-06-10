@@ -16,3 +16,28 @@
   background-color: #eff6ff !important;
   transition: border-color 0.3s, background-color 0.3s;
 }
+
+/* Dashboard mount motion (Fix Sprint 2) — subtle fade + rise, staggered via --rise-delay */
+@keyframes dash-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dash-rise {
+  opacity: 0;
+  animation: dash-rise 0.45s ease-out forwards;
+  animation-delay: var(--rise-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-rise {
+    animation: none;
+    opacity: 1;
+  }
+}

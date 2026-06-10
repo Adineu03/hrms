@@ -32,3 +32,25 @@ export function formatDateTime(value: string | number | Date | null | undefined)
     hour12: true,
   });
 }
+
+/** "₹15,00,000" (Indian digit grouping, no decimals). */
+export function formatINR(value: number | string | null | undefined): string {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return EM_DASH;
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
+/** Compact lakh/crore style for KPI tiles: "₹15.0L", "₹1.2Cr", "₹47.6k". */
+export function formatINRCompact(value: number | string | null | undefined): string {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return EM_DASH;
+  const abs = Math.abs(n);
+  if (abs >= 1_00_00_000) return `₹${(n / 1_00_00_000).toFixed(1)}Cr`;
+  if (abs >= 1_00_000) return `₹${(n / 1_00_000).toFixed(1)}L`;
+  if (abs >= 1_000) return `₹${(n / 1_000).toFixed(1)}k`;
+  return `₹${Math.round(n)}`;
+}

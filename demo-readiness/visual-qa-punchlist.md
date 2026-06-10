@@ -4,6 +4,8 @@
 
 > **Fix Sprint 1 status (2026-06-10):** addressed — **#20** (hierarchy seeded: Sarah/Engineering 8, Vikram/Sales 4, Meera/HR+Fin 8; cascades to #21, #22, #29–#32, #34), **#19/#43** (role-scoped sidebar + route guards: manager 13 modules, employee 11; AI assistant navigation enforces the same map), **#66** (Account-Deletion card removed), **#2** (userName join + safe timestamps), **#4** (corrections employeeName), **#16** (audit-trail user/module/entity + config entityName), **#25** (OT summary cards now match the table), **#38** (team budget derived from team CTC; leave-impact populated), **#41** (one team-size source of truth = direct reports; grade distribution counts employees), **#42** (lastUpdated fixed; downloads cut-by-scoping — demo-company hidden for managers). Scoped away by role nav: **#36, #61, #62, #63** (platform-experience hidden for manager/employee). Verify on the owner re-walk.
 
+> **Fix Sprint 2 status (2026-06-10):** **#67 done** — three role-tiered dashboards (admin org-wide / manager direct-reports / employee personal) on the Hybrid A+B design: KPI cards with deltas + sparklines + count-up, recharts trend/donut/bar panels, actionable row-3 widgets (manager approvals queue with inline Review deep-links), skeletons on load, matte-token palette. Backend: role-aware `GET /api/v1/dashboard/overview` computed deterministically from the locked seed (no seed changes). Screenshot script: `apps/web/e2e/dashboard-shots.mjs`.
+
 Status legend — **Type:** Blank · Unrealistic · Layout · WrongNumber · BrokenAction · Copy
 **Severity:** 🔴 High (demo-blocker) · 🟠 Med · 🟡 Low
 

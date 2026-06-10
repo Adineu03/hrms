@@ -1,119 +1,86 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
+import { AlertCircle, RotateCw } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api';
-import { getAllowedModuleIds } from '@hrms/shared';
-import { Boxes, Users, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
-import { StatCardSkeleton } from '@/components/ui/skeleton';
+import { StatCardSkeleton, CardSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { AdminDashboard } from '@/components/dashboard/admin-dashboard';
+import { ManagerDashboard } from '@/components/dashboard/manager-dashboard';
+import { EmployeeDashboard } from '@/components/dashboard/employee-dashboard';
+import type { DashboardOverview } from '@/components/dashboard/types';
 
-interface OrgStats {
-  totalEmployees: number;
-  activeModules: number;
-  pendingApprovals: number;
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-64" />
+        <Skeleton className="h-4 w-40" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="lg:col-span-3">
+          <CardSkeleton />
+        </div>
+        <div className="lg:col-span-2">
+          <CardSkeleton />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const [stats, setStats] = useState<OrgStats | null>(null);
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setIsLoading(true);
+    setError(false);
     api
-      .get<OrgStats>('/dashboard/stats')
-      .then((res) => setStats(res.data))
-      .catch(() => {/* stats are best-effort */})
+      .get<DashboardOverview>('/dashboard/overview')
+      .then((res) => setOverview(res.data))
+      .catch(() => setError(true))
       .finally(() => setIsLoading(false));
   }, []);
 
+  useEffect(() => {
+    load();
+  }, [load]);
+
   if (!user) return null;
+  if (isLoading) return <DashboardSkeleton />;
 
-  const isAdmin = user.role === 'super_admin' || user.role === 'admin';
-  const allowedModuleCount = getAllowedModuleIds(user.role).length;
-
-  return (
-    <div className="max-w-4xl space-y-8">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-2xl font-bold text-text">Welcome, {user.firstName}!</h1>
-        <p className="text-text-muted mt-1">Your organization: {user.orgName}</p>
+  if (error || !overview) {
+    return (
+      <div className="max-w-md mx-auto mt-16 bg-card rounded-2xl border border-border shadow-sm p-8 text-center">
+        <AlertCircle className="h-8 w-8 text-text-muted mx-auto mb-3" />
+        <h2 className="text-lg font-semibold text-text">Couldn&apos;t load your dashboard</h2>
+        <p className="text-sm text-text-muted mt-1 mb-5">Check that the API is reachable and try again.</p>
+        <button
+          onClick={load}
+          className="inline-flex items-center gap-2 text-sm font-medium bg-primary text-white rounded-lg px-4 py-2 hover:bg-primary-hover transition-colors"
+        >
+          <RotateCw className="h-4 w-4" />
+          Retry
+        </button>
       </div>
+    );
+  }
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {isLoading ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : (
-          <>
-            <div className="bg-card rounded-xl shadow-sm border border-border p-5 flex items-center gap-4">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <Users className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-text">{stats?.totalEmployees ?? 0}</p>
-                <p className="text-sm text-text-muted">Active Employees</p>
-              </div>
-            </div>
-
-            <div className="bg-card rounded-xl shadow-sm border border-border p-5 flex items-center gap-4">
-              <div className="p-3 bg-green-50 rounded-lg">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-text">{stats?.activeModules ?? 0}</p>
-                <p className="text-sm text-text-muted">Active Modules</p>
-              </div>
-            </div>
-
-            <div className="bg-card rounded-xl shadow-sm border border-border p-5 flex items-center gap-4">
-              <div className="p-3 bg-amber-50 rounded-lg">
-                <Clock className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-text">{stats?.pendingApprovals ?? 0}</p>
-                <p className="text-sm text-text-muted">Pending Approvals</p>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Modules Card */}
-      <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <Boxes className="h-6 w-6 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold text-text">Modules</h2>
-            <p className="text-text-muted mt-1">
-              {isAdmin ? (
-                <>
-                  Your HRMS includes <span className="font-semibold text-text">{allowedModuleCount}</span> modules
-                  ready to be configured. Start by setting up Core HR, then proceed through each module
-                  in order to build your complete HR platform.
-                </>
-              ) : (
-                <>
-                  You have access to <span className="font-semibold text-text">{allowedModuleCount}</span> modules.
-                  Use the sidebar to open a module and get started.
-                </>
-              )}
-            </p>
-            {isAdmin && (
-              <Link href="/dashboard/modules/cold-start-setup" className="mt-4 flex items-center gap-2 text-sm text-primary font-medium hover:underline cursor-pointer">
-                <ArrowRight className="h-4 w-4" />
-                Begin setup with module configuration
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  if (overview.role === 'admin') return <AdminDashboard data={overview} />;
+  if (overview.role === 'manager') return <ManagerDashboard data={overview} />;
+  return <EmployeeDashboard data={overview} />;
 }
